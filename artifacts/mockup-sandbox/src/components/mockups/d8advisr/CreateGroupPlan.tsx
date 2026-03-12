@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowLeft, Users, Plus, Calendar, DollarSign, Home, User as UserIcon } from 'lucide-react';
 
 export function CreateGroupPlan() {

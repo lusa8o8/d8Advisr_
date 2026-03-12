@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 
 export function PreferenceEdit() {

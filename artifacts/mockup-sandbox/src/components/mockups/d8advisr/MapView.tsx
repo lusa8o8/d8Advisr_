@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bell, Settings, Search, MapPin, Star, Home, Calendar, User, List, Map } from 'lucide-react';
 
 export function MapView() {

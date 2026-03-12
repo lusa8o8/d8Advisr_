@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bell, Calendar, CheckCircle2, AlertCircle, Star, Users, MapPin, Check } from 'lucide-react';
 
 export function NotificationsCenter() {

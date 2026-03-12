@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowLeft, Plus, DollarSign, ArrowUpRight, Home, Calendar, User } from 'lucide-react';
 
 export function BudgetDashboard() {
