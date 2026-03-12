@@ -48,6 +48,34 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 - `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
 - `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
 
+## D8Advisr Mockup
+
+Full high-fidelity mobile app mockup for D8Advisr (date and group planning app) built in the mockup sandbox.
+
+**Location:** `artifacts/mockup-sandbox/src/components/mockups/d8advisr/`
+
+**18 screens:**
+1. Welcome / Value Prop
+2. Sign-Up / Auth
+3. Initial Preferences
+4. Home / Discovery Feed
+5. Map View
+6. Filter Modal
+7. Venue Details
+8. Plan Generator / Surprise Me
+9. Generated Plan Overview
+10. Plan Detail / Cost Review
+11. Plan Edit / Adjustment
+12. Execution Tracker
+13. Feedback / Completion Log
+14. Profile Overview
+15. Preference Edit
+16. Budget Dashboard / Sinking Fund
+17. Create Group Plan
+18. Notifications Center
+
+**Brand:** #FF5A5F (primary), #00C851 (success), #FF9500 (warning), #F7F7F7 (bg), Poppins font
+
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)
