@@ -8,7 +8,7 @@ export function VenueDetails() {
   const [activeTab, setActiveTab] = useState('Overview');
 
   return (
-    <div className="flex-1 bg-card flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className="flex-1 min-h-0 bg-card flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header Image Area */}
       <div className="h-72 bg-gradient-to-br from-rose-400 to-red-500 relative flex items-center justify-center rounded-b-[40px] shadow-sm shrink-0">
         <button 

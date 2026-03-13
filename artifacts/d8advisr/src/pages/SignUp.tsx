@@ -7,7 +7,7 @@ export function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="flex-1 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
+    <div className="flex-1 min-h-0 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
       {/* Header Logo */}
       <div className="w-full flex justify-center mt-12 mb-8 cursor-pointer" onClick={() => setLocation('/')}>
         <div className="flex items-baseline">

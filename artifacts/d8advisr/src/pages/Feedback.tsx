@@ -11,7 +11,7 @@ export function Feedback() {
   const highlights = ['Romantic', 'Fun', 'Great Service', 'Would Return', 'Worth the Price', 'Crowded'];
 
   return (
-    <div className="flex-1 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
       <div className="px-6 pt-14 pb-4 flex justify-end">
         <button onClick={() => setLocation('/home')} className="w-10 h-10 bg-card rounded-full flex items-center justify-center text-foreground shadow-sm">

@@ -5,7 +5,7 @@ export function NotificationsCenter() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="flex-1 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
       {/* Header */}
       <div className="bg-card px-6 pt-14 pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
         <div className="flex justify-between items-center mb-2">

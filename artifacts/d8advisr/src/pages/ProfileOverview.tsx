@@ -6,7 +6,7 @@ export function ProfileOverview() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="flex-1 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header Banner */}
       <div className="bg-primary px-6 pt-14 pb-20 relative text-primary-foreground rounded-b-[40px] shadow-md">
         <div className="flex justify-between items-center mb-6">

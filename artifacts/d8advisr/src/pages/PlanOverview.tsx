@@ -6,7 +6,7 @@ export function PlanOverview() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="flex-1 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       <div className="px-6 pt-16 pb-6 text-center">
         <div className="w-20 h-20 bg-[#E8FFF0] rounded-full mx-auto flex items-center justify-center text-4xl shadow-sm mb-6 border-4 border-white">
           🎉

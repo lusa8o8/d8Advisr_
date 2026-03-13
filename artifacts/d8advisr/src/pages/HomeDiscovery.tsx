@@ -53,7 +53,7 @@ export function HomeDiscovery() {
     <div className="flex-1 flex flex-col relative bg-background">
       <TopBar />
 
-      <div className="flex-1 overflow-y-auto pb-28 no-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-28 no-scrollbar">
         {/* Greeting & Search */}
         <div className="px-6 pt-6 pb-2">
           <h1 className="text-[28px] font-bold text-foreground mb-5">Good evening, Alex 👋</h1>

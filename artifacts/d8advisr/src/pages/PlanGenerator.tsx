@@ -9,7 +9,7 @@ export function PlanGenerator() {
   const [mood, setMood] = useState('Romantic');
   
   return (
-    <div className="flex-1 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       <TopBar />
 
       <div className="px-6 py-4">
