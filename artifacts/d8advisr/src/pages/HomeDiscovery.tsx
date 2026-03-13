@@ -50,7 +50,7 @@ export function HomeDiscovery() {
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
 
   return (
-    <div className="flex-1 flex flex-col relative bg-background">
+    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       <TopBar />
 
       <div className="flex-1 min-h-0 overflow-y-auto pb-28 no-scrollbar">

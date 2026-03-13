@@ -6,7 +6,7 @@ export function MapView() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="flex-1 flex flex-col relative bg-[#E5E2DA] overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col relative bg-[#E5E2DA] overflow-hidden">
       
       {/* Top Bar (Overlay) */}
       <div className="absolute top-0 w-full bg-gradient-to-b from-white/90 to-white/0 pt-14 pb-8 px-6 flex justify-between items-start z-20">
