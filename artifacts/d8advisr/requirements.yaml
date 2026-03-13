@@ -1,0 +1,11 @@
+packages:
+  "lucide-react": "For UI icons as specified in the design"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes"
+
+images: []
+
+notes:
+  - "Frontend-only MVP. No backend API integration."
+  - "Local state and mock data used for all screens."
+  - "App is contained within a mobile-sized frame on desktop for the requested mobile-first experience."
