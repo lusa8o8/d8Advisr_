@@ -1,9 +1,38 @@
+import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
-import { Settings, Heart, Star, Award, ChevronRight } from 'lucide-react';
+import { Settings, Heart, Star, Award, ChevronRight, Camera, X } from 'lucide-react';
 import { BottomNav } from "@/components/SharedUI";
+
+const AVATARS = [
+  { id: "romantic",    emoji: "🥰", label: "Romantic"     },
+  { id: "cool",        emoji: "😎", label: "Cool"         },
+  { id: "excited",     emoji: "🤩", label: "Excited"      },
+  { id: "rose",        emoji: "🌹", label: "Rose"         },
+  { id: "free-spirit", emoji: "🦋", label: "Free Spirit"  },
+  { id: "night-owl",   emoji: "🌙", label: "Night Owl"    },
+  { id: "foodie",      emoji: "🍕", label: "Foodie"       },
+  { id: "adventurer",  emoji: "🎭", label: "Adventurer"   },
+  { id: "sparkle",     emoji: "✨", label: "Sparkle"      },
+];
 
 export function ProfileOverview() {
   const [, setLocation] = useLocation();
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('d8advisr_avatar');
+    if (saved) setAvatar(saved);
+  }, []);
+
+  function selectAvatar(id: string | null) {
+    setAvatar(id);
+    if (id) localStorage.setItem('d8advisr_avatar', id);
+    else localStorage.removeItem('d8advisr_avatar');
+    setShowPicker(false);
+  }
+
+  const currentAvatar = AVATARS.find(a => a.id === avatar);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">
@@ -24,11 +53,34 @@ export function ProfileOverview() {
         {/* Profile Card (Overlapping) */}
         <div className="px-6 -mt-16 mb-8 relative z-10">
           <div className="bg-card rounded-3xl p-6 shadow-lg border border-border flex flex-col items-center">
-            <div className="w-24 h-24 bg-[#FFE8E8] text-primary rounded-full flex items-center justify-center text-3xl font-bold border-4 border-white shadow-md -mt-16 mb-4">
-              AJ
+            {/* Avatar with edit button */}
+            <div className="relative -mt-16 mb-4">
+              <button
+                onClick={() => setShowPicker(true)}
+                className="group w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center overflow-hidden bg-[#FFE8E8] transition-opacity active:opacity-80"
+              >
+                {currentAvatar ? (
+                  <span className="text-5xl">{currentAvatar.emoji}</span>
+                ) : (
+                  <span className="text-primary text-3xl font-bold">AJ</span>
+                )}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+                  <Camera size={22} className="text-white" />
+                </div>
+              </button>
+              <button
+                onClick={() => setShowPicker(true)}
+                className="absolute bottom-0.5 right-0.5 w-7 h-7 bg-primary rounded-full border-2 border-white flex items-center justify-center shadow-sm"
+              >
+                <Camera size={13} className="text-white" />
+              </button>
             </div>
+
             <h2 className="text-[22px] font-bold text-foreground">Alex Johnson</h2>
-            <p className="text-sm text-muted-foreground mb-6 font-medium">Member since Jan 2024</p>
+            {currentAvatar && (
+              <p className="text-xs font-semibold text-primary mt-0.5">{currentAvatar.label}</p>
+            )}
+            <p className="text-sm text-muted-foreground mb-6 font-medium mt-1">Member since Jan 2024</p>
 
             <div className="w-full grid grid-cols-3 gap-2 border-t border-border pt-5">
               <div className="flex flex-col items-center">
@@ -145,6 +197,62 @@ export function ProfileOverview() {
       </div>
 
       <BottomNav active="profile" />
+
+      {/* Avatar Picker Bottom Sheet */}
+      {showPicker && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowPicker(false)}
+          />
+          {/* Sheet */}
+          <div className="relative bg-card rounded-t-3xl px-6 pt-5 pb-10 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-[18px] font-bold text-foreground">Choose your avatar</h3>
+              <button
+                onClick={() => setShowPicker(false)}
+                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">Pick one that fits your vibe</p>
+
+            {/* 3×3 grid */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {AVATARS.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => selectAvatar(a.id)}
+                  className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all active:scale-95 ${
+                    avatar === a.id
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border bg-background hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-4xl">{a.emoji}</span>
+                  <span className={`text-[11px] font-bold ${avatar === a.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {a.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Keep initials option */}
+            <button
+              onClick={() => selectAvatar(null)}
+              className={`w-full py-3.5 rounded-xl border-2 font-semibold text-sm transition-all ${
+                !avatar
+                  ? 'border-foreground bg-foreground text-card'
+                  : 'border-border text-muted-foreground hover:border-gray-300'
+              }`}
+            >
+              Use my initials (AJ)
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
