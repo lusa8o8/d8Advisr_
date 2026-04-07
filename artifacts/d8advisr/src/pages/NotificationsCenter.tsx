@@ -144,7 +144,7 @@ export function NotificationsCenter() {
             <p className="font-extrabold text-foreground text-[16px] mb-1.5">Rate your last date!</p>
             <p className="text-[14px] text-muted-foreground font-medium mb-3">How was your time at The Jazz Corner?</p>
             <button 
-              onClick={(e) => { e.stopPropagation(); setLocation('/feedback'); }}
+              onClick={(e) => { e.stopPropagation(); setLocation('/review'); }}
               className="bg-background px-5 py-2.5 rounded-xl text-sm font-bold text-foreground border border-border shadow-sm hover:border-gray-400 transition-colors"
             >
               Leave Review

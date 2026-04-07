@@ -26,6 +26,8 @@ import { BudgetDashboard } from "@/pages/BudgetDashboard";
 import { CreateGroupPlan } from "@/pages/CreateGroupPlan";
 import { NotificationsCenter } from "@/pages/NotificationsCenter";
 import { AdminPanel } from "@/pages/AdminPanel";
+import { PostDateReview } from "@/pages/PostDateReview";
+import { ReviewComplete } from "@/pages/ReviewComplete";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +60,9 @@ function Router() {
       <Route path="/notifications" component={NotificationsCenter} />
       
       <Route path="/admin" component={AdminPanel} />
+      
+      <Route path="/review" component={PostDateReview} />
+      <Route path="/review/complete" component={ReviewComplete} />
       
       {/* Fallback to Home if unknown route */}
       <Route component={HomeDiscovery} />
