@@ -52,7 +52,7 @@ export function ProfileOverview() {
           <div className="mb-10">
             <div className="flex justify-between items-center mb-4 px-1">
               <h3 className="text-[17px] font-bold text-foreground">Badges</h3>
-              <span className="text-sm font-semibold text-primary">View All</span>
+              <button onClick={() => setLocation('/profile/badges')} className="text-sm font-semibold text-primary">View All</button>
             </div>
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
               <div className="bg-card min-w-[85px] h-[85px] rounded-2xl flex flex-col items-center justify-center gap-1.5 shadow-sm border border-border">

@@ -20,6 +20,7 @@ import { PlanEdit } from "@/pages/PlanEdit";
 import { ExecutionTracker } from "@/pages/ExecutionTracker";
 import { Feedback } from "@/pages/Feedback";
 import { ProfileOverview } from "@/pages/ProfileOverview";
+import { BadgesPage } from "@/pages/BadgesPage";
 import { PreferenceEdit } from "@/pages/PreferenceEdit";
 import { BudgetDashboard } from "@/pages/BudgetDashboard";
 import { CreateGroupPlan } from "@/pages/CreateGroupPlan";
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/feedback" component={Feedback} />
       
       <Route path="/profile" component={ProfileOverview} />
+      <Route path="/profile/badges" component={BadgesPage} />
       <Route path="/profile/preferences" component={PreferenceEdit} />
       <Route path="/profile/budget" component={BudgetDashboard} />
       
