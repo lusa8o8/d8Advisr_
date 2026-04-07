@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket, Bell, BellOff } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket, Bell, BellOff, ThumbsUp, Navigation, Car, Footprints, Copy } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
 
 const VENUE_EVENTS = [
@@ -49,6 +49,78 @@ const VIBE_COLORS: Record<string, string> = {
   "Group":    "bg-blue-50 text-blue-600",
   "Date Night": "bg-green-50 text-[#00C851]",
 };
+
+const REVIEWS = [
+  {
+    id: "r1",
+    avatar: "🥰",
+    name: "Jordan",
+    occasion: "First Date",
+    timeAgo: "2 weeks ago",
+    rating: 5,
+    text: "Candles everywhere, soft jazz, you completely forget the city exists outside. My date couldn't stop smiling. Already planning our anniversary here.",
+    helpful: 12,
+  },
+  {
+    id: "r2",
+    avatar: "😎",
+    name: "Marcus",
+    occasion: "Anniversary",
+    timeAgo: "1 month ago",
+    rating: 5,
+    text: "The lighting alone is worth it. Dim enough to feel intimate, bright enough to actually see each other. Staff gave us space — but were always there when we needed. Perfect.",
+    helpful: 8,
+  },
+  {
+    id: "r3",
+    avatar: "🌹",
+    name: "Priya",
+    occasion: "Date Night",
+    timeAgo: "3 weeks ago",
+    rating: 4,
+    text: "Gorgeous atmosphere and the food was seriously amazing. It got a little loud on Friday — might choose a weeknight next time. The rooftop seating is everything though.",
+    helpful: 5,
+  },
+];
+
+const RATING_BREAKDOWN = [
+  { label: "Atmosphere",           score: 4.9 },
+  { label: "Conversation-friendly", score: 4.5 },
+  { label: "Lighting",             score: 4.9 },
+  { label: "Service",              score: 4.7 },
+];
+
+const VIBE_TAGS = ["Intimate", "Candlelit", "Great lighting", "Rooftop views", "Worth the price", "Attentive staff"];
+
+const NEARBY_VENUES = [
+  {
+    id: "n1",
+    emoji: "🍸",
+    name: "The Velvet Lounge",
+    type: "Pre-dinner cocktails",
+    distance: "3 min walk",
+    timing: "Before",
+    image: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=200&h=130&fit=crop&auto=format",
+  },
+  {
+    id: "n2",
+    emoji: "🌊",
+    name: "Waterfront Promenade",
+    type: "After dinner stroll",
+    distance: "5 min walk",
+    timing: "After",
+    image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=200&h=130&fit=crop&auto=format",
+  },
+  {
+    id: "n3",
+    emoji: "🍰",
+    name: "Petite Patisserie",
+    type: "Dessert & coffee",
+    distance: "4 min walk",
+    timing: "After",
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=130&fit=crop&auto=format",
+  },
+];
 
 export function VenueDetails() {
   const [, setLocation] = useLocation();
@@ -270,6 +342,224 @@ export function VenueDetails() {
             </div>
           </div>
         )}
+        {/* ── REVIEWS TAB ── */}
+        {activeTab === 'Reviews' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2">
+
+            {/* Aggregate score */}
+            <div className="bg-card rounded-3xl p-5 border border-border shadow-sm mb-6">
+              <div className="flex items-center gap-5 mb-5">
+                <div className="text-center">
+                  <p className="text-5xl font-black text-foreground leading-none">4.8</p>
+                  <div className="flex gap-0.5 mt-1.5 justify-center">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} size={12} className="fill-[#FF9500] text-[#FF9500]" />
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium">324 date reviews</p>
+                </div>
+                <div className="flex-1 flex flex-col gap-2.5">
+                  {RATING_BREAKDOWN.map(r => (
+                    <div key={r.label} className="flex items-center gap-2">
+                      <span className="text-[11px] text-muted-foreground font-medium w-[120px] shrink-0 leading-tight">{r.label}</span>
+                      <div className="flex-1 h-1.5 bg-background rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#FF9500] rounded-full"
+                          style={{ width: `${(r.score / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-bold text-foreground w-6 text-right">{r.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vibe tags */}
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+                {VIBE_TAGS.map(tag => (
+                  <span key={tag} className="bg-background border border-border text-foreground text-[11px] font-semibold px-3 py-1.5 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Individual reviews */}
+            <div className="flex flex-col gap-4 mb-6">
+              {REVIEWS.map(review => (
+                <div key={review.id} className="bg-card rounded-3xl p-5 border border-border shadow-sm">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-xl">
+                        {review.avatar}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-foreground text-[14px]">{review.name}</p>
+                          <span className="bg-[#FFF0F1] text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {review.occasion}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {Array.from({ length: review.rating }).map((_, i) => (
+                            <Star key={i} size={10} className="fill-[#FF9500] text-[#FF9500]" />
+                          ))}
+                          <span className="text-[11px] text-muted-foreground ml-1">{review.timeAgo}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Review text */}
+                  <p className="text-[14px] text-foreground leading-relaxed mb-4 italic">
+                    "{review.text}"
+                  </p>
+
+                  {/* Helpful */}
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <ThumbsUp size={13} />
+                    <span className="text-[12px] font-medium">{review.helpful} found this helpful</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Write review CTA */}
+            <button
+              onClick={() => setLocation('/plan/generate')}
+              className="w-full py-4 rounded-2xl border-2 border-dashed border-border text-muted-foreground font-bold text-[14px] hover:border-primary hover:text-primary transition-colors"
+            >
+              + Share your date experience
+            </button>
+          </div>
+        )}
+
+        {/* ── LOCATION TAB ── */}
+        {activeTab === 'Location' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2">
+
+            {/* Map placeholder */}
+            <div className="rounded-3xl overflow-hidden h-44 mb-5 relative shadow-sm border border-border">
+              <img
+                src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=700&h=300&fit=crop&auto=format"
+                alt="Map"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+              {/* Pin marker */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-primary shadow-lg flex items-center justify-center">
+                    <MapPin size={18} className="text-white fill-white" />
+                  </div>
+                  <div className="w-2 h-2 bg-primary/40 rounded-full mt-0.5 blur-sm" />
+                </div>
+              </div>
+              {/* Open maps pill */}
+              <button className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-foreground text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform">
+                <Navigation size={11} className="text-primary" /> Open in Maps
+              </button>
+            </div>
+
+            {/* Address */}
+            <div className="bg-card rounded-2xl p-4 border border-border shadow-sm mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#FFF0F1] flex items-center justify-center text-primary shrink-0">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground text-[14px]">123 Main St</p>
+                  <p className="text-[12px] text-muted-foreground font-medium">Downtown District · 1.2 mi away</p>
+                </div>
+              </div>
+              <button className="w-9 h-9 rounded-xl bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                <Copy size={15} />
+              </button>
+            </div>
+
+            {/* Transport options */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm mb-6 overflow-hidden">
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Getting There</p>
+              </div>
+              {[
+                { icon: <Footprints size={16} />, label: "Walking",   detail: "18 min · 1.2 mi",       color: "text-[#00C851] bg-[#E8FFF0]" },
+                { icon: <Car size={16} />,        label: "Rideshare", detail: "~$8–12 · 5 min",         color: "text-blue-600 bg-blue-50"    },
+                { icon: <MapPin size={16} />,     label: "Parking",   detail: "2nd St Garage · $6/hr",  color: "text-orange-600 bg-orange-50"},
+              ].map((opt, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border last:border-0">
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", opt.color)}>
+                    {opt.icon}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground text-[14px]">{opt.label}</p>
+                    <p className="text-[12px] text-muted-foreground">{opt.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Make a Night of It */}
+            <div className="mb-6">
+              <div className="flex justify-between items-end mb-3 px-1">
+                <div>
+                  <h3 className="font-bold text-foreground text-[16px] leading-tight">Make a Night of It</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">Nearby spots to complete your evening</p>
+                </div>
+                <button
+                  onClick={() => setLocation('/plan/generate')}
+                  className="text-[12px] font-bold text-primary"
+                >
+                  Plan full night →
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {NEARBY_VENUES.map(venue => (
+                  <div key={venue.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex active:scale-[0.98] transition-transform cursor-pointer">
+                    <div className="w-24 h-20 relative shrink-0">
+                      <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/20" />
+                      <span className={cn(
+                        "absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full",
+                        venue.timing === 'Before' ? "bg-blue-500 text-white" : "bg-[#00C851] text-white"
+                      )}>
+                        {venue.timing}
+                      </span>
+                    </div>
+                    <div className="flex-1 p-3.5 flex flex-col justify-center">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-base">{venue.emoji}</span>
+                        <p className="font-bold text-foreground text-[14px] leading-tight">{venue.name}</p>
+                      </div>
+                      <p className="text-[12px] text-muted-foreground mb-1">{venue.type}</p>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Footprints size={11} />
+                        <span className="text-[11px] font-medium">{venue.distance}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Neighbourhood context */}
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-5 text-white">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-xl">🏙️</div>
+                <div>
+                  <p className="font-bold text-[15px]">Downtown District</p>
+                  <p className="text-white/60 text-[12px] font-medium">Vibrant · Safe · Walkable</p>
+                </div>
+              </div>
+              <p className="text-white/70 text-[13px] leading-relaxed">
+                A lively mix of upscale dining, rooftop bars, and waterfront views. Perfect for a full evening — park once and explore on foot.
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Action Bottom */}
