@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket, Bell, BellOff, ThumbsUp, Navigation, Car, Footprints, Copy } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket, Bell, BellOff, ThumbsUp, Navigation, Car, Footprints, Copy, ExternalLink } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
 
 const VENUE_EVENTS = [
@@ -483,21 +483,82 @@ export function VenueDetails() {
               <div className="px-4 py-3 border-b border-border">
                 <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Getting There</p>
               </div>
-              {[
-                { icon: <Footprints size={16} />, label: "Walking",   detail: "18 min · 1.2 mi",       color: "text-[#00C851] bg-[#E8FFF0]" },
-                { icon: <Car size={16} />,        label: "Rideshare", detail: "~$8–12 · 5 min",         color: "text-blue-600 bg-blue-50"    },
-                { icon: <MapPin size={16} />,     label: "Parking",   detail: "2nd St Garage · $6/hr",  color: "text-orange-600 bg-orange-50"},
-              ].map((opt, i) => (
-                <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border last:border-0">
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", opt.color)}>
-                    {opt.icon}
+
+              {/* Walking */}
+              <div className="flex items-center gap-4 px-4 py-3.5 border-b border-border">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[#00C851] bg-[#E8FFF0]">
+                  <Footprints size={16} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-[14px]">Walking</p>
+                  <p className="text-[12px] text-muted-foreground">18 min · 1.2 mi</p>
+                </div>
+              </div>
+
+              {/* Yango — deep link row */}
+              <div className="px-4 py-4 border-b border-border">
+                <div className="flex items-start gap-4">
+                  {/* Icon */}
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#FF5A5F]/10 text-[#FF5A5F]">
+                    <Car size={16} />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground text-[14px]">{opt.label}</p>
-                    <p className="text-[12px] text-muted-foreground">{opt.detail}</p>
+                  {/* Detail */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-bold text-foreground text-[14px]">Yango</p>
+                      <span className="text-[10px] font-bold bg-[#FF5A5F]/10 text-[#FF5A5F] px-2 py-0.5 rounded-full">Recommended</span>
+                    </div>
+                    <p className="text-[12px] text-muted-foreground mb-3">
+                      Est. ₦800–1,500 · ~5 min
+                      <span className="ml-1.5 text-[11px] text-gray-400 italic">(estimate only, may vary)</span>
+                    </p>
+                    {/* CTA buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          // Stub: track tap for partnership pitch data
+                          console.log('[D8Advisr] yango_deeplink_tap', { venueId: 1, venueName: 'Lumina Restaurant & Bar' });
+                          // Deep link — opens Yango app with destination pre-filled
+                          // Fallback to Google Maps if Yango not installed
+                          const lat = 6.4550;
+                          const lon = 3.3841;
+                          const name = encodeURIComponent('Lumina Restaurant & Bar');
+                          const yangoUrl = `yango://route?end-lat=${lat}&end-lon=${lon}&end-name=${name}`;
+                          const fallbackUrl = `https://maps.google.com/?daddr=${lat},${lon}`;
+                          // Try Yango deep link; if it doesn't open within 1.5s, fall back to Maps
+                          const start = Date.now();
+                          window.location.href = yangoUrl;
+                          setTimeout(() => {
+                            if (Date.now() - start < 2000) window.open(fallbackUrl, '_blank');
+                          }, 1500);
+                        }}
+                        className="flex items-center gap-1.5 bg-[#FF5A5F] text-white px-4 py-2 rounded-xl text-[13px] font-bold shadow-sm active:scale-95 transition-transform hover:bg-[#FF5A5F]/90"
+                      >
+                        <Car size={13} /> Open in Yango
+                      </button>
+                      <a
+                        href={`https://maps.google.com/?daddr=6.4550,3.3841`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-2"
+                      >
+                        <ExternalLink size={12} /> Maps
+                      </a>
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Parking */}
+              <div className="flex items-center gap-4 px-4 py-3.5">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-orange-600 bg-orange-50">
+                  <MapPin size={16} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-[14px]">Parking</p>
+                  <p className="text-[12px] text-muted-foreground">2nd St Garage · ₦2,000/hr</p>
+                </div>
+              </div>
             </div>
 
             {/* Make a Night of It */}
