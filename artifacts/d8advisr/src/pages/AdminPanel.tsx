@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import {
   ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle,
   ClipboardList, Search, Shield, Star, Eye, Edit3, Save,
-  ChevronDown, Clock, RotateCcw, Plus, Lock
+  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, TrendingUp, Hourglass
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 
@@ -179,7 +179,7 @@ const CONFIDENCE_STYLE: Record<string, string> = {
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
 
-type AdminView = 'list' | 'detail' | 'tracker';
+type AdminView = 'list' | 'detail' | 'tracker' | 'health';
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -188,7 +188,7 @@ export function AdminPanel() {
   const [view, setView]       = useState<AdminView>('list');
   const [venues, setVenues]   = useState<Venue[]>(SEED);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [navTab, setNavTab]   = useState<'venues' | 'tracker'>('venues');
+  const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health'>('venues');
 
   // Filter state
   const [filterTier, setFilterTier]     = useState<string>('All');
@@ -285,16 +285,22 @@ export function AdminPanel() {
 
       {/* NAV TABS — only on list/tracker */}
       {view !== 'detail' && (
-        <div className="bg-[#141414] px-5 pb-4 flex gap-1 shrink-0">
-          {(['venues', 'tracker'] as const).map(t => (
-            <button key={t} onClick={() => { setNavTab(t); setView(t === 'venues' ? 'list' : 'tracker'); }}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-bold transition-all",
-                navTab === t ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80"
-              )}>
-              {t === 'venues' ? <><ClipboardList size={13} /> Venues ({venues.length})</> : <><Clock size={13} /> Inspections</>}
-            </button>
-          ))}
+        <div className="bg-[#141414] px-5 pb-4 flex gap-1 shrink-0 overflow-x-auto no-scrollbar">
+          <button onClick={() => { setNavTab('venues'); setView('list'); }}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+              navTab === 'venues' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <ClipboardList size={13} /> Venues ({venues.length})
+          </button>
+          <button onClick={() => { setNavTab('tracker'); setView('tracker'); }}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+              navTab === 'tracker' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <Clock size={13} /> Inspections
+          </button>
+          <button onClick={() => { setNavTab('health'); setView('health'); }}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+              navTab === 'health' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <Activity size={13} /> Health
+          </button>
         </div>
       )}
 
@@ -696,6 +702,204 @@ export function AdminPanel() {
           </div>
         </div>
       )}
+
+      {/* ── HEALTH VIEW ─────────────────────────────────────────────────────── */}
+      {view === 'health' && (() => {
+        // ── Computed metrics ──────────────────────────────────────────────────
+        const allFields = venues.flatMap(v => [
+          ...Object.values(v.listing),
+          ...Object.values(v.experience),
+        ]);
+        const highFields     = allFields.filter(f => f.confidence === 'high').length;
+        const coverageRate   = allFields.length ? Math.round((highFields / allFields.length) * 100) : 0;
+
+        const tierCounts: Record<Tier, number> = { 'Verified': 0, 'D8 Approved': 0, 'Hidden Gem': 0 };
+        venues.forEach(v => { tierCounts[v.tier]++; });
+
+        const healthCounts = {
+          green: venues.filter(v => v.health === 'green').length,
+          amber: venues.filter(v => v.health === 'amber').length,
+          red:   venues.filter(v => v.health === 'red').length,
+        };
+
+        const today = new Date();
+        const avgDaysSince = venues.length ? Math.round(
+          venues.reduce((sum, v) => {
+            const oldestDate = Object.values({ ...v.listing, ...v.experience })
+              .map(f => new Date(f.verifiedAt).getTime())
+              .reduce((a, b) => Math.min(a, b), Date.now());
+            return sum + (today.getTime() - oldestDate) / (1000 * 60 * 60 * 24);
+          }, 0) / venues.length
+        ) : 0;
+
+        const inspectionCompliance = venues.length
+          ? Math.round((healthCounts.green / venues.length) * 100)
+          : 0;
+
+        return (
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-6">
+
+            {/* Section header */}
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <Activity size={14} className="text-gray-400" />
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Live — Computed from Venue Data</p>
+            </div>
+
+            {/* Top stat row */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {/* Field coverage */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Field Coverage</p>
+                <p className={cn("text-3xl font-black leading-none mb-1",
+                  coverageRate >= 90 ? "text-[#00C851]" : coverageRate >= 70 ? "text-[#FF9500]" : "text-[#FF5A5F]")}>
+                  {coverageRate}%
+                </p>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
+                  <div className={cn("h-full rounded-full transition-all",
+                    coverageRate >= 90 ? "bg-[#00C851]" : coverageRate >= 70 ? "bg-[#FF9500]" : "bg-[#FF5A5F]")}
+                    style={{ width: `${coverageRate}%` }} />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1.5">{highFields} / {allFields.length} fields high-confidence</p>
+              </div>
+
+              {/* Inspection compliance */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Inspection Compliance</p>
+                <p className={cn("text-3xl font-black leading-none mb-1",
+                  inspectionCompliance >= 80 ? "text-[#00C851]" : inspectionCompliance >= 50 ? "text-[#FF9500]" : "text-[#FF5A5F]")}>
+                  {inspectionCompliance}%
+                </p>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
+                  <div className={cn("h-full rounded-full transition-all",
+                    inspectionCompliance >= 80 ? "bg-[#00C851]" : inspectionCompliance >= 50 ? "bg-[#FF9500]" : "bg-[#FF5A5F]")}
+                    style={{ width: `${inspectionCompliance}%` }} />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1.5">{healthCounts.green} of {venues.length} venues current</p>
+              </div>
+            </div>
+
+            {/* Avg days + change velocity */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Avg Data Age</p>
+                <p className={cn("text-3xl font-black leading-none",
+                  avgDaysSince <= 90 ? "text-[#00C851]" : avgDaysSince <= 180 ? "text-[#FF9500]" : "text-[#FF5A5F]")}>
+                  {avgDaysSince}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">days since oldest verified field (avg)</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Changes</p>
+                <p className="text-3xl font-black leading-none text-gray-900">
+                  {venues.reduce((sum, v) => sum + v.changeLog.length, 0)}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">logged edits across all venues</p>
+              </div>
+            </div>
+
+            {/* Inspection health breakdown */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm mb-3">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Inspection Health Breakdown</p>
+              <div className="flex h-3 rounded-full overflow-hidden gap-0.5 mb-3">
+                {healthCounts.green > 0 && (
+                  <div className="bg-[#00C851] rounded-l-full" style={{ flex: healthCounts.green }} />
+                )}
+                {healthCounts.amber > 0 && (
+                  <div className="bg-[#FF9500]" style={{ flex: healthCounts.amber }} />
+                )}
+                {healthCounts.red > 0 && (
+                  <div className="bg-[#FF5A5F] rounded-r-full" style={{ flex: healthCounts.red }} />
+                )}
+              </div>
+              <div className="flex justify-between text-[11px] font-semibold">
+                <span className="flex items-center gap-1.5 text-[#00C851]">
+                  <span className="w-2 h-2 rounded-full bg-[#00C851]" /> {healthCounts.green} Current
+                </span>
+                <span className="flex items-center gap-1.5 text-[#FF9500]">
+                  <span className="w-2 h-2 rounded-full bg-[#FF9500]" /> {healthCounts.amber} Re-verify
+                </span>
+                <span className="flex items-center gap-1.5 text-[#FF5A5F]">
+                  <span className="w-2 h-2 rounded-full bg-[#FF5A5F]" /> {healthCounts.red} Overdue
+                </span>
+              </div>
+            </div>
+
+            {/* Tier distribution */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm mb-5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Tier Distribution</p>
+              <div className="flex flex-col gap-3">
+                {TIERS.map(t => {
+                  const count = tierCounts[t];
+                  const pct   = venues.length ? Math.round((count / venues.length) * 100) : 0;
+                  return (
+                    <div key={t}>
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", TIER_DOT[t])} />
+                          <span className="text-[12px] font-semibold text-gray-800">{t}</span>
+                        </div>
+                        <span className="text-[12px] font-bold text-gray-500">{count} venue{count !== 1 ? 's' : ''} · {pct}%</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={cn("h-full rounded-full", TIER_DOT[t])}
+                          style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Pending metrics section */}
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <Hourglass size={13} className="text-gray-400" />
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending — Requires User Data</p>
+            </div>
+
+            <div className="bg-[#141414] rounded-2xl p-4 mb-3 flex items-start gap-3">
+              <TrendingUp size={15} className="text-white/40 mt-0.5 shrink-0" />
+              <p className="text-[12px] text-white/50 leading-relaxed">
+                The metrics below activate once users are completing plans and returning with post-date feedback. The data structure to collect them is already in place.
+              </p>
+            </div>
+
+            {[
+              {
+                label: 'Price Accuracy Rate',
+                desc:  'Reported post-date: did the actual cost match the estimate?',
+                why:   'Triggers re-verification of specific price fields.',
+              },
+              {
+                label: 'Post-Date Satisfaction',
+                desc:  'Average user satisfaction score across completed date plans.',
+                why:   'Signals whether D8 Approved venues are delivering on the promise.',
+              },
+              {
+                label: 'Review Submission Rate',
+                desc:  'Of users who completed a plan, % who returned to leave a review.',
+                why:   'Measures trust loop closure — the experience data layer depends on this.',
+              },
+              {
+                label: 'Time to First Inspection',
+                desc:  'Days between venue listing and first verified inspection visit.',
+                why:   'Tracks how quickly new listings reach verified data quality.',
+              },
+            ].map(m => (
+              <div key={m.label} className="bg-white rounded-2xl border border-gray-200 p-4 mb-2.5 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-bold text-gray-900 text-[13px]">{m.label}</p>
+                  <span className="bg-gray-100 text-gray-400 text-[10px] font-bold px-2.5 py-1 rounded-full">Pending data</span>
+                </div>
+                <p className="text-[12px] text-gray-500 leading-relaxed mb-2">{m.desc}</p>
+                <div className="flex items-start gap-1.5 pt-2 border-t border-gray-100">
+                  <Star size={11} className="text-[#FF9500] mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-gray-400 leading-snug">{m.why}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
