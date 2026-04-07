@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X, Ticket } from 'lucide-react';
+import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
+
+type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
+
+const TIER_STYLES: Record<Tier, { pill: string; dot: string; icon: React.ElementType }> = {
+  'Verified':    { pill: 'bg-blue-600/80 text-white',   dot: 'bg-blue-300',    icon: ShieldCheck },
+  'D8 Approved': { pill: 'bg-amber-500/80 text-white',  dot: 'bg-amber-200',   icon: Award },
+  'Hidden Gem':  { pill: 'bg-purple-600/80 text-white', dot: 'bg-purple-300',  icon: Gem },
+};
 
 const VENUES = [
   {
     id: 1,
     name: "Lumina Restaurant & Bar",
     type: "Romantic Dining",
+    tier: 'D8 Approved' as Tier,
     rating: 4.8,
     reviews: 324,
     distance: "1.2 mi",
@@ -22,6 +31,7 @@ const VENUES = [
     id: 2,
     name: "The Jazz Corner",
     type: "Live Music",
+    tier: 'Verified' as Tier,
     rating: 4.6,
     reviews: 120,
     distance: "0.8 mi",
@@ -36,6 +46,7 @@ const VENUES = [
     id: 3,
     name: "Riverfront Park Walk",
     type: "Outdoor",
+    tier: 'Verified' as Tier,
     rating: 4.5,
     reviews: 856,
     distance: "2.1 mi",
@@ -215,13 +226,34 @@ export function HomeDiscovery() {
               <div className="h-44 relative overflow-hidden">
                 <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
+
+                {/* Tier badge — top left */}
+                {(() => {
+                  const t = TIER_STYLES[venue.tier];
+                  const Icon = t.icon;
+                  return (
+                    <div className={cn(
+                      "absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm text-[11px] font-bold shadow-sm",
+                      t.pill
+                    )}>
+                      <Icon size={11} strokeWidth={2.5} />
+                      {venue.tier}
+                    </div>
+                  );
+                })()}
+
+                {/* Rating — top right */}
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
                   <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
                   {venue.rating}
                 </div>
+
+                {/* Emoji icon — bottom left */}
                 <div className="absolute bottom-3 left-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl border border-white/30">
                   {venue.icon}
                 </div>
+
+                {/* Event badge — bottom right */}
                 {venue.eventBadge && (
                   <div className="absolute bottom-3 right-3 bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                     <Ticket size={10} /> {venue.eventBadge}
