@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
-import { Settings, Heart, Star, Award, ChevronRight, Camera, X } from 'lucide-react';
+import { Settings, Heart, Star, Award, ChevronRight, Camera, X, LogOut } from 'lucide-react';
 import { BottomNav } from "@/components/SharedUI";
 
 const AVATARS = [
@@ -192,6 +192,18 @@ export function ProfileOverview() {
                 <ChevronRight size={20} className="text-gray-300" />
               </div>
             </div>
+          </div>
+
+          {/* Sign Out */}
+          <div className="pt-6 pb-2">
+            <button
+              onClick={() => setLocation('/')}
+              className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl border border-border bg-card text-primary font-bold text-[15px] hover:bg-[#FFF0F1] active:scale-[0.98] transition-all"
+            >
+              <LogOut size={18} strokeWidth={2.5} />
+              Sign Out
+            </button>
+            <p className="text-center text-[11px] text-muted-foreground mt-3 font-medium">D8Advisr · v1.0</p>
           </div>
         </div>
       </div>
