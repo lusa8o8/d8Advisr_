@@ -16,6 +16,7 @@ const VENUES = [
     color: "from-rose-400 to-red-500",
     icon: "🍷",
     eventBadge: "3 events this week",
+    image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=320&fit=crop&auto=format",
   },
   {
     id: 2,
@@ -29,6 +30,7 @@ const VENUES = [
     color: "from-amber-400 to-orange-500",
     icon: "🎷",
     eventBadge: null,
+    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=320&fit=crop&auto=format",
   },
   {
     id: 3,
@@ -42,6 +44,7 @@ const VENUES = [
     color: "from-emerald-400 to-green-500",
     icon: "🌳",
     eventBadge: null,
+    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=320&fit=crop&auto=format",
   }
 ];
 
@@ -56,7 +59,7 @@ const EXPERIENCES = [
     price: "$35",
     vibes: ["Romantic", "Culture"],
     emoji: "🕯️",
-    color: "from-purple-400 to-indigo-500",
+    image: "https://images.unsplash.com/photo-1501612780327-45045538702b?w=480&h=200&fit=crop&auto=format",
     urgency: "Only 12 spots left",
   },
   {
@@ -68,7 +71,7 @@ const EXPERIENCES = [
     price: "$18",
     vibes: ["Date Night", "Relaxing"],
     emoji: "🎬",
-    color: "from-sky-400 to-blue-500",
+    image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=480&h=200&fit=crop&auto=format",
     urgency: null,
   },
   {
@@ -80,7 +83,7 @@ const EXPERIENCES = [
     price: "Free",
     vibes: ["Adventurous", "Group"],
     emoji: "🎨",
-    color: "from-teal-400 to-green-500",
+    image: "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=480&h=200&fit=crop&auto=format",
     urgency: null,
   },
 ];
@@ -161,8 +164,10 @@ export function HomeDiscovery() {
                 onClick={() => setLocation('/plan/generate')}
                 className="snap-start shrink-0 w-60 bg-card rounded-2xl border border-border shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
               >
-                <div className={`h-24 bg-gradient-to-br ${exp.color} flex items-center justify-center relative`}>
-                  <span className="text-4xl drop-shadow-sm">{exp.emoji}</span>
+                <div className="h-24 relative overflow-hidden">
+                  <img src={exp.image} alt={exp.name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+                  <span className="absolute inset-0 flex items-center justify-center text-4xl drop-shadow-lg">{exp.emoji}</span>
                   {exp.urgency && (
                     <span className="absolute top-2.5 right-2.5 bg-white/90 text-[#FF9500] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       {exp.urgency}
@@ -207,14 +212,18 @@ export function HomeDiscovery() {
               onClick={() => setLocation(`/venue/${venue.id}`)}
               className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
             >
-              <div className={`h-40 bg-gradient-to-br ${venue.color} relative flex items-center justify-center`}>
-                <span className="text-5xl drop-shadow-md">{venue.icon}</span>
+              <div className="h-44 relative overflow-hidden">
+                <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
                   <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
                   {venue.rating}
                 </div>
+                <div className="absolute bottom-3 left-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl border border-white/30">
+                  {venue.icon}
+                </div>
                 {venue.eventBadge && (
-                  <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <div className="absolute bottom-3 right-3 bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                     <Ticket size={10} /> {venue.eventBadge}
                   </div>
                 )}

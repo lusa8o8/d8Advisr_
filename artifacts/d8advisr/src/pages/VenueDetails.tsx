@@ -13,7 +13,7 @@ const VENUE_EVENTS = [
     price: "$20 /pp",
     emoji: "🎷",
     desc: "Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening.",
-    color: "from-amber-400 to-orange-500",
+    image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 8,
   },
   {
@@ -25,7 +25,7 @@ const VENUE_EVENTS = [
     price: "$95 /pp",
     emoji: "👨‍🍳",
     desc: "6-course tasting menu crafted live by the head chef. Limited to 10 guests.",
-    color: "from-rose-400 to-red-500",
+    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 3,
   },
   {
@@ -37,7 +37,7 @@ const VENUE_EVENTS = [
     price: "$15 /pp",
     emoji: "🌅",
     desc: "Cocktails and small bites as the sun sets over downtown. Relaxed and open format.",
-    color: "from-purple-400 to-pink-500",
+    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 22,
   },
 ];
@@ -58,17 +58,31 @@ export function VenueDetails() {
   return (
     <div className="flex-1 min-h-0 bg-card flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header Image Area */}
-      <div className="h-72 bg-gradient-to-br from-rose-400 to-red-500 relative flex items-center justify-center rounded-b-[40px] shadow-sm shrink-0">
+      <div className="h-72 relative overflow-hidden rounded-b-[40px] shadow-md shrink-0">
+        <img
+          src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&auto=format"
+          alt="Lumina Restaurant & Bar"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/25" />
         <button 
           onClick={() => setLocation('/home')}
-          className="absolute top-14 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          className="absolute top-14 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20"
         >
           <ArrowLeft size={20} />
         </button>
-        <button className="absolute top-14 right-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+        <button className="absolute top-14 right-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20">
           <Share size={18} />
         </button>
-        <span className="text-7xl drop-shadow-xl mt-4">🍷</span>
+        <div className="absolute bottom-6 left-6 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl">
+            🍷
+          </div>
+          <div>
+            <p className="text-white font-bold text-[17px] drop-shadow-sm">Lumina Restaurant & Bar</p>
+            <p className="text-white/80 text-[12px] font-medium">Romantic Dining · Downtown</p>
+          </div>
+        </div>
       </div>
 
       <div className="px-6 -mt-8 relative z-10">
@@ -216,20 +230,19 @@ export function VenueDetails() {
             <div className="flex flex-col gap-4">
               {VENUE_EVENTS.map(event => (
                 <div key={event.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-                  <div className={`h-20 bg-gradient-to-r ${event.color} flex items-center px-5 gap-4`}>
-                    <span className="text-3xl">{event.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white text-[16px] leading-tight">{event.name}</p>
-                      <p className="text-white/80 text-[12px] font-medium mt-0.5">{event.date} · {event.time}</p>
+                  <div className="h-24 relative overflow-hidden">
+                    <img src={event.image} alt={event.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/20" />
+                    <div className="absolute inset-0 flex items-center px-5 gap-4">
+                      <span className="text-3xl drop-shadow-md shrink-0">{event.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white text-[16px] leading-tight">{event.name}</p>
+                        <p className="text-white/80 text-[12px] font-medium mt-0.5">{event.date} · {event.time}</p>
+                      </div>
+                      <span className="text-xs font-bold px-2.5 py-1.5 rounded-xl shrink-0 bg-white/20 text-white backdrop-blur-sm border border-white/20">
+                        {event.spotsLeft <= 5 ? `${event.spotsLeft} left` : `${event.spotsLeft} spots`}
+                      </span>
                     </div>
-                    <span className={cn(
-                      "text-xs font-bold px-2.5 py-1.5 rounded-xl shrink-0",
-                      event.spotsLeft <= 5
-                        ? "bg-white/20 text-white"
-                        : "bg-white/20 text-white"
-                    )}>
-                      {event.spotsLeft <= 5 ? `${event.spotsLeft} left` : `${event.spotsLeft} spots`}
-                    </span>
                   </div>
                   <div className="p-4">
                     <p className="text-[13px] text-muted-foreground leading-relaxed mb-3">{event.desc}</p>
