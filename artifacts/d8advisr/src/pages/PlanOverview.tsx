@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Sparkles, MapPin, Clock, ChevronRight,
@@ -88,18 +88,47 @@ const TIER_DOT: Record<Tier, string> = {
   'Hidden Gem':  'bg-purple-500',
 };
 
-// ─── Derived totals ─────────────────────────────────────────────────────────────
-
-const stopTotal   = PLAN_STOPS.reduce((sum, s) => sum + (s.isFree ? 0 : s.costPP), 0);
-const transportTotal = TRANSPORTS.reduce((sum, t) => sum + t.cost, 0);
-const grandTotal  = stopTotal + transportTotal;
-const STASH_PCT   = 45; // % funded
+const STASH_PCT = 45;
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export function PlanOverview() {
   const [, setLocation] = useLocation();
   const [saved, setSaved] = useState(false);
+
+  // Read anchor once — injected by "Build Around" flow from VenueDetails
+  const [stops, setStops] = useState<(Stop & { isAnchor?: boolean })[]>(PLAN_STOPS);
+  const [anchorLabel, setAnchorLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem('d8advisr_plan_anchor');
+    if (raw) {
+      try {
+        const anchor = JSON.parse(raw);
+        const updated = PLAN_STOPS.map(s => {
+          if (s.id === 's2') {
+            return {
+              ...s,
+              venueName: anchor.venueName,
+              category: anchor.venueCategory || s.category,
+              emoji: anchor.venueEmoji || s.emoji,
+              isAnchor: true,
+            };
+          }
+          return s;
+        });
+        setStops(updated);
+        setAnchorLabel(anchor.venueName);
+      } catch {
+        // ignore malformed data
+      }
+      localStorage.removeItem('d8advisr_plan_anchor');
+    }
+  }, []);
+
+  const stopTotal = stops.reduce((sum, s) => sum + (s.isFree ? 0 : s.costPP), 0);
+  const transportTotal = TRANSPORTS.reduce((sum, t) => sum + t.cost, 0);
+  const grandTotal = stopTotal + transportTotal;
 
   const handleSave = () => {
     setSaved(true);
@@ -148,12 +177,17 @@ export function PlanOverview() {
         {/* ── PLAN TIMELINE ─────────────────────────────────────────────────────── */}
         <div className="px-4 -mt-4 relative">
 
-          {PLAN_STOPS.map((stop, idx) => (
+          {stops.map((stop, idx) => (
             <div key={stop.id}>
               {/* Venue card */}
               <button
                 onClick={() => setLocation(`/venue/${stop.venueId}`)}
-                className="w-full bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm active:scale-[0.98] transition-transform mb-0 text-left"
+                className={cn(
+                  "w-full bg-white rounded-3xl overflow-hidden shadow-sm active:scale-[0.98] transition-transform mb-0 text-left border",
+                  (stop as Stop & { isAnchor?: boolean }).isAnchor
+                    ? "border-primary/30 ring-1 ring-primary/15"
+                    : "border-gray-200"
+                )}
               >
                 {/* Image strip */}
                 <div className="h-28 relative overflow-hidden">
@@ -168,14 +202,21 @@ export function PlanOverview() {
                       {stop.time}
                     </div>
                   </div>
-                  {/* Tier badge */}
-                  <div className={cn(
-                    "absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold bg-white/90 backdrop-blur-sm",
-                    TIER_BADGE[stop.tier]
-                  )}>
-                    <div className={cn("w-1.5 h-1.5 rounded-full", TIER_DOT[stop.tier])} />
-                    {stop.tier}
-                  </div>
+                  {/* Tier badge — or "Your Choice" if anchored */}
+                  {(stop as Stop & { isAnchor?: boolean }).isAnchor ? (
+                    <div className="absolute top-3 right-4 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary text-white backdrop-blur-sm">
+                      <Check size={9} strokeWidth={3} />
+                      Your Choice
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      "absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold bg-white/90 backdrop-blur-sm",
+                      TIER_BADGE[stop.tier]
+                    )}>
+                      <div className={cn("w-1.5 h-1.5 rounded-full", TIER_DOT[stop.tier])} />
+                      {stop.tier}
+                    </div>
+                  )}
                   {/* Emoji */}
                   <span className="absolute bottom-3 left-4 text-2xl drop-shadow-md">{stop.emoji}</span>
                 </div>
@@ -190,7 +231,7 @@ export function PlanOverview() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p className="font-black text-gray-900 text-[16px] leading-tight">
-                        {stop.isFree ? <span className="text-[#00C851]">Free</span> : `$${stop.costPP}`}
+                        {stop.isFree ? <span className="text-[#00C851]">Free</span> : `₦${(stop.costPP * 1500).toLocaleString()}`}
                       </p>
                       {!stop.isFree && <p className="text-[10px] text-gray-400">per person</p>}
                     </div>
@@ -200,7 +241,7 @@ export function PlanOverview() {
               </button>
 
               {/* Transport connector between stops */}
-              {idx < PLAN_STOPS.length - 1 && TRANSPORTS[idx] && (
+              {idx < stops.length - 1 && TRANSPORTS[idx] && (
                 <div className="flex items-center gap-3 py-3 px-5">
                   <div className="flex flex-col items-center gap-1">
                     <div className="w-px h-2 bg-gray-200" />
@@ -217,11 +258,11 @@ export function PlanOverview() {
                         {TRANSPORTS[idx].detail} · {TRANSPORTS[idx].duration}
                       </p>
                       <p className="text-[11px] text-gray-400">
-                        {PLAN_STOPS[idx + 1].venueName}
+                        {stops[idx + 1].venueName}
                       </p>
                     </div>
                     <span className="text-[12px] font-bold text-gray-500">
-                      {TRANSPORTS[idx].cost === 0 ? 'Free' : `~$${TRANSPORTS[idx].cost}`}
+                      {TRANSPORTS[idx].cost === 0 ? 'Free' : `~₦${(TRANSPORTS[idx].cost * 1500).toLocaleString()}`}
                     </span>
                   </div>
                 </div>
@@ -236,14 +277,17 @@ export function PlanOverview() {
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cost Breakdown · Per Person</p>
           </div>
           <div className="px-5 py-4 flex flex-col gap-3">
-            {PLAN_STOPS.map(s => (
+            {stops.map(s => (
               <div key={s.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-base">{s.emoji}</span>
                   <span className="text-[13px] font-semibold text-gray-700">{s.venueName}</span>
+                  {(s as Stop & { isAnchor?: boolean }).isAnchor && (
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Your pick</span>
+                  )}
                 </div>
                 <span className="text-[13px] font-bold text-gray-900">
-                  {s.isFree ? <span className="text-[#00C851]">Free</span> : `$${s.costPP}`}
+                  {s.isFree ? <span className="text-[#00C851]">Free</span> : `₦${(s.costPP * 1500).toLocaleString()}`}
                 </span>
               </div>
             ))}
@@ -252,7 +296,7 @@ export function PlanOverview() {
                 <Car size={15} className="text-blue-400" />
                 <span className="text-[13px] font-semibold text-gray-700">Transport (est.)</span>
               </div>
-              <span className="text-[13px] font-bold text-gray-900">~${transportTotal}</span>
+              <span className="text-[13px] font-bold text-gray-900">~₦{(transportTotal * 1500).toLocaleString()}</span>
             </div>
           </div>
           <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
@@ -260,7 +304,7 @@ export function PlanOverview() {
               <p className="font-bold text-gray-900 text-[15px]">Total estimate</p>
               <p className="text-[11px] text-gray-400 mt-0.5">±10% depending on choices made</p>
             </div>
-            <p className="font-black text-[22px] text-gray-900">${grandTotal}</p>
+            <p className="font-black text-[22px] text-gray-900">₦{(grandTotal * 1500).toLocaleString()}</p>
           </div>
         </div>
 
@@ -276,7 +320,9 @@ export function PlanOverview() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 text-[14px] leading-tight">Your Evening Fund</p>
-                <p className="text-[12px] text-amber-700 font-medium">{STASH_PCT}% saved · ${ Math.round(grandTotal * STASH_PCT / 100) } of ${grandTotal}</p>
+                <p className="text-[12px] text-amber-700 font-medium">
+                  {STASH_PCT}% saved · ₦{Math.round(grandTotal * 1500 * STASH_PCT / 100).toLocaleString()} of ₦{(grandTotal * 1500).toLocaleString()}
+                </p>
               </div>
               <ChevronRight size={16} className="text-amber-500 shrink-0" />
             </div>
@@ -288,7 +334,7 @@ export function PlanOverview() {
               />
             </div>
             <p className="text-[11px] text-amber-600 mt-1.5 font-medium">
-              ${grandTotal - Math.round(grandTotal * STASH_PCT / 100)} more to cover this evening — keep going!
+              ₦{Math.round(grandTotal * 1500 * (1 - STASH_PCT / 100)).toLocaleString()} more to cover this evening — keep going!
             </p>
           </div>
         </div>

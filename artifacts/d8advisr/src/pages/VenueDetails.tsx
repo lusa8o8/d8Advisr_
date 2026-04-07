@@ -629,7 +629,15 @@ export function VenueDetails() {
           <Heart size={24} />
         </button>
         <button 
-          onClick={() => setLocation('/plan/generate')}
+          onClick={() => {
+            const params = new URLSearchParams({
+              venueId: '2',
+              venueName: 'Lumina Restaurant & Bar',
+              venueEmoji: '🍷',
+              venueCategory: 'Romantic Dining',
+            });
+            setLocation(`/plan/generate?${params.toString()}`);
+          }}
           className="flex-1 bg-primary text-primary-foreground rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90"
         >
           Add to Plan

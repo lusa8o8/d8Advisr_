@@ -220,12 +220,329 @@ function PlanningAnimation({ onDone }: { onDone: () => void }) {
   );
 }
 
-export function PlanGenerator() {
+// ─── Venue-anchored "Build Around" mode ─────────────────────────────────────
+
+const WHEN_OPTIONS = ['Tonight', 'Tomorrow', 'This Weekend'];
+const WHO_OPTIONS = [
+  { label: 'Just Us', emoji: '💑', value: 'couple' },
+  { label: 'Solo', emoji: '🧍', value: 'solo' },
+  { label: 'Small Group', emoji: '👥', value: 'small' },
+  { label: 'Group 5+', emoji: '🎉', value: 'large' },
+];
+const BUDGET_STEPS = [25000, 50000, 75000, 100000, 150000, 200000, 300000];
+
+function BuildAroundMode({
+  venueName,
+  venueEmoji,
+  venueCategory,
+  onGenerate,
+}: {
+  venueName: string;
+  venueEmoji: string;
+  venueCategory: string;
+  onGenerate: () => void;
+}) {
   const [, setLocation] = useLocation();
+  const [when, setWhen] = useState('Tonight');
+  const [who, setWho] = useState('couple');
+  const [budgetIdx, setBudgetIdx] = useState(2);
+
+  const handleGenerate = () => {
+    localStorage.setItem('d8advisr_plan_anchor', JSON.stringify({
+      venueId: new URLSearchParams(window.location.search).get('venueId') || '2',
+      venueName,
+      venueEmoji,
+      venueCategory,
+      when,
+      who,
+      budgetPerPerson: BUDGET_STEPS[budgetIdx],
+    }));
+    onGenerate();
+  };
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
+      {/* Header */}
+      <div className="px-6 pt-14 pb-4 flex items-center gap-3">
+        <button
+          onClick={() => setLocation(-1 as unknown as string)}
+          className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-background transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Building around</p>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-36">
+        <div className="px-6">
+          {/* Locked Venue Card */}
+          <div className="bg-card border border-primary/25 rounded-2xl p-4 mb-8 flex items-center gap-4 shadow-sm">
+            <div className="w-14 h-14 rounded-xl bg-primary/8 flex items-center justify-center text-2xl shrink-0">
+              {venueEmoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-foreground text-[16px] leading-tight truncate">{venueName}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{venueCategory}</p>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-bold px-2 py-0.5 rounded-full">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Anchored stop
+                </span>
+              </div>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center" title="You can't remove the anchored venue here">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+          </div>
+
+          <p className="text-[28px] font-bold text-foreground leading-tight mb-1">
+            Build your evening ✨
+          </p>
+          <p className="text-sm text-muted-foreground mb-8">We'll fill in the rest around your choice.</p>
+
+          <div className="flex flex-col gap-8">
+            {/* When? */}
+            <div>
+              <h3 className="font-bold text-foreground mb-3 text-[15px]">When?</h3>
+              <div className="flex gap-2.5">
+                {WHEN_OPTIONS.map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setWhen(opt)}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95",
+                      when === opt
+                        ? "bg-foreground text-card shadow-md"
+                        : "bg-card border border-border text-foreground hover:border-gray-300"
+                    )}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Who's joining? */}
+            <div>
+              <h3 className="font-bold text-foreground mb-3 text-[15px]">Who's joining?</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {WHO_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setWho(opt.value)}
+                    className={cn(
+                      "py-4 rounded-xl flex flex-col items-center gap-1.5 text-sm font-bold transition-all active:scale-95",
+                      who === opt.value
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                        : "bg-card border border-border text-foreground hover:border-gray-300"
+                    )}
+                  >
+                    <span className="text-xl">{opt.emoji}</span>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Budget per person */}
+            <div>
+              <div className="flex items-baseline justify-between mb-3">
+                <h3 className="font-bold text-foreground text-[15px]">Budget per person</h3>
+                <span className="text-primary font-bold text-[15px]">
+                  ₦{BUDGET_STEPS[budgetIdx].toLocaleString()}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={BUDGET_STEPS.length - 1}
+                value={budgetIdx}
+                onChange={e => setBudgetIdx(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-muted-foreground">₦{BUDGET_STEPS[0].toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground">₦{BUDGET_STEPS[BUDGET_STEPS.length - 1].toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fixed CTA */}
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-background/95 backdrop-blur-sm border-t border-border">
+        <button
+          onClick={handleGenerate}
+          className="w-full bg-primary text-primary-foreground py-[18px] rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.6)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2"
+        >
+          Build My Evening ✨
+        </button>
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          {venueName} will be your confirmed stop
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Full blank form mode ────────────────────────────────────────────────────
+
+function FullFormMode({ onGenerate }: { onGenerate: () => void }) {
   const [type, setType] = useState<'solo' | 'group'>('solo');
   const [occasion, setOccasion] = useState('Date Night');
   const [mood, setMood] = useState('Romantic');
+
+  const handleGenerate = () => {
+    localStorage.removeItem('d8advisr_plan_anchor');
+    onGenerate();
+  };
+
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
+      <div className="px-6 py-4">
+        <h1 className="text-[32px] font-bold text-foreground leading-tight mb-6">Build Your Plan ✨</h1>
+
+        {/* Solo / Group toggle */}
+        <div className="flex bg-card p-1 rounded-full shadow-sm border border-border mb-8">
+          <button
+            onClick={() => setType('solo')}
+            className={cn(
+              "flex-1 py-3 rounded-full text-sm font-bold transition-all",
+              type === 'solo'
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Solo Date
+          </button>
+          <button
+            onClick={() => setType('group')}
+            className={cn(
+              "flex-1 py-3 rounded-full text-sm font-bold transition-all",
+              type === 'group'
+                ? "bg-foreground text-card shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Group Plan
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-8">
+          {/* Occasion */}
+          <div>
+            <h3 className="font-bold text-foreground mb-3 text-[15px]">Occasion</h3>
+            <div className="flex flex-wrap gap-2.5">
+              {['Date Night', 'First Date', 'Anniversary', 'Casual', 'Celebration'].map(item => (
+                <button
+                  key={item}
+                  onClick={() => setOccasion(item)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-sm font-medium transition-all active:scale-95",
+                    occasion === item
+                      ? "bg-foreground text-card shadow-md"
+                      : "bg-card border border-border text-foreground hover:border-gray-300"
+                  )}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Vibe / Mood */}
+          <div>
+            <h3 className="font-bold text-foreground mb-3 text-[15px]">Vibe / Mood</h3>
+            <div className="flex flex-wrap gap-2.5">
+              {['Romantic', 'Fun', 'Adventure', 'Relaxing', 'Cultural'].map(item => (
+                <button
+                  key={item}
+                  onClick={() => setMood(item)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-sm font-medium transition-all active:scale-95",
+                    mood === item
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                      : "bg-card border border-border text-foreground hover:border-gray-300"
+                  )}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="flex flex-col gap-4">
+            <h3 className="font-bold text-foreground text-[15px]">Details</h3>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">When</label>
+                <input
+                  type="date"
+                  defaultValue="2025-10-14"
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Time</label>
+                <input
+                  type="time"
+                  defaultValue="19:00"
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget per person (₦)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold text-sm">₦</span>
+                <input
+                  type="number"
+                  defaultValue={75000}
+                  className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Neighborhood / Area</label>
+              <input
+                type="text"
+                placeholder="e.g. Victoria Island"
+                defaultValue="Victoria Island"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={handleGenerate}
+          className="w-full bg-primary text-primary-foreground py-[18px] rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.6)] active:scale-[0.98] transition-all mt-10 hover:bg-primary/90 flex items-center justify-center gap-2"
+        >
+          Generate Plan ✨
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main export ─────────────────────────────────────────────────────────────
+
+export function PlanGenerator() {
+  const [, setLocation] = useLocation();
   const [generating, setGenerating] = useState(false);
+
+  // Read anchor params from URL
+  const params = new URLSearchParams(window.location.search);
+  const venueName = params.get('venueName');
+  const venueEmoji = params.get('venueEmoji') || '📍';
+  const venueCategory = params.get('venueCategory') || '';
+  const isAnchorMode = Boolean(venueName);
 
   const handleGenerate = useCallback(() => {
     setGenerating(true);
@@ -237,139 +554,23 @@ export function PlanGenerator() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">
-      <TopBar />
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
-        <div className="px-6 py-4">
-          <h1 className="text-[32px] font-bold text-foreground leading-tight mb-6">Build Your Plan ✨</h1>
+      {!isAnchorMode && <TopBar />}
 
-          {/* Solo / Group toggle */}
-          <div className="flex bg-card p-1 rounded-full shadow-sm border border-border mb-8">
-            <button
-              onClick={() => setType('solo')}
-              className={cn(
-                "flex-1 py-3 rounded-full text-sm font-bold transition-all",
-                type === 'solo'
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Solo Date
-            </button>
-            <button
-              onClick={() => setType('group')}
-              className={cn(
-                "flex-1 py-3 rounded-full text-sm font-bold transition-all",
-                type === 'group'
-                  ? "bg-foreground text-card shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Group Plan
-            </button>
-          </div>
+      {isAnchorMode ? (
+        <BuildAroundMode
+          venueName={venueName!}
+          venueEmoji={venueEmoji}
+          venueCategory={venueCategory}
+          onGenerate={handleGenerate}
+        />
+      ) : (
+        <>
+          <FullFormMode onGenerate={handleGenerate} />
+          <BottomNav active="plans" />
+        </>
+      )}
 
-          <div className="flex flex-col gap-8">
-            {/* Occasion */}
-            <div>
-              <h3 className="font-bold text-foreground mb-3 text-[15px]">Occasion</h3>
-              <div className="flex flex-wrap gap-2.5">
-                {['Date Night', 'First Date', 'Anniversary', 'Casual', 'Celebration'].map(item => (
-                  <button
-                    key={item}
-                    onClick={() => setOccasion(item)}
-                    className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-medium transition-all active:scale-95",
-                      occasion === item
-                        ? "bg-foreground text-card shadow-md"
-                        : "bg-card border border-border text-foreground hover:border-gray-300"
-                    )}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Vibe / Mood */}
-            <div>
-              <h3 className="font-bold text-foreground mb-3 text-[15px]">Vibe / Mood</h3>
-              <div className="flex flex-wrap gap-2.5">
-                {['Romantic', 'Fun', 'Adventure', 'Relaxing', 'Cultural'].map(item => (
-                  <button
-                    key={item}
-                    onClick={() => setMood(item)}
-                    className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-medium transition-all active:scale-95",
-                      mood === item
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                        : "bg-card border border-border text-foreground hover:border-gray-300"
-                    )}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Details */}
-            <div className="flex flex-col gap-4">
-              <h3 className="font-bold text-foreground text-[15px]">Details</h3>
-
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">When</label>
-                  <input
-                    type="date"
-                    defaultValue="2025-10-14"
-                    className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Time</label>
-                  <input
-                    type="time"
-                    defaultValue="19:00"
-                    className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget (Total)</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold">$</span>
-                  <input
-                    type="number"
-                    defaultValue={150}
-                    className="w-full bg-card border border-border rounded-xl pl-8 pr-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Neighborhood / City</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Downtown"
-                  defaultValue="Downtown"
-                  className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            className="w-full bg-primary text-primary-foreground py-[18px] rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.6)] active:scale-[0.98] transition-all mt-10 hover:bg-primary/90 flex items-center justify-center gap-2"
-          >
-            Generate Plan ✨
-          </button>
-        </div>
-      </div>
-
-      <BottomNav active="plans" />
-
-      {/* ── AI Planning Animation Overlay ── */}
+      {/* AI Planning Animation Overlay */}
       {generating && <PlanningAnimation onDone={handleDone} />}
     </div>
   );
