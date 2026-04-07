@@ -25,6 +25,7 @@ import { PreferenceEdit } from "@/pages/PreferenceEdit";
 import { BudgetDashboard } from "@/pages/BudgetDashboard";
 import { CreateGroupPlan } from "@/pages/CreateGroupPlan";
 import { NotificationsCenter } from "@/pages/NotificationsCenter";
+import { AdminPanel } from "@/pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,8 @@ function Router() {
       <Route path="/group/create" component={CreateGroupPlan} />
       
       <Route path="/notifications" component={NotificationsCenter} />
+      
+      <Route path="/admin" component={AdminPanel} />
       
       {/* Fallback to Home if unknown route */}
       <Route component={HomeDiscovery} />
