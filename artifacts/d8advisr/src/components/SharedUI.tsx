@@ -51,7 +51,7 @@ export function BottomNav({ active }: { active: 'home' | 'plans' | 'profile' }) 
       </button>
       
       <button 
-        onClick={() => setLocation('/plan/overview')}
+        onClick={() => setLocation('/plans')}
         className={cn("flex flex-col items-center gap-1.5 transition-colors", active === 'plans' ? "text-primary" : "text-muted-foreground hover:text-foreground")}
       >
         <Calendar size={24} strokeWidth={active === 'plans' ? 2.5 : 2} />
