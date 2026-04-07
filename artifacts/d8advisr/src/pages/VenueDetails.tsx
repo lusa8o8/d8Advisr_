@@ -202,13 +202,13 @@ export function VenueDetails() {
               <button
                 onClick={() => setNotifyOn(v => !v)}
                 className={cn(
-                  "w-12 h-6 rounded-full transition-colors relative shrink-0",
+                  "w-11 h-6 rounded-full transition-colors relative shrink-0 overflow-hidden",
                   notifyOn ? "bg-primary" : "bg-gray-200"
                 )}
               >
                 <span className={cn(
-                  "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform",
-                  notifyOn ? "translate-x-6" : "translate-x-0.5"
+                  "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform",
+                  notifyOn ? "translate-x-[18px]" : "translate-x-0"
                 )} />
               </button>
             </div>
