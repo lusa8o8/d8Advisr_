@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X } from 'lucide-react';
+import { Search, MapPin, Star, Filter, X, Ticket } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 
 const VENUES = [
@@ -14,7 +14,8 @@ const VENUES = [
     price: "$$$",
     desc: "Intimate atmosphere with panoramic city views and modern fusion cuisine.",
     color: "from-rose-400 to-red-500",
-    icon: "🍷"
+    icon: "🍷",
+    eventBadge: "3 events this week",
   },
   {
     id: 2,
@@ -26,7 +27,8 @@ const VENUES = [
     price: "$$",
     desc: "Hidden speakeasy featuring local jazz bands every weekend.",
     color: "from-amber-400 to-orange-500",
-    icon: "🎷"
+    icon: "🎷",
+    eventBadge: null,
   },
   {
     id: 3,
@@ -38,9 +40,59 @@ const VENUES = [
     price: "Free",
     desc: "Beautiful paved trail along the river perfect for a sunset stroll.",
     color: "from-emerald-400 to-green-500",
-    icon: "🌳"
+    icon: "🌳",
+    eventBadge: null,
   }
 ];
+
+// Standalone experiences at non-listed venues (soft venue naming)
+const EXPERIENCES = [
+  {
+    id: "x1",
+    name: "Candlelight String Quartet",
+    location: "A historic venue · Downtown",
+    date: "Fri, Oct 18",
+    time: "8:00 PM",
+    price: "$35",
+    vibes: ["Romantic", "Culture"],
+    emoji: "🕯️",
+    color: "from-purple-400 to-indigo-500",
+    urgency: "Only 12 spots left",
+  },
+  {
+    id: "x2",
+    name: "Rooftop Cinema: La La Land",
+    location: "Rooftop venue · Midtown",
+    date: "Sat, Oct 19",
+    time: "9:00 PM",
+    price: "$18",
+    vibes: ["Date Night", "Relaxing"],
+    emoji: "🎬",
+    color: "from-sky-400 to-blue-500",
+    urgency: null,
+  },
+  {
+    id: "x3",
+    name: "Night Market & Live Art",
+    location: "Open-air venue · Arts District",
+    date: "Sun, Oct 20",
+    time: "6:00 PM",
+    price: "Free",
+    vibes: ["Adventurous", "Group"],
+    emoji: "🎨",
+    color: "from-teal-400 to-green-500",
+    urgency: null,
+  },
+];
+
+const VIBE_COLORS: Record<string, string> = {
+  "Romantic":    "bg-[#FFF0F1] text-primary",
+  "Culture":     "bg-purple-50 text-purple-600",
+  "Date Night":  "bg-green-50 text-[#00C851]",
+  "Relaxing":    "bg-sky-50 text-sky-600",
+  "Adventurous": "bg-orange-50 text-orange-600",
+  "Group":       "bg-blue-50 text-blue-600",
+};
 
 export function HomeDiscovery() {
   const [, setLocation] = useLocation();
@@ -92,7 +144,62 @@ export function HomeDiscovery() {
           ))}
         </div>
 
-        {/* Feed */}
+        {/* ── Experiences Near You ── */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center px-6 mb-3">
+            <div>
+              <h2 className="text-[17px] font-bold text-foreground leading-tight">Experiences Near You</h2>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">Curated one-off events worth your evening</p>
+            </div>
+            <Ticket size={18} className="text-primary" />
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto no-scrollbar px-6 snap-x pb-1">
+            {EXPERIENCES.map(exp => (
+              <div
+                key={exp.id}
+                onClick={() => setLocation('/plan/generate')}
+                className="snap-start shrink-0 w-60 bg-card rounded-2xl border border-border shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
+              >
+                <div className={`h-24 bg-gradient-to-br ${exp.color} flex items-center justify-center relative`}>
+                  <span className="text-4xl drop-shadow-sm">{exp.emoji}</span>
+                  {exp.urgency && (
+                    <span className="absolute top-2.5 right-2.5 bg-white/90 text-[#FF9500] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                      {exp.urgency}
+                    </span>
+                  )}
+                  {exp.price === 'Free' && (
+                    <span className="absolute top-2.5 right-2.5 bg-[#E8FFF0] text-[#00C851] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                      Free
+                    </span>
+                  )}
+                </div>
+                <div className="p-3.5">
+                  <p className="font-bold text-foreground text-[14px] leading-tight mb-1">{exp.name}</p>
+                  <p className="text-[11px] text-muted-foreground font-medium mb-0.5">{exp.location}</p>
+                  <p className="text-[11px] text-muted-foreground mb-2.5">{exp.date} · {exp.time}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-1 flex-wrap">
+                      {exp.vibes.map(v => (
+                        <span key={v} className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full", VIBE_COLORS[v] || "bg-gray-100 text-gray-600")}>
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                    {exp.price !== 'Free' && (
+                      <span className="text-[12px] font-bold text-foreground ml-1 shrink-0">{exp.price}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Venue Feed ── */}
+        <div className="px-6 mb-2">
+          <h2 className="text-[17px] font-bold text-foreground">Venues for You</h2>
+        </div>
         <div className="px-6 flex flex-col gap-5 pb-6">
           {VENUES.map((venue) => (
             <div 
@@ -106,6 +213,11 @@ export function HomeDiscovery() {
                   <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
                   {venue.rating}
                 </div>
+                {venue.eventBadge && (
+                  <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <Ticket size={10} /> {venue.eventBadge}
+                  </div>
+                )}
               </div>
               <div className="p-5">
                 <div className="flex justify-between items-start mb-1">
@@ -152,6 +264,7 @@ export function HomeDiscovery() {
                   <button className="bg-background border border-border text-foreground px-4 py-2 rounded-full text-sm font-medium">Activity</button>
                   <button className="bg-background border border-border text-foreground px-4 py-2 rounded-full text-sm font-medium">Nightlife</button>
                   <button className="bg-background border border-border text-foreground px-4 py-2 rounded-full text-sm font-medium">Outdoors</button>
+                  <button className="bg-background border border-border text-foreground px-4 py-2 rounded-full text-sm font-medium">Experiences</button>
                 </div>
               </div>
 
