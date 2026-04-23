@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -5,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Layout & UI
 import { MobileFrame } from "@/components/MobileFrame";
+import { DesktopShell } from "@/components/DesktopShell";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 // Pages
 import { Welcome } from "@/pages/Welcome";
@@ -71,14 +74,21 @@ function Router() {
   );
 }
 
+function AppShell({ children }: { children: ReactNode }) {
+  const isDesktop = useIsDesktop();
+  return isDesktop
+    ? <DesktopShell>{children}</DesktopShell>
+    : <MobileFrame>{children}</MobileFrame>;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <MobileFrame>
-             <Router />
-          </MobileFrame>
+          <AppShell>
+            <Router />
+          </AppShell>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

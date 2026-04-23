@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem } from 'lucide-react';
+import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Sparkles } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 
@@ -112,8 +113,283 @@ export function HomeDiscovery() {
   const [, setLocation] = useLocation();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+  const isDesktop = useIsDesktop();
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
+
+  if (isDesktop) {
+    return (
+      <div className="min-h-full bg-[#F7F7F7]">
+        {/* Desktop Hero Header */}
+        <div
+          className="px-10 pt-10 pb-8"
+          style={{ background: 'linear-gradient(135deg, #141414 0%, #1e1e1e 100%)' }}
+        >
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-end justify-between mb-6">
+              <div>
+                <p className="text-[13px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em' }}>
+                  THURSDAY EVENING · LAGOS
+                </p>
+                <h1 className="text-[36px] font-black text-white leading-tight">
+                  Good evening, Alex 👋
+                </h1>
+                <p className="mt-1.5 text-[15px] font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  Where are you heading tonight?
+                </p>
+              </div>
+              <button
+                onClick={() => setLocation('/plan/generate')}
+                className="flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white text-[14px] active:scale-[0.97] transition-all shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, #FF5A5F 0%, #FF3D6B 100%)',
+                  boxShadow: '0 8px 24px -6px rgba(255,90,95,0.55)',
+                }}
+              >
+                <Sparkles size={16} />
+                Surprise Me
+              </button>
+            </div>
+
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search venues, moods, experiences..."
+                className="w-full pl-14 pr-36 py-4 rounded-2xl font-medium text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+              />
+              <button
+                onClick={() => setShowFilters(true)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[13px] transition-colors"
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
+              >
+                <Filter size={14} />
+                Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Category tabs */}
+        <div className="px-10 py-5 bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+          <div className="max-w-5xl mx-auto flex gap-2.5 overflow-x-auto no-scrollbar">
+            {tabs.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm transition-all",
+                  activeTab === tab
+                    ? "bg-foreground text-white shadow-md"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                )}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-10 py-8 max-w-5xl mx-auto">
+
+          {/* Experiences section */}
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-[20px] font-bold text-foreground">Experiences Near You</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">Curated one-off events worth your evening</p>
+              </div>
+              <button className="text-primary font-semibold text-sm flex items-center gap-1.5 hover:opacity-80">
+                <Ticket size={15} /> View all
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              {EXPERIENCES.map(exp => (
+                <div
+                  key={exp.id}
+                  onClick={() => setLocation('/plan/generate')}
+                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group"
+                >
+                  <div className="h-36 relative overflow-hidden">
+                    <img src={exp.image} alt={exp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
+                    <span className="absolute inset-0 flex items-center justify-center text-5xl drop-shadow-lg">{exp.emoji}</span>
+                    {exp.urgency && (
+                      <span className="absolute top-3 right-3 bg-white/90 text-[#FF9500] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                        {exp.urgency}
+                      </span>
+                    )}
+                    {exp.price === 'Free' && (
+                      <span className="absolute top-3 right-3 bg-[#E8FFF0] text-[#00C851] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                        Free
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <p className="font-bold text-foreground text-[15px] leading-tight mb-1">{exp.name}</p>
+                    <p className="text-[12px] text-muted-foreground font-medium">{exp.location}</p>
+                    <p className="text-[12px] text-muted-foreground mb-3">{exp.date} · {exp.time}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-1.5 flex-wrap">
+                        {exp.vibes.map(v => (
+                          <span key={v} className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", VIBE_COLORS[v] || "bg-gray-100 text-gray-600")}>
+                            {v}
+                          </span>
+                        ))}
+                      </div>
+                      {exp.price !== 'Free' && (
+                        <span className="text-[14px] font-bold text-foreground">{exp.price}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Venues section */}
+          <div>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-[20px] font-bold text-foreground">Venues For You</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">Handpicked for the best evenings in Lagos</p>
+              </div>
+              <button
+                onClick={() => setLocation('/map')}
+                className="text-primary font-semibold text-sm flex items-center gap-1.5 hover:opacity-80"
+              >
+                <MapPin size={15} /> View on map
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-5">
+              {VENUES.map(venue => {
+                const t = TIER_STYLES[venue.tier];
+                const Icon = t.icon;
+                return (
+                  <div
+                    key={venue.id}
+                    onClick={() => setLocation(`/venue/${venue.id}`)}
+                    className="bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group"
+                  >
+                    <div className="h-52 relative overflow-hidden">
+                      <img src={venue.image} alt={venue.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
+
+                      {/* Tier badge */}
+                      <div className={cn(
+                        "absolute top-3.5 left-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm text-[11px] font-bold shadow-sm",
+                        t.pill
+                      )}>
+                        <Icon size={11} strokeWidth={2.5} />
+                        {venue.tier}
+                      </div>
+
+                      {/* Rating */}
+                      <div className="absolute top-3.5 right-3.5 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
+                        <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
+                        {venue.rating}
+                        <span className="text-gray-400 font-normal">({venue.reviews})</span>
+                      </div>
+
+                      {/* Emoji */}
+                      <div className="absolute bottom-3.5 left-3.5 w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl border border-white/30">
+                        {venue.icon}
+                      </div>
+
+                      {/* Event badge */}
+                      {venue.eventBadge && (
+                        <div className="absolute bottom-3.5 right-3.5 bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <Ticket size={10} /> {venue.eventBadge}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-bold text-[17px] text-foreground leading-tight">{venue.name}</h3>
+                        <span className={cn("font-bold text-[15px] shrink-0 ml-2", venue.price === 'Free' ? "text-[#00C851]" : "text-primary")}>
+                          {venue.price}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-400 mb-3 font-medium">
+                        <span>{venue.type}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <div className="flex items-center gap-1">
+                          <MapPin size={12} />{venue.distance}
+                        </div>
+                      </div>
+                      <p className="text-gray-500 text-[13px] leading-relaxed line-clamp-2 mb-4">{venue.desc}</p>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          const params = new URLSearchParams({
+                            venueId: String(venue.id),
+                            venueName: venue.name,
+                            venueEmoji: venue.icon,
+                            venueCategory: venue.type,
+                          });
+                          setLocation(`/plan/generate?${params.toString()}`);
+                        }}
+                        className="w-full py-3 rounded-xl border-2 border-primary text-primary font-bold text-[13px] hover:bg-primary hover:text-white transition-all"
+                      >
+                        + Add to Plan
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop filter modal */}
+        {showFilters && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowFilters(false)} />
+            <div className="relative bg-white rounded-2xl w-full max-w-md mx-8 p-8 shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Filters</h2>
+                <button onClick={() => setShowFilters(false)} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-foreground hover:bg-gray-200">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="flex flex-col gap-6">
+                <div>
+                  <h3 className="font-bold text-foreground mb-3 text-sm">Category</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['Dining', 'Activity', 'Nightlife', 'Outdoors', 'Experiences'].map(cat => (
+                      <button key={cat} className="bg-gray-100 border border-gray-200 text-foreground px-4 py-2 rounded-full text-sm font-medium hover:border-primary hover:text-primary transition-colors first:bg-primary first:text-white first:border-primary">
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-foreground text-sm">Price Range</h3>
+                    <span className="text-primary font-bold text-sm">$ — $$$</span>
+                  </div>
+                  <input type="range" className="w-full accent-primary" defaultValue="70" />
+                </div>
+              </div>
+              <div className="mt-8 flex gap-3">
+                <button onClick={() => setShowFilters(false)} className="px-6 py-3 rounded-xl border border-gray-200 text-foreground font-semibold text-sm hover:bg-gray-50">
+                  Reset
+                </button>
+                <button onClick={() => setShowFilters(false)} className="flex-1 bg-primary text-white py-3 rounded-xl font-bold text-[15px] shadow-lg shadow-primary/30">
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">

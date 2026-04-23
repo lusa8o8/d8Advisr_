@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { Home, Calendar, User, Bell, Settings } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,6 +10,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function TopBar({ transparent = false }: { transparent?: boolean }) {
   const [, setLocation] = useLocation();
+  const isDesktop = useIsDesktop();
+  if (isDesktop) return null;
   
   return (
     <div className={cn("px-6 pt-14 pb-4 flex justify-between items-center sticky top-0 z-20", 
@@ -39,7 +42,9 @@ export function TopBar({ transparent = false }: { transparent?: boolean }) {
 
 export function BottomNav({ active }: { active: 'home' | 'plans' | 'profile' }) {
   const [, setLocation] = useLocation();
-  
+  const isDesktop = useIsDesktop();
+  if (isDesktop) return null;
+
   return (
     <div className="absolute bottom-0 w-full bg-white border-t border-border pb-8 pt-4 px-8 flex justify-between items-center z-20 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
       <button 
@@ -71,7 +76,9 @@ export function BottomNav({ active }: { active: 'home' | 'plans' | 'profile' }) 
 
 export function FAB({ type }: { type: 'home' | 'plans' }) {
   const [, setLocation] = useLocation();
-  
+  const isDesktop = useIsDesktop();
+  if (isDesktop) return null;
+
   if (type === 'home') {
     return (
       <button 
