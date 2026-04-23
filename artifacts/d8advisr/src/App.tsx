@@ -31,6 +31,7 @@ import { AdminPanel } from "@/pages/AdminPanel";
 import { SavedPlans } from "@/pages/SavedPlans";
 import { PostDateReview } from "@/pages/PostDateReview";
 import { ReviewComplete } from "@/pages/ReviewComplete";
+import { Settings } from "@/pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,8 @@ function Router() {
       
       <Route path="/review" component={PostDateReview} />
       <Route path="/review/complete" component={ReviewComplete} />
+      
+      <Route path="/settings" component={Settings} />
       
       {/* Fallback to Home if unknown route */}
       <Route component={HomeDiscovery} />

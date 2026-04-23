@@ -19,10 +19,13 @@ export function ProfileOverview() {
   const [, setLocation] = useLocation();
   const [avatar, setAvatar] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [displayName, setDisplayName] = useState('Alex Johnson');
 
   useEffect(() => {
     const saved = localStorage.getItem('d8advisr_avatar');
     if (saved) setAvatar(saved);
+    const name = localStorage.getItem('d8advisr_name');
+    if (name) setDisplayName(name);
   }, []);
 
   function selectAvatar(id: string | null) {
@@ -42,7 +45,7 @@ export function ProfileOverview() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-xl font-bold">Profile</h1>
             <button 
-              onClick={() => setLocation('/profile/preferences')}
+              onClick={() => setLocation('/settings')}
               className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
             >
               <Settings size={20} />
@@ -62,7 +65,9 @@ export function ProfileOverview() {
                 {currentAvatar ? (
                   <span className="text-5xl">{currentAvatar.emoji}</span>
                 ) : (
-                  <span className="text-primary text-3xl font-bold">AJ</span>
+                  <span className="text-primary text-3xl font-bold">
+                  {displayName.split(' ').map((p: string) => p[0]).join('').slice(0,2).toUpperCase()}
+                </span>
                 )}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity rounded-full flex items-center justify-center">
                   <Camera size={22} className="text-white" />
@@ -76,7 +81,7 @@ export function ProfileOverview() {
               </button>
             </div>
 
-            <h2 className="text-[22px] font-bold text-foreground">Alex Johnson</h2>
+            <h2 className="text-[22px] font-bold text-foreground">{displayName}</h2>
             {currentAvatar && (
               <p className="text-xs font-semibold text-primary mt-0.5">{currentAvatar.label}</p>
             )}
@@ -260,7 +265,7 @@ export function ProfileOverview() {
                   : 'border-border text-muted-foreground hover:border-gray-300'
               }`}
             >
-              Use my initials (AJ)
+              Use my initials ({displayName.split(' ').map((p: string) => p[0]).join('').slice(0,2).toUpperCase()})
             </button>
           </div>
         </div>

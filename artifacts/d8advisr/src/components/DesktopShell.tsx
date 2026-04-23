@@ -122,7 +122,7 @@ function Sidebar() {
           </div>
         </button>
         <button
-          onClick={() => setLocation('/profile/preferences')}
+          onClick={() => setLocation('/settings')}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl w-full text-left hover:bg-white/5 transition-colors"
           style={{ color: 'rgba(255,255,255,0.4)' }}
         >
