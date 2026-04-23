@@ -30,6 +30,9 @@ import { NotificationsCenter } from "@/pages/NotificationsCenter";
 import { AdminPanel } from "@/pages/AdminPanel";
 import { EventDetail } from "@/pages/EventDetail";
 import { VenueSubmit } from "@/pages/VenueSubmit";
+import { PartnerPortal } from "@/pages/PartnerPortal";
+import { PartnerDashboard } from "@/pages/PartnerDashboard";
+import { PartnerEventEditor } from "@/pages/PartnerEventEditor";
 import { SavedPlans } from "@/pages/SavedPlans";
 import { PostDateReview } from "@/pages/PostDateReview";
 import { ReviewComplete } from "@/pages/ReviewComplete";
@@ -69,6 +72,11 @@ function Router() {
       <Route path="/notifications" component={NotificationsCenter} />
       
       <Route path="/admin" component={AdminPanel} />
+      
+      <Route path="/partner" component={PartnerPortal} />
+      <Route path="/partner/dashboard" component={PartnerDashboard} />
+      <Route path="/partner/event/new" component={PartnerEventEditor} />
+      <Route path="/partner/event/:id/edit" component={PartnerEventEditor} />
       
       <Route path="/review" component={PostDateReview} />
       <Route path="/review/complete" component={ReviewComplete} />
