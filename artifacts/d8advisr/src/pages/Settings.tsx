@@ -5,12 +5,17 @@ import {
   User, Phone, Calendar, AtSign,
   MapPin, Heart, Wallet, Bell,
   Lock, Palette, LogOut, Trash2,
-  Eye, Sun, Moon, Monitor,
+  Eye, Sun, Moon, Monitor, CreditCard,
 } from 'lucide-react';
 import { TopBar, BottomNav, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+interface PaymentMethod {
+  type: 'card' | 'bank';
+  last4: string;
+  label: string; // e.g. "Visa" or "GTBank"
+}
 interface NotifSettings {
   planReminders: boolean;
   venueAlerts: boolean;
@@ -31,6 +36,7 @@ const NEIGHBORHOODS = [
 ];
 const CITIES = [
   { id: 'lagos',  name: 'Lagos',  flag: '🇳🇬', live: true  },
+  { id: 'lusaka', name: 'Lusaka', flag: '🇿🇲', live: true  },
   { id: 'london', name: 'London', flag: '🇬🇧', live: false },
   { id: 'dubai',  name: 'Dubai',  flag: '🇦🇪', live: false },
 ];
@@ -190,6 +196,10 @@ export function Settings() {
   const [theme, setTheme]     = useState<'light' | 'dark' | 'system'>('system');
   const [distUnit, setDistUnit] = useState<'km' | 'mi'>('km');
 
+  // Payment
+  const [payment, setPayment] = useState<PaymentMethod | null>(null);
+  const [showPaySheet, setShowPaySheet] = useState(false);
+
   // Edit sheet state
   const [editing, setEditing] = useState<null | {
     field: string;
@@ -220,6 +230,8 @@ export function Settings() {
       setNotif(prev => ({ ...prev, ...n }));
       const p = JSON.parse(load('d8advisr_privacy', '{}'));
       setPrivacy(prev => ({ ...prev, ...p }));
+      const pm = localStorage.getItem('d8advisr_payment');
+      if (pm) setPayment(JSON.parse(pm));
     } catch { /* ignore */ }
   }, []);
 
@@ -405,6 +417,53 @@ export function Settings() {
           value="Sinking fund & spending goals"
           onClick={() => setLocation('/profile/budget')}
         />
+      </Section>
+
+      {/* ── Payment Method ────────────────────────────────────── */}
+      <Section title="Payment Method">
+        {payment ? (
+          <>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <span className="text-base">💳</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-[14px]">{payment.label} •••• {payment.last4}</p>
+                <p className="text-[12px] text-[#00C851] font-bold mt-0.5">✓ Stash linked — Hidden Gems unlocked</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setPayment(null);
+                localStorage.removeItem('d8advisr_payment');
+                localStorage.removeItem('d8advisr_payment_linked');
+              }}
+              className="w-full px-5 py-3.5 text-left text-[13px] font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            >
+              Remove payment method
+            </button>
+          </>
+        ) : (
+          <div className="px-5 py-5">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100/60 border border-purple-200 rounded-2xl p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl shrink-0">💎</span>
+                <div>
+                  <p className="font-bold text-purple-900 text-[14px] leading-tight">Unlock Hidden Gems</p>
+                  <p className="text-[12px] text-purple-700 mt-1 leading-relaxed">
+                    Link a payment method to your Stash and we'll reveal exclusive, off-the-radar venues — personally verified and not listed anywhere else.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPaySheet(true)}
+              className="w-full bg-primary text-white py-3.5 rounded-xl font-bold text-[14px] shadow-md shadow-primary/25 hover:bg-primary/90 transition-colors"
+            >
+              Link card or bank account
+            </button>
+          </div>
+        )}
       </Section>
 
       {/* ── Notifications ─────────────────────────────────────── */}
@@ -609,6 +668,163 @@ export function Settings() {
           onClose={() => setEditing(null)}
         />
       )}
+
+      {/* Payment link sheet */}
+      {showPaySheet && (
+        <PaymentSheet
+          onSave={pm => {
+            setPayment(pm);
+            localStorage.setItem('d8advisr_payment', JSON.stringify(pm));
+            localStorage.setItem('d8advisr_payment_linked', 'true');
+            setShowPaySheet(false);
+          }}
+          onClose={() => setShowPaySheet(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Payment Sheet ─────────────────────────────────────────────────────────────
+function PaymentSheet({ onSave, onClose }: {
+  onSave: (pm: PaymentMethod) => void;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<'card' | 'bank'>('card');
+  const [cardNum, setCardNum]   = useState('');
+  const [expiry, setExpiry]     = useState('');
+  const [name, setName]         = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNum, setAccountNum] = useState('');
+
+  function formatCard(v: string) {
+    return v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+  }
+  function formatExpiry(v: string) {
+    const d = v.replace(/\D/g, '').slice(0, 4);
+    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+  }
+
+  const canSave = tab === 'card'
+    ? cardNum.replace(/\s/g, '').length === 16 && expiry.length === 5 && name.trim()
+    : bankName.trim() && accountNum.replace(/\D/g, '').length >= 10;
+
+  function handleSave() {
+    if (tab === 'card') {
+      onSave({ type: 'card', last4: cardNum.replace(/\s/g, '').slice(-4), label: 'Visa' });
+    } else {
+      onSave({ type: 'bank', last4: accountNum.replace(/\D/g, '').slice(-4), label: bankName });
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl animate-in slide-in-from-bottom-full duration-300 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-[20px] font-bold text-foreground">Link Payment Method</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Gem unlock message */}
+        <div className="flex items-center gap-2 mb-5 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+          <span className="text-lg">💎</span>
+          <p className="text-[12px] text-purple-700 font-semibold leading-snug">
+            Your Stash enables auto-saving — and unlocks Hidden Gem venues only visible to linked members.
+          </p>
+        </div>
+
+        {/* Tab toggle */}
+        <div className="flex bg-gray-100 rounded-xl p-1 mb-5">
+          <button
+            onClick={() => setTab('card')}
+            className={cn('flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-[13px] transition-all',
+              tab === 'card' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground')}
+          >
+            <CreditCard size={14} /> Card
+          </button>
+          <button
+            onClick={() => setTab('bank')}
+            className={cn('flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-[13px] transition-all',
+              tab === 'bank' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground')}
+          >
+            🏦 Bank Account
+          </button>
+        </div>
+
+        {tab === 'card' ? (
+          <div className="flex flex-col gap-4 mb-6">
+            <div>
+              <label className="text-[12px] font-bold text-muted-foreground mb-1.5 block">CARD NUMBER</label>
+              <input
+                type="text" inputMode="numeric" placeholder="0000 0000 0000 0000"
+                value={cardNum}
+                onChange={e => setCardNum(formatCard(e.target.value))}
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-foreground font-mono text-[15px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-[12px] font-bold text-muted-foreground mb-1.5 block">EXPIRY</label>
+                <input
+                  type="text" inputMode="numeric" placeholder="MM/YY"
+                  value={expiry}
+                  onChange={e => setExpiry(formatExpiry(e.target.value))}
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-foreground font-mono text-[15px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[12px] font-bold text-muted-foreground mb-1.5 block">NAME ON CARD</label>
+              <input
+                type="text" placeholder="Alex Johnson"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-foreground text-[15px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 mb-6">
+            <div>
+              <label className="text-[12px] font-bold text-muted-foreground mb-1.5 block">BANK NAME</label>
+              <input
+                type="text" placeholder="e.g. GTBank, First Bank, Zanaco..."
+                value={bankName}
+                onChange={e => setBankName(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-foreground text-[15px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-bold text-muted-foreground mb-1.5 block">ACCOUNT NUMBER</label>
+              <input
+                type="text" inputMode="numeric" placeholder="10-digit account number"
+                value={accountNum}
+                onChange={e => setAccountNum(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-foreground font-mono text-[15px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleSave}
+          disabled={!canSave}
+          className={cn(
+            'w-full py-4 rounded-xl font-bold text-[15px] transition-all',
+            canSave
+              ? 'bg-primary text-white shadow-lg shadow-primary/30'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed',
+          )}
+        >
+          Link & Unlock Hidden Gems 💎
+        </button>
+        <p className="text-center text-[11px] text-muted-foreground mt-3">
+          Your payment details are encrypted and never stored on our servers.
+        </p>
+      </div>
     </div>
   );
 }

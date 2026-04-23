@@ -47,6 +47,7 @@ const VIBE_CHIPS = [
 
 const CITIES = [
   { id: "lagos",  name: "Lagos",  flag: "🇳🇬", sub: "Available now",        live: true  },
+  { id: "lusaka", name: "Lusaka", flag: "🇿🇲", sub: "Available now",        live: true  },
   { id: "london", name: "London", flag: "🇬🇧", sub: "Coming soon",           live: false },
   { id: "dubai",  name: "Dubai",  flag: "🇦🇪", sub: "Coming soon",           live: false },
 ];

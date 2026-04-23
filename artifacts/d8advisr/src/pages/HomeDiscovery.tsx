@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem } from 'lucide-react';
+import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
@@ -57,7 +57,37 @@ const VENUES = [
     icon: "🌳",
     eventBadge: null,
     image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=320&fit=crop&auto=format",
-  }
+  },
+  {
+    id: 4,
+    name: "The Terrace at Eko",
+    type: "Rooftop Bar",
+    tier: 'Hidden Gem' as Tier,
+    rating: 4.9,
+    reviews: 47,
+    distance: "0.5 mi",
+    price: "$$$$",
+    desc: "A secret rooftop with panoramic Lagos skyline views, craft cocktails, and a curated guest list — not listed anywhere else.",
+    color: "from-purple-600 to-violet-900",
+    icon: "🌃",
+    eventBadge: "Members only Fri",
+    image: "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=600&h=320&fit=crop&auto=format",
+  },
+  {
+    id: 5,
+    name: "House of Gidi",
+    type: "Afrobeats Lounge",
+    tier: 'Hidden Gem' as Tier,
+    rating: 4.7,
+    reviews: 23,
+    distance: "1.8 mi",
+    price: "$$$",
+    desc: "An underground Afrobeats experience in a converted warehouse — intimate, vibey, and undiscovered by the masses.",
+    color: "from-violet-700 to-purple-900",
+    icon: "🎵",
+    eventBadge: null,
+    image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&h=320&fit=crop&auto=format",
+  },
 ];
 
 // Standalone experiences at non-listed venues (soft venue naming)
@@ -113,7 +143,13 @@ export function HomeDiscovery() {
   const [, setLocation] = useLocation();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+  const [paymentLinked, setPaymentLinked] = useState(false);
+  const [showGemGate, setShowGemGate] = useState(false);
   const isDesktop = useIsDesktop();
+
+  useEffect(() => {
+    setPaymentLinked(localStorage.getItem('d8advisr_payment_linked') === 'true');
+  }, []);
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
 
@@ -257,6 +293,45 @@ export function HomeDiscovery() {
               {VENUES.map(venue => {
                 const t = TIER_STYLES[venue.tier];
                 const Icon = t.icon;
+                const isGemLocked = venue.tier === 'Hidden Gem' && !paymentLinked;
+
+                if (isGemLocked) {
+                  return (
+                    <div
+                      key={venue.id}
+                      onClick={() => setShowGemGate(true)}
+                      className="bg-white rounded-2xl overflow-hidden border-2 border-purple-200 cursor-pointer hover:border-purple-400 transition-all group relative"
+                    >
+                      {/* Blurred image */}
+                      <div className="h-52 relative overflow-hidden">
+                        <img src={venue.image} alt="Hidden Gem" className="w-full h-full object-cover scale-110" style={{ filter: 'blur(6px)', opacity: 0.35 }} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-purple-950/80 via-purple-900/50 to-purple-800/30" />
+                        {/* Lock overlay */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+                          <div className="w-12 h-12 rounded-2xl bg-purple-600/90 backdrop-blur-sm flex items-center justify-center shadow-lg mb-1">
+                            <Gem size={22} className="text-white" strokeWidth={1.5} />
+                          </div>
+                          <p className="font-bold text-white text-[15px] leading-tight">Hidden Gem</p>
+                          <p className="text-purple-200 text-[11px] font-medium leading-snug">Link your Stash to reveal this exclusive spot</p>
+                        </div>
+                        {/* Badge */}
+                        <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-600/80 text-white text-[11px] font-bold shadow-sm backdrop-blur-sm">
+                          <Gem size={11} strokeWidth={2.5} /> Hidden Gem
+                        </div>
+                      </div>
+                      <div className="p-5">
+                        <div className="h-4 bg-purple-100 rounded-full w-3/4 mb-2" />
+                        <div className="h-3 bg-purple-50 rounded-full w-1/2 mb-3" />
+                        <button
+                          className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-purple-700 transition-colors"
+                        >
+                          <Lock size={13} /> Link Stash to Unlock
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={venue.id}
@@ -377,6 +452,46 @@ export function HomeDiscovery() {
             </div>
           </div>
         )}
+
+        {/* Desktop Hidden Gem gate modal */}
+        {showGemGate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowGemGate(false)} />
+            <div className="relative bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
+              <button onClick={() => setShowGemGate(false)} className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                <X size={16} />
+              </button>
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-16 h-16 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg">
+                  <Gem size={28} className="text-white" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Members Only</p>
+                  <h3 className="text-[22px] font-bold text-foreground leading-tight">Hidden Gem Venues</h3>
+                </div>
+              </div>
+              <p className="text-[14px] text-muted-foreground leading-relaxed mb-5">
+                Hidden Gem venues are exclusive spots curated by our team — hand-picked for quality. They're only visible to members who've linked their Stash.
+              </p>
+              <div className="flex flex-col gap-2 mb-6">
+                {['🌃 Rooftop bars with skyline views', '🎵 Underground music & lounge experiences', '🍽 Chef-table dining with no waitlist', '🎁 Members-only events & early access'].map(item => (
+                  <div key={item} className="bg-purple-50 rounded-xl px-4 py-3 text-[13px] font-semibold text-purple-800">
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => { setShowGemGate(false); setLocation('/settings'); }}
+                className="w-full py-4 rounded-xl bg-purple-600 text-white font-bold text-[15px] shadow-lg shadow-purple-600/30 mb-3"
+              >
+                Link Stash & Unlock 💎
+              </button>
+              <button onClick={() => setShowGemGate(false)} className="w-full text-center text-[13px] font-semibold text-muted-foreground">
+                Not now
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -483,73 +598,148 @@ export function HomeDiscovery() {
           <h2 className="text-[17px] font-bold text-foreground">Venues for You</h2>
         </div>
         <div className="px-6 flex flex-col gap-5 pb-6">
-          {VENUES.map((venue) => (
-            <div 
-              key={venue.id} 
-              onClick={() => setLocation(`/venue/${venue.id}`)}
-              className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
-            >
-              <div className="h-44 relative overflow-hidden">
-                <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
+          {VENUES.map((venue) => {
+            const isGemLocked = venue.tier === 'Hidden Gem' && !paymentLinked;
 
-                {/* Tier badge — top left */}
-                {(() => {
-                  const t = TIER_STYLES[venue.tier];
-                  const Icon = t.icon;
-                  return (
-                    <div className={cn(
-                      "absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm text-[11px] font-bold shadow-sm",
-                      t.pill
-                    )}>
-                      <Icon size={11} strokeWidth={2.5} />
-                      {venue.tier}
+            if (isGemLocked) {
+              return (
+                <div
+                  key={venue.id}
+                  onClick={() => setShowGemGate(true)}
+                  className="bg-card rounded-3xl overflow-hidden shadow-sm border-2 border-purple-200 cursor-pointer"
+                >
+                  <div className="h-44 relative overflow-hidden">
+                    <img src={venue.image} alt="Hidden Gem" className="w-full h-full object-cover scale-110" style={{ filter: 'blur(6px)', opacity: 0.3 }} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-950/80 via-purple-900/50 to-purple-800/30" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg mb-1">
+                        <Gem size={22} className="text-white" strokeWidth={1.5} />
+                      </div>
+                      <p className="font-bold text-white text-[16px]">Hidden Gem</p>
+                      <p className="text-purple-200 text-[12px] font-medium">Link your Stash to reveal this exclusive spot</p>
                     </div>
-                  );
-                })()}
-
-                {/* Rating — top right */}
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
-                  <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
-                  {venue.rating}
-                </div>
-
-                {/* Emoji icon — bottom left */}
-                <div className="absolute bottom-3 left-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl border border-white/30">
-                  {venue.icon}
-                </div>
-
-                {/* Event badge — bottom right */}
-                {venue.eventBadge && (
-                  <div className="absolute bottom-3 right-3 bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <Ticket size={10} /> {venue.eventBadge}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-600/80 text-white text-[11px] font-bold shadow-sm backdrop-blur-sm">
+                      <Gem size={11} strokeWidth={2.5} /> Hidden Gem
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-bold text-[18px] text-foreground leading-tight">{venue.name}</h3>
-                  <span className={cn("font-bold text-[15px]", venue.price === 'Free' ? "text-[#00C851]" : "text-primary")}>{venue.price}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-3 font-medium">
-                  <span>{venue.type}</span>
-                  <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                  <div className="flex items-center gap-1">
-                    <MapPin size={12} />
-                    <span>{venue.distance}</span>
+                  <div className="p-5">
+                    <div className="h-4 bg-purple-100 rounded-full w-3/4 mb-2" />
+                    <div className="h-3 bg-purple-50 rounded-full w-1/2 mb-4" />
+                    <button className="w-full py-3 rounded-2xl bg-purple-600 text-white font-bold text-[14px] flex items-center justify-center gap-2">
+                      <Lock size={14} /> Link Stash to Unlock
+                    </button>
                   </div>
                 </div>
-                <p className="text-muted-foreground text-[14px] leading-relaxed line-clamp-2">
-                  {venue.desc}
-                </p>
+              );
+            }
+
+            return (
+              <div
+                key={venue.id}
+                onClick={() => setLocation(`/venue/${venue.id}`)}
+                className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="h-44 relative overflow-hidden">
+                  <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
+
+                  {/* Tier badge — top left */}
+                  {(() => {
+                    const t = TIER_STYLES[venue.tier];
+                    const Icon = t.icon;
+                    return (
+                      <div className={cn(
+                        "absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm text-[11px] font-bold shadow-sm",
+                        t.pill
+                      )}>
+                        <Icon size={11} strokeWidth={2.5} />
+                        {venue.tier}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Rating — top right */}
+                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
+                    <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
+                    {venue.rating}
+                  </div>
+
+                  {/* Emoji icon — bottom left */}
+                  <div className="absolute bottom-3 left-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl border border-white/30">
+                    {venue.icon}
+                  </div>
+
+                  {/* Event badge — bottom right */}
+                  {venue.eventBadge && (
+                    <div className="absolute bottom-3 right-3 bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <Ticket size={10} /> {venue.eventBadge}
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-bold text-[18px] text-foreground leading-tight">{venue.name}</h3>
+                    <span className={cn("font-bold text-[15px]", venue.price === 'Free' ? "text-[#00C851]" : "text-primary")}>{venue.price}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-3 font-medium">
+                    <span>{venue.type}</span>
+                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <div className="flex items-center gap-1">
+                      <MapPin size={12} />
+                      <span>{venue.distance}</span>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-[14px] leading-relaxed line-clamp-2">
+                    {venue.desc}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       <FAB type="home" />
       <BottomNav active="home" />
+
+      {/* Hidden Gem gate sheet */}
+      {showGemGate && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowGemGate(false)} />
+          <div className="relative bg-white rounded-t-3xl px-6 pt-6 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+            <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg">
+                <Gem size={28} className="text-white" strokeWidth={1.5} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Members Only</p>
+                <h3 className="text-[22px] font-bold text-foreground leading-tight">Hidden Gem Venues</h3>
+              </div>
+            </div>
+            <p className="text-[14px] text-muted-foreground leading-relaxed mb-5">
+              Hidden Gem venues are exclusive spots curated by our team — hand-picked for quality and experience. They're only visible to members who've linked their Stash.
+            </p>
+            <div className="flex flex-col gap-2 mb-6">
+              {['🌃 Rooftop bars with skyline views', '🎵 Underground music & lounge experiences', '🍽 Chef-table dining with no waitlist', '🎁 Members-only events & early access'].map(item => (
+                <div key={item} className="flex items-center gap-3 bg-purple-50 rounded-xl px-4 py-3 text-[13px] font-semibold text-purple-800">
+                  {item}
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => { setShowGemGate(false); setLocation('/settings'); }}
+              className="w-full py-4 rounded-2xl bg-purple-600 text-white font-bold text-[16px] shadow-lg shadow-purple-600/30 mb-3"
+            >
+              Link Stash & Unlock 💎
+            </button>
+            <button onClick={() => setShowGemGate(false)} className="w-full text-center text-[13px] font-semibold text-muted-foreground py-1">
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Modal Overlay */}
       {showFilters && (
