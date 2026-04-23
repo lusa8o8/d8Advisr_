@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Sparkles } from 'lucide-react';
+import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
@@ -126,29 +126,16 @@ export function HomeDiscovery() {
           style={{ background: 'linear-gradient(135deg, #141414 0%, #1e1e1e 100%)' }}
         >
           <div className="max-w-5xl mx-auto">
-            <div className="flex items-end justify-between mb-6">
-              <div>
-                <p className="text-[13px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em' }}>
-                  THURSDAY EVENING · LAGOS
-                </p>
-                <h1 className="text-[36px] font-black text-white leading-tight">
-                  Good evening, Alex 👋
-                </h1>
-                <p className="mt-1.5 text-[15px] font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Where are you heading tonight?
-                </p>
-              </div>
-              <button
-                onClick={() => setLocation('/plan/generate')}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white text-[14px] active:scale-[0.97] transition-all shrink-0"
-                style={{
-                  background: 'linear-gradient(135deg, #FF5A5F 0%, #FF3D6B 100%)',
-                  boxShadow: '0 8px 24px -6px rgba(255,90,95,0.55)',
-                }}
-              >
-                <Sparkles size={16} />
-                Surprise Me
-              </button>
+            <div className="mb-6">
+              <p className="text-[13px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em' }}>
+                THURSDAY EVENING · LAGOS
+              </p>
+              <h1 className="text-[36px] font-black text-white leading-tight">
+                Good evening, Alex 👋
+              </h1>
+              <p className="mt-1.5 text-[15px] font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Where are you heading tonight?
+              </p>
             </div>
 
             {/* Search bar */}
