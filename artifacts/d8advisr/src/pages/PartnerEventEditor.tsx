@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, Check, Send } from 'lucide-react';
+import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
+
+interface MediaFile {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+  name: string;
+}
 
 const FREQ_OPTIONS: { value: Frequency; label: string; desc: string }[] = [
   { value: 'one-off', label: 'One-off',   desc: 'Specific date, happens once' },
@@ -23,6 +30,8 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
 
+const MAX_IMAGES = 4;
+
 export function PartnerEventEditor() {
   const [, setLocation] = useLocation();
   const [saved, setSaved] = useState(false);
@@ -37,6 +46,47 @@ export function PartnerEventEditor() {
   const [capacity, setCapacity] = useState('');
   const [desc, setDesc] = useState('');
   const [status, setStatus] = useState<'draft' | 'live'>('draft');
+  const [media, setMedia] = useState<MediaFile[]>([]);
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const images = media.filter(m => m.type === 'image');
+  const video  = media.find(m => m.type === 'video');
+
+  const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX_IMAGES - images.length;
+    files.slice(0, remaining).forEach(file => {
+      setMedia(prev => [...prev, {
+        id: Math.random().toString(36).slice(2),
+        url: URL.createObjectURL(file),
+        type: 'image',
+        name: file.name,
+      }]);
+    });
+    e.target.value = '';
+  };
+
+  const handleVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMedia(prev => [...prev.filter(m => m.type !== 'video'), {
+      id: Math.random().toString(36).slice(2),
+      url: URL.createObjectURL(file),
+      type: 'video',
+      name: file.name,
+    }]);
+    e.target.value = '';
+  };
+
+  const removeMedia = (id: string) => {
+    setMedia(prev => {
+      const item = prev.find(m => m.id === id);
+      if (item) URL.revokeObjectURL(item.url);
+      return prev.filter(m => m.id !== id);
+    });
+  };
 
   const canSave = name.trim() && category && time && (
     frequency === 'one-off' ? date : frequency === 'weekly' ? weekday : true
@@ -64,6 +114,23 @@ export function PartnerEventEditor() {
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-32">
 
+      {/* Hidden file inputs */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleImages}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={handleVideo}
+      />
+
       {/* Header */}
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0">
         <button
@@ -79,7 +146,7 @@ export function PartnerEventEditor() {
 
       <div className="px-5 pt-5 flex flex-col gap-4">
 
-        {/* Basics */}
+        {/* ── Event details ─────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Event details</p>
           <div>
@@ -105,7 +172,131 @@ export function PartnerEventEditor() {
           </div>
         </div>
 
-        {/* Frequency */}
+        {/* ── Media upload ──────────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
+          <div className="flex items-center justify-between -mb-1">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Event media</p>
+            <p className="text-[10px] text-gray-300 font-medium">
+              {images.length}/{MAX_IMAGES} photos{video ? ' · 1 video' : ''}
+            </p>
+          </div>
+
+          {/* Image grid */}
+          {images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {images.map((img, idx) => (
+                <div key={img.id} className="relative rounded-xl overflow-hidden aspect-[4/3] bg-gray-100">
+                  <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                  {idx === 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] font-bold px-2 py-1 text-center tracking-wider uppercase">
+                      Cover
+                    </div>
+                  )}
+                  <button
+                    onClick={() => removeMedia(img.id)}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white active:scale-90 transition-transform"
+                  >
+                    <X size={11} strokeWidth={3} />
+                  </button>
+                </div>
+              ))}
+
+              {/* Add more slot */}
+              {images.length < MAX_IMAGES && (
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  className="aspect-[4/3] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.97]"
+                >
+                  <ImagePlus size={20} />
+                  <span className="text-[11px] font-bold">Add photo</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Video block */}
+          {video && (
+            <div className="relative rounded-xl overflow-hidden bg-black">
+              <video
+                src={video.url}
+                className="w-full max-h-48 object-cover"
+                preload="metadata"
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
+                  <Play size={20} className="text-white fill-white ml-0.5" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-3 py-2 flex items-center justify-between">
+                <span className="text-white text-[11px] font-medium truncate max-w-[180px]">{video.name}</span>
+                <button
+                  onClick={() => removeMedia(video.id)}
+                  className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white active:scale-90 transition-transform shrink-0"
+                >
+                  <X size={11} strokeWidth={3} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Upload buttons */}
+          <div className="flex gap-2">
+            {images.length === 0 && !video && (
+              /* First-time state — bigger prompt */
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
+              >
+                <ImagePlus size={24} />
+                <span className="text-[13px] font-bold">Add photos</span>
+                <span className="text-[11px] text-gray-300">Up to 4 · First becomes cover</span>
+              </button>
+            )}
+
+            {images.length === 0 && !video && (
+              <button
+                onClick={() => videoInputRef.current?.click()}
+                className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
+              >
+                <Film size={24} />
+                <span className="text-[13px] font-bold">Add video</span>
+                <span className="text-[11px] text-gray-300">Short clip or promo</span>
+              </button>
+            )}
+
+            {/* Secondary add buttons shown when something already uploaded */}
+            {(images.length > 0 || video) && (
+              <div className="flex gap-2 w-full">
+                {images.length > 0 && images.length < MAX_IMAGES && (
+                  <button
+                    onClick={() => imageInputRef.current?.click()}
+                    className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3.5 py-2.5 rounded-xl hover:bg-gray-200 active:scale-95 transition-all"
+                  >
+                    <ImagePlus size={14} /> Add photo
+                  </button>
+                )}
+                {!video && (
+                  <button
+                    onClick={() => videoInputRef.current?.click()}
+                    className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3.5 py-2.5 rounded-xl hover:bg-gray-200 active:scale-95 transition-all"
+                  >
+                    <Film size={14} /> Add video
+                  </button>
+                )}
+                {video && (
+                  <button
+                    onClick={() => videoInputRef.current?.click()}
+                    className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3.5 py-2.5 rounded-xl hover:bg-gray-200 active:scale-95 transition-all"
+                  >
+                    <Film size={14} /> Replace video
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Frequency ─────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-3">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">How often</p>
           <div className="grid grid-cols-2 gap-2">
@@ -130,7 +321,7 @@ export function PartnerEventEditor() {
           </div>
         </div>
 
-        {/* When */}
+        {/* ── When ──────────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">When</p>
           {frequency === 'weekly' && (
@@ -172,7 +363,7 @@ export function PartnerEventEditor() {
 
       </div>
 
-      {/* Bottom actions */}
+      {/* ── Bottom actions ────────────────────────────────────────────────── */}
       <div className="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-gray-100 px-5 py-4 z-20 shadow-[0_-8px_24px_rgba(0,0,0,0.05)] flex flex-col gap-2">
         <button
           onClick={() => { setStatus('live'); save(); }}
