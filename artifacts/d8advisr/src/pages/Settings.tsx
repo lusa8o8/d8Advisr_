@@ -271,9 +271,9 @@ export function Settings() {
   ];
 
   const VISIBILITY: { id: PrivacySettings['visibility']; label: string }[] = [
-    { id: 'private', label: 'Private'  },
-    { id: 'friends', label: 'Friends'  },
-    { id: 'public',  label: 'Public'   },
+    { id: 'private', label: 'Invite-only'     },
+    { id: 'friends', label: 'Friends only'    },
+    { id: 'public',  label: 'Open to plans'   },
   ];
 
   const content = (
@@ -527,8 +527,8 @@ export function Settings() {
       {/* ── Privacy ───────────────────────────────────────────── */}
       <Section title="Privacy">
         <div className="px-5 py-4 border-b border-gray-100">
-          <p className="font-semibold text-foreground text-[14px] mb-1">Profile Visibility</p>
-          <p className="text-[12px] text-muted-foreground mb-3">Who can search for and view your profile</p>
+          <p className="font-semibold text-foreground text-[14px] mb-1">Who can invite you to plans</p>
+          <p className="text-[12px] text-muted-foreground mb-3">Controls who can find and add you to a group plan — not a public profile</p>
           <div className="flex gap-2">
             {VISIBILITY.map(v => (
               <button
@@ -549,13 +549,13 @@ export function Settings() {
         <Row
           icon={<Eye size={16} />}
           label="Share Plan History"
-          value="Show completed plans on your profile"
+          value="Let mutual plan partners see venues you've been to together"
           right={<Toggle on={privacy.sharePlans} onChange={v => savePrivacy({ sharePlans: v })} />}
         />
         <Row
           icon={<Eye size={16} />}
-          label="Online Status"
-          value="Let plan partners see when you're active"
+          label="Active Status"
+          value="Show plan partners you're online and ready to coordinate"
           right={<Toggle on={privacy.onlineStatus} onChange={v => savePrivacy({ onlineStatus: v })} />}
         />
       </Section>
