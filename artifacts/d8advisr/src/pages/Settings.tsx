@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
 import {
   ArrowLeft, ChevronRight, X, Check,
-  User, Phone, Calendar, AtSign,
+  User, Phone, Calendar, AtSign, Mail,
   MapPin, Heart, Wallet, Bell,
   Lock, Palette, LogOut, Trash2,
   Eye, Sun, Moon, Monitor, CreditCard,
@@ -40,6 +40,11 @@ const CITIES = [
   { id: 'london', name: 'London', flag: '🇬🇧', live: false },
   { id: 'dubai',  name: 'Dubai',  flag: '🇦🇪', live: false },
 ];
+
+const CURRENCY_BY_CITY: Record<string, { symbol: string; name: string; market: string }> = {
+  lagos:  { symbol: '₦', name: 'Nigerian Naira (₦)',  market: 'Lagos market' },
+  lusaka: { symbol: 'K',  name: 'Zambian Kwacha (K)', market: 'Lusaka market' },
+};
 
 // ─── Small Toggle ─────────────────────────────────────────────────────────────
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -171,6 +176,7 @@ export function Settings() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName]   = useState('');
   const [handle, setHandle]       = useState('');
+  const [email, setEmail]         = useState('');
   const [phone, setPhone]         = useState('');
   const [dob, setDob]             = useState('');
   const [city, setCity]           = useState('lagos');
@@ -218,6 +224,7 @@ export function Settings() {
     setFirstName(parts[0] ?? '');
     setLastName(parts.slice(1).join(' '));
     setHandle(load('d8advisr_handle', 'alexj'));
+    setEmail(load('d8advisr_email'));
     setPhone(load('d8advisr_phone'));
     setDob(load('d8advisr_dob'));
     setCity(load('d8advisr_city', 'lagos'));
@@ -332,6 +339,20 @@ export function Settings() {
           })}
         />
         <Row
+          icon={<Mail size={16} />}
+          label="Email Address"
+          value={email || 'Add your email'}
+          onClick={() => setEditing({
+            field: 'email', title: 'Email Address', value: email,
+            placeholder: 'e.g. alex@example.com',
+            type: 'email',
+            onSave: v => {
+              setEmail(v.trim().toLowerCase());
+              localStorage.setItem('d8advisr_email', v.trim().toLowerCase());
+            },
+          })}
+        />
+        <Row
           icon={<Calendar size={16} />}
           label="Date of Birth"
           value={displayDob || 'Add your birthday'}
@@ -344,6 +365,7 @@ export function Settings() {
               localStorage.setItem('d8advisr_dob', v);
             },
           })}
+          border={false}
         />
       </Section>
 
@@ -584,16 +606,21 @@ export function Settings() {
             ))}
           </div>
         </div>
-        <div className="px-5 py-4 flex items-center gap-4">
-          <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-            <span className="font-bold text-sm">₦</span>
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-foreground text-[14px]">Currency</p>
-            <p className="text-[12px] text-muted-foreground mt-0.5">Nigerian Naira (₦) — Lagos market</p>
-          </div>
-          <span className="text-[12px] font-bold text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">Fixed</span>
-        </div>
+        {(() => {
+          const curr = CURRENCY_BY_CITY[city] ?? CURRENCY_BY_CITY.lagos;
+          return (
+            <div className="px-5 py-4 flex items-center gap-4">
+              <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                <span className="font-bold text-sm">{curr.symbol}</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground text-[14px]">Currency</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">{curr.name} — {curr.market}</p>
+              </div>
+              <span className="text-[12px] font-bold text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">Auto</span>
+            </div>
+          );
+        })()}
       </Section>
 
       {/* ── Account ───────────────────────────────────────────── */}
