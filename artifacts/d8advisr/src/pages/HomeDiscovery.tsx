@@ -119,7 +119,8 @@ export function HomeDiscovery() {
 
   if (isDesktop) {
     return (
-      <div className="min-h-full bg-[#F7F7F7]">
+      <div className="flex-1 min-h-0 flex flex-col bg-[#F7F7F7]">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Desktop Hero Header */}
         <div
           className="px-10 pt-10 pb-8"
@@ -332,6 +333,8 @@ export function HomeDiscovery() {
             </div>
           </div>
         </div>
+
+      </div>
 
         {/* Desktop filter modal */}
         {showFilters && (
