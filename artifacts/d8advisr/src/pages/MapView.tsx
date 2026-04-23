@@ -1,19 +1,26 @@
 import { useLocation } from "wouter";
 import { Search, Star } from 'lucide-react';
 import { BottomNav, FAB, cn } from "@/components/SharedUI";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 export function MapView() {
   const [, setLocation] = useLocation();
+  const isDesktop = useIsDesktop();
 
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-[#E5E2DA] overflow-hidden">
       
       {/* Top Bar (Overlay) */}
-      <div className="absolute top-0 w-full bg-gradient-to-b from-white/90 to-white/0 pt-14 pb-8 px-6 flex justify-between items-start z-20">
-        <div className="flex items-baseline bg-white px-4 py-2 rounded-2xl shadow-sm cursor-pointer" onClick={() => setLocation('/home')}>
-          <span className="font-bold text-xl text-primary tracking-tight">D8</span>
-          <span className="font-bold text-xl text-foreground tracking-tight">Advisr</span>
-        </div>
+      <div className={cn(
+        "absolute top-0 w-full bg-gradient-to-b from-white/90 to-white/0 pb-8 px-6 flex justify-between items-start z-20",
+        isDesktop ? "pt-5" : "pt-14"
+      )}>
+        {!isDesktop && (
+          <div className="flex items-baseline bg-white px-4 py-2 rounded-2xl shadow-sm cursor-pointer" onClick={() => setLocation('/home')}>
+            <span className="font-bold text-xl text-primary tracking-tight">D8</span>
+            <span className="font-bold text-xl text-foreground tracking-tight">Advisr</span>
+          </div>
+        )}
         
         <div className="bg-white rounded-full p-1 shadow-sm flex">
           <button 
@@ -58,7 +65,7 @@ export function MapView() {
       </div>
 
       {/* Search Overlay */}
-      <div className="absolute top-[110px] w-full px-6 z-20">
+      <div className={cn("absolute w-full px-6 z-20", isDesktop ? "top-[72px]" : "top-[110px]")}>
         <div className="bg-white rounded-2xl shadow-md p-3.5 flex items-center gap-3">
           <Search size={20} className="text-gray-400" />
           <input 
@@ -70,7 +77,7 @@ export function MapView() {
       </div>
 
       {/* Selected Venue Bottom Sheet (Peek) */}
-      <div className="absolute bottom-[90px] w-full px-6 z-20">
+      <div className={cn("absolute w-full px-6 z-20", isDesktop ? "bottom-6" : "bottom-[90px]")}>
         <div 
           onClick={() => setLocation('/venue/1')}
           className="bg-white rounded-3xl p-4 shadow-xl border border-border flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors"

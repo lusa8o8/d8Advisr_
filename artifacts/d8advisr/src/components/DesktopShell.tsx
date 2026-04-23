@@ -142,10 +142,11 @@ export function DesktopShell({ children }: { children: ReactNode }) {
       {/* Vertical rule */}
       <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
 
-      {/* Main scrollable content area — transform: translateZ(0) traps fixed children */}
+      {/* Main content area — flex col + h-screen so page flex-1/min-h-0 chains work.
+          transform: translateZ(0) makes this the containing block for any fixed children. */}
       <main
-        className="flex-1 overflow-y-auto relative"
-        style={{ transform: 'translateZ(0)' }}
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{ height: '100vh', transform: 'translateZ(0)' }}
       >
         {children}
       </main>
