@@ -28,6 +28,8 @@ import { BudgetDashboard } from "@/pages/BudgetDashboard";
 import { CreateGroupPlan } from "@/pages/CreateGroupPlan";
 import { NotificationsCenter } from "@/pages/NotificationsCenter";
 import { AdminPanel } from "@/pages/AdminPanel";
+import { EventDetail } from "@/pages/EventDetail";
+import { VenueSubmit } from "@/pages/VenueSubmit";
 import { SavedPlans } from "@/pages/SavedPlans";
 import { PostDateReview } from "@/pages/PostDateReview";
 import { ReviewComplete } from "@/pages/ReviewComplete";
@@ -45,6 +47,8 @@ function Router() {
       <Route path="/home" component={HomeDiscovery} />
       <Route path="/map" component={MapView} />
       <Route path="/venue/:id" component={VenueDetails} />
+      <Route path="/event/:id" component={EventDetail} />
+      <Route path="/submit" component={VenueSubmit} />
       
       <Route path="/plan/generate" component={PlanGenerator} />
       <Route path="/plan/overview" component={PlanOverview} />

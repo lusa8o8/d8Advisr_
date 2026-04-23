@@ -179,7 +179,57 @@ const CONFIDENCE_STYLE: Record<string, string> = {
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
 
-type AdminView = 'list' | 'detail' | 'tracker' | 'health';
+type AdminView = 'list' | 'detail' | 'tracker' | 'health' | 'submissions';
+
+type SubmissionStatus = 'pending' | 'approved' | 'rejected';
+type SubmissionKind = 'venue' | 'event';
+
+interface Submission {
+  id: string;
+  kind: SubmissionKind;
+  name: string;
+  city: string;
+  category: string;
+  contact: string;
+  phone: string;
+  submittedAt: string;
+  status: SubmissionStatus;
+  note?: string;
+  extra?: string;
+}
+
+const MOCK_SUBMISSIONS: Submission[] = [
+  {
+    id: 's1', kind: 'venue', name: 'Bo Jangles Restaurant', city: 'Lusaka',
+    category: 'Bar & Lounge', contact: 'Tendai Mwale', phone: '+260 97 123 4567',
+    submittedAt: '2025-04-21', status: 'pending', extra: 'Jazz night every Thursday',
+  },
+  {
+    id: 's2', kind: 'event', name: 'Lusaka Food & Wine Market', city: 'Lusaka',
+    category: 'Food & Drink Market', contact: 'Chileshe Banda', phone: '+260 96 987 6543',
+    submittedAt: '2025-04-22', status: 'pending', extra: 'Annual · June 14–16 · Showgrounds',
+  },
+  {
+    id: 's3', kind: 'event', name: 'Sunday Cardio at Manda Hill', city: 'Lusaka',
+    category: 'Fitness & Wellness', contact: 'Kunda Phiri', phone: '+260 95 555 0001',
+    submittedAt: '2025-04-22', status: 'pending', extra: 'Recurring · Every Sunday 7AM · Manda Hill Mall',
+  },
+  {
+    id: 's4', kind: 'venue', name: 'The Terrace at Kabulonga', city: 'Lusaka',
+    category: 'Dining & Restaurant', contact: 'Mwamba Lungu', phone: '+260 97 222 3334',
+    submittedAt: '2025-04-20', status: 'approved', note: 'Live listing — goes up Friday',
+  },
+  {
+    id: 's5', kind: 'event', name: 'Lagos Fashion & Tech Mixer', city: 'Lagos',
+    category: 'Social & Mixer', contact: 'Adesola Okafor', phone: '+234 803 444 5555',
+    submittedAt: '2025-04-19', status: 'rejected', note: 'No date or venue provided',
+  },
+  {
+    id: 's6', kind: 'event', name: 'Cornerstone Youth Alive Conference', city: 'Lusaka',
+    category: 'Faith-based Event', contact: 'Pastor David Zulu', phone: '+260 96 111 2222',
+    submittedAt: '2025-04-23', status: 'pending', extra: 'Annual · Aug 1–3 · Mulungushi Conference Centre',
+  },
+];
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -188,7 +238,8 @@ export function AdminPanel() {
   const [view, setView]       = useState<AdminView>('list');
   const [venues, setVenues]   = useState<Venue[]>(SEED);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health'>('venues');
+  const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health' | 'submissions'>('venues');
+  const [submissions, setSubmissions] = useState<Submission[]>(MOCK_SUBMISSIONS);
 
   // Filter state
   const [filterTier, setFilterTier]     = useState<string>('All');
@@ -300,6 +351,16 @@ export function AdminPanel() {
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'health' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Activity size={13} /> Health
+          </button>
+          <button onClick={() => { setNavTab('submissions'); setView('submissions'); }}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
+              navTab === 'submissions' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <Plus size={13} /> Submissions
+            {submissions.filter(s => s.status === 'pending').length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-black flex items-center justify-center">
+                {submissions.filter(s => s.status === 'pending').length}
+              </span>
+            )}
           </button>
         </div>
       )}
@@ -897,6 +958,129 @@ export function AdminPanel() {
                 </div>
               </div>
             ))}
+          </div>
+        );
+      })()}
+
+      {/* ── SUBMISSIONS VIEW ─────────────────────────────────────────────────── */}
+      {view === 'submissions' && (() => {
+        const pending  = submissions.filter(s => s.status === 'pending');
+        const resolved = submissions.filter(s => s.status !== 'pending');
+
+        const approve = (id: string) =>
+          setSubmissions(ss => ss.map(s => s.id === id ? { ...s, status: 'approved' as const, note: 'Approved by D8 Team' } : s));
+        const reject = (id: string) =>
+          setSubmissions(ss => ss.map(s => s.id === id ? { ...s, status: 'rejected' as const, note: 'Rejected — needs more info' } : s));
+
+        const Card = ({ sub }: { sub: Submission }) => (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0",
+                  sub.kind === 'venue' ? "bg-[#FFF0F1]" : "bg-blue-50"
+                )}>
+                  {sub.kind === 'venue' ? '🏛️' : '🎟️'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 text-[14px] leading-tight">{sub.name}</p>
+                  <p className="text-[12px] text-gray-400 font-medium mt-0.5">{sub.category} · {sub.city}</p>
+                  {sub.extra && (
+                    <p className="text-[11px] text-gray-500 mt-1 italic">{sub.extra}</p>
+                  )}
+                </div>
+              </div>
+              <span className={cn(
+                "text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ml-2",
+                sub.status === 'pending'  ? "bg-amber-50 text-amber-700 border-amber-200" :
+                sub.status === 'approved' ? "bg-green-50 text-[#00C851] border-green-200" :
+                "bg-red-50 text-red-600 border-red-200"
+              )}>
+                {sub.status === 'pending' ? '⏳ Pending' : sub.status === 'approved' ? '✓ Approved' : '✕ Rejected'}
+              </span>
+            </div>
+
+            <div className="flex gap-3 mb-3 text-[12px] text-gray-500">
+              <span className="font-medium">{sub.contact}</span>
+              <span>·</span>
+              <span>{sub.phone}</span>
+              <span>·</span>
+              <span>{sub.submittedAt}</span>
+            </div>
+
+            {sub.note && sub.status !== 'pending' && (
+              <p className={cn(
+                "text-[12px] font-medium px-3 py-2 rounded-xl mb-3",
+                sub.status === 'approved' ? "bg-green-50 text-[#00C851]" : "bg-red-50 text-red-600"
+              )}>
+                {sub.note}
+              </p>
+            )}
+
+            {sub.status === 'pending' && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => approve(sub.id)}
+                  className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle size={14} /> Approve
+                </button>
+                <button
+                  onClick={() => reject(sub.id)}
+                  className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors"
+                >
+                  <XCircle size={14} /> Reject
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+        return (
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-8">
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-2.5 mb-5">
+              {[
+                { label: 'Pending', count: submissions.filter(s => s.status === 'pending').length, color: 'bg-amber-50 text-amber-700' },
+                { label: 'Approved', count: submissions.filter(s => s.status === 'approved').length, color: 'bg-green-50 text-[#00C851]' },
+                { label: 'Rejected', count: submissions.filter(s => s.status === 'rejected').length, color: 'bg-red-50 text-red-500' },
+              ].map(stat => (
+                <div key={stat.label} className={cn("rounded-2xl p-3 text-center", stat.color, "border border-current/10")}>
+                  <p className="text-[22px] font-black leading-none">{stat.count}</p>
+                  <p className="text-[11px] font-bold mt-1">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {pending.length > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Needs review ({pending.length})
+                </p>
+                <div className="flex flex-col gap-3 mb-6">
+                  {pending.map(s => <Card key={s.id} sub={s} />)}
+                </div>
+              </>
+            )}
+
+            {resolved.length > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Resolved ({resolved.length})
+                </p>
+                <div className="flex flex-col gap-3">
+                  {resolved.map(s => <Card key={s.id} sub={s} />)}
+                </div>
+              </>
+            )}
+
+            {submissions.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <p className="text-4xl mb-4">📥</p>
+                <p className="font-bold text-gray-700 text-[16px]">No submissions yet</p>
+                <p className="text-[13px] text-gray-400 mt-1">Venue and event submissions will appear here</p>
+              </div>
+            )}
           </div>
         );
       })()}

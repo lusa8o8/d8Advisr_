@@ -1,7 +1,19 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket, Bell, BellOff, ThumbsUp, Navigation, Car, Footprints, Copy, ExternalLink } from 'lucide-react';
+import {
+  ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket,
+  Bell, BellOff, ThumbsUp, Navigation, Car, Footprints, Copy, ExternalLink,
+  ChevronLeft, ChevronRight, X, ZoomIn, Images,
+} from 'lucide-react';
 import { cn } from "@/components/SharedUI";
+
+const VENUE_IMAGES = [
+  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=800&h=600&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?w=800&h=600&fit=crop&auto=format",
+];
 
 const VENUE_EVENTS = [
   {
@@ -10,11 +22,13 @@ const VENUE_EVENTS = [
     date: "Fri, Oct 18",
     time: "7:30 PM",
     vibes: ["Romantic", "Foodie"],
-    price: "$20 /pp",
+    price: "₦30,000 /pp",
     emoji: "🎷",
     desc: "Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening.",
     image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 8,
+    recurrence: "weekly" as const,
+    recurrenceLabel: "Every Friday",
   },
   {
     id: "e2",
@@ -22,11 +36,13 @@ const VENUE_EVENTS = [
     date: "Sat, Oct 19",
     time: "8:00 PM",
     vibes: ["Romantic", "Adventurous"],
-    price: "$95 /pp",
+    price: "₦142,500 /pp",
     emoji: "👨‍🍳",
     desc: "6-course tasting menu crafted live by the head chef. Limited to 10 guests.",
     image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 3,
+    recurrence: null as null,
+    recurrenceLabel: null,
   },
   {
     id: "e3",
@@ -34,11 +50,13 @@ const VENUE_EVENTS = [
     date: "Sun, Oct 20",
     time: "6:00 PM",
     vibes: ["Group", "Date Night"],
-    price: "$15 /pp",
+    price: "₦22,500 /pp",
     emoji: "🌅",
     desc: "Cocktails and small bites as the sun sets over downtown. Relaxed and open format.",
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 22,
+    recurrence: "monthly" as const,
+    recurrenceLabel: "Every last Sunday",
   },
 ];
 
@@ -126,26 +144,94 @@ export function VenueDetails() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('Overview');
   const [notifyOn, setNotifyOn] = useState(true);
+  const [imgIdx, setImgIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const prevImg = () => setImgIdx(i => Math.max(0, i - 1));
+  const nextImg = () => setImgIdx(i => Math.min(VENUE_IMAGES.length - 1, i + 1));
 
   return (
     <div className="flex-1 min-h-0 bg-card flex flex-col relative overflow-y-auto no-scrollbar pb-24">
-      {/* Header Image Area */}
+
+      {/* ── IMAGE SLIDESHOW ─────────────────────────────────────────────────── */}
       <div className="h-72 relative overflow-hidden rounded-b-[40px] shadow-md shrink-0">
-        <img
-          src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&auto=format"
-          alt="Lumina Restaurant & Bar"
-          className="w-full h-full object-cover"
-        />
+        {VENUE_IMAGES.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={`Lumina ${i + 1}`}
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+              i === imgIdx ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          />
+        ))}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/25" />
-        <button 
+
+        {/* Back */}
+        <button
           onClick={() => setLocation('/home')}
-          className="absolute top-14 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20"
+          className="absolute top-14 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20 z-10"
         >
           <ArrowLeft size={20} />
         </button>
-        <button className="absolute top-14 right-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20">
+
+        {/* Image counter */}
+        <button
+          onClick={() => setLightboxOpen(true)}
+          className="absolute top-14 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1.5 rounded-full z-10 flex items-center gap-1.5 hover:bg-black/60 transition-colors"
+        >
+          <Images size={11} /> {imgIdx + 1} / {VENUE_IMAGES.length}
+        </button>
+
+        {/* Share */}
+        <button className="absolute top-14 right-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20 z-10">
           <Share size={18} />
         </button>
+
+        {/* Left arrow */}
+        {imgIdx > 0 && (
+          <button
+            onClick={prevImg}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        )}
+
+        {/* Right arrow */}
+        {imgIdx < VENUE_IMAGES.length - 1 && (
+          <button
+            onClick={nextImg}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
+          >
+            <ChevronRight size={18} />
+          </button>
+        )}
+
+        {/* Expand button */}
+        <button
+          onClick={() => setLightboxOpen(true)}
+          className="absolute bottom-[70px] right-4 w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
+        >
+          <ZoomIn size={14} />
+        </button>
+
+        {/* Dot indicators */}
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          {VENUE_IMAGES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setImgIdx(i)}
+              className={cn(
+                "rounded-full transition-all",
+                i === imgIdx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/50"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Venue name overlay */}
         <div className="absolute bottom-6 left-6 flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl">
             🍷
@@ -163,7 +249,7 @@ export function VenueDetails() {
           <div className="flex justify-between items-start mb-2">
             <span className="bg-background px-3 py-1 rounded-full text-xs font-bold text-muted-foreground uppercase tracking-wider">Romantic Dining</span>
             <div className="bg-[#E8FFF0] text-[#00C851] px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-              Est. $65/pp
+              Est. ₦97,500/pp
             </div>
           </div>
           
@@ -207,7 +293,7 @@ export function VenueDetails() {
           ))}
         </div>
 
-        {/* OVERVIEW TAB */}
+        {/* ── OVERVIEW TAB ── */}
         {activeTab === 'Overview' && (
           <div className="animate-in fade-in slide-in-from-bottom-2">
             <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">
@@ -240,14 +326,18 @@ export function VenueDetails() {
                 <h3 className="font-bold text-foreground text-lg">Upcoming here</h3>
                 <button onClick={() => setActiveTab('Events')} className="text-sm font-bold text-primary">See all</button>
               </div>
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform" onClick={() => setActiveTab('Events')}>
+              <div
+                className="bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+                onClick={() => setLocation('/event/e1')}
+              >
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-2xl shadow-sm shrink-0">🎷</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-foreground text-[15px] leading-tight">Jazz & Wine Night</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">Fri, Oct 18 · 7:30 PM · $20/pp</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Every Friday · 7:30 PM · ₦30,000/pp</p>
                   <div className="flex gap-1.5 mt-2">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF0F1] text-primary">Romantic</span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Foodie</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Weekly</span>
                   </div>
                 </div>
                 <span className="text-xs font-bold text-[#FF9500] bg-orange-50 border border-orange-200 px-2.5 py-1.5 rounded-xl">8 left</span>
@@ -271,7 +361,7 @@ export function VenueDetails() {
           </div>
         )}
 
-        {/* EVENTS TAB */}
+        {/* ── EVENTS TAB ── */}
         {activeTab === 'Events' && (
           <div className="animate-in fade-in slide-in-from-bottom-2">
             {/* Notify toggle */}
@@ -301,7 +391,11 @@ export function VenueDetails() {
 
             <div className="flex flex-col gap-4">
               {VENUE_EVENTS.map(event => (
-                <div key={event.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                <div
+                  key={event.id}
+                  onClick={() => setLocation(`/event/${event.id}`)}
+                  className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+                >
                   <div className="h-24 relative overflow-hidden">
                     <img src={event.image} alt={event.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/20" />
@@ -309,7 +403,9 @@ export function VenueDetails() {
                       <span className="text-3xl drop-shadow-md shrink-0">{event.emoji}</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-white text-[16px] leading-tight">{event.name}</p>
-                        <p className="text-white/80 text-[12px] font-medium mt-0.5">{event.date} · {event.time}</p>
+                        <p className="text-white/80 text-[12px] font-medium mt-0.5">
+                          {event.recurrenceLabel ?? event.date} · {event.time}
+                        </p>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1.5 rounded-xl shrink-0 bg-white/20 text-white backdrop-blur-sm border border-white/20">
                         {event.spotsLeft <= 5 ? `${event.spotsLeft} left` : `${event.spotsLeft} spots`}
@@ -325,15 +421,17 @@ export function VenueDetails() {
                             {v}
                           </span>
                         ))}
+                        {event.recurrence && (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600">
+                            {event.recurrenceLabel}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-foreground text-[14px]">{event.price}</span>
-                        <button
-                          onClick={() => setLocation('/plan/generate')}
-                          className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
-                        >
-                          <Ticket size={13} /> Add
-                        </button>
+                        <span className="font-bold text-foreground text-[13px]">{event.price}</span>
+                        <div className="flex items-center gap-1 bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-sm">
+                          <Ticket size={11} /> View
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -342,6 +440,7 @@ export function VenueDetails() {
             </div>
           </div>
         )}
+
         {/* ── REVIEWS TAB ── */}
         {activeTab === 'Reviews' && (
           <div className="animate-in fade-in slide-in-from-bottom-2">
@@ -388,7 +487,6 @@ export function VenueDetails() {
             <div className="flex flex-col gap-4 mb-6">
               {REVIEWS.map(review => (
                 <div key={review.id} className="bg-card rounded-3xl p-5 border border-border shadow-sm">
-                  {/* Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-xl">
@@ -411,12 +509,10 @@ export function VenueDetails() {
                     </div>
                   </div>
 
-                  {/* Review text */}
                   <p className="text-[14px] text-foreground leading-relaxed mb-4 italic">
                     "{review.text}"
                   </p>
 
-                  {/* Helpful */}
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <ThumbsUp size={13} />
                     <span className="text-[12px] font-medium">{review.helpful} found this helpful</span>
@@ -425,9 +521,8 @@ export function VenueDetails() {
               ))}
             </div>
 
-            {/* Write review CTA */}
             <button
-              onClick={() => setLocation('/plan/generate')}
+              onClick={() => setLocation('/review')}
               className="w-full py-4 rounded-2xl border-2 border-dashed border-border text-muted-foreground font-bold text-[14px] hover:border-primary hover:text-primary transition-colors"
             >
               + Share your date experience
@@ -439,7 +534,6 @@ export function VenueDetails() {
         {activeTab === 'Location' && (
           <div className="animate-in fade-in slide-in-from-bottom-2">
 
-            {/* Map placeholder */}
             <div className="rounded-3xl overflow-hidden h-44 mb-5 relative shadow-sm border border-border">
               <img
                 src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=700&h=300&fit=crop&auto=format"
@@ -447,7 +541,6 @@ export function VenueDetails() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              {/* Pin marker */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="flex flex-col items-center">
                   <div className="w-10 h-10 rounded-full bg-primary shadow-lg flex items-center justify-center">
@@ -456,13 +549,11 @@ export function VenueDetails() {
                   <div className="w-2 h-2 bg-primary/40 rounded-full mt-0.5 blur-sm" />
                 </div>
               </div>
-              {/* Open maps pill */}
               <button className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-foreground text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform">
                 <Navigation size={11} className="text-primary" /> Open in Maps
               </button>
             </div>
 
-            {/* Address */}
             <div className="bg-card rounded-2xl p-4 border border-border shadow-sm mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#FFF0F1] flex items-center justify-center text-primary shrink-0">
@@ -478,13 +569,11 @@ export function VenueDetails() {
               </button>
             </div>
 
-            {/* Transport options */}
             <div className="bg-card rounded-2xl border border-border shadow-sm mb-6 overflow-hidden">
               <div className="px-4 py-3 border-b border-border">
                 <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Getting There</p>
               </div>
 
-              {/* Walking */}
               <div className="flex items-center gap-4 px-4 py-3.5 border-b border-border">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[#00C851] bg-[#E8FFF0]">
                   <Footprints size={16} />
@@ -495,14 +584,11 @@ export function VenueDetails() {
                 </div>
               </div>
 
-              {/* Yango — deep link row */}
               <div className="px-4 py-4 border-b border-border">
                 <div className="flex items-start gap-4">
-                  {/* Icon */}
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#FF5A5F]/10 text-[#FF5A5F]">
                     <Car size={16} />
                   </div>
-                  {/* Detail */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className="font-bold text-foreground text-[14px]">Yango</p>
@@ -512,20 +598,14 @@ export function VenueDetails() {
                       Est. ₦800–1,500 · ~5 min
                       <span className="ml-1.5 text-[11px] text-gray-400 italic">(estimate only, may vary)</span>
                     </p>
-                    {/* CTA buttons */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          // Stub: track tap for partnership pitch data
-                          console.log('[D8Advisr] yango_deeplink_tap', { venueId: 1, venueName: 'Lumina Restaurant & Bar' });
-                          // Deep link — opens Yango app with destination pre-filled
-                          // Fallback to Google Maps if Yango not installed
                           const lat = 6.4550;
                           const lon = 3.3841;
                           const name = encodeURIComponent('Lumina Restaurant & Bar');
                           const yangoUrl = `yango://route?end-lat=${lat}&end-lon=${lon}&end-name=${name}`;
                           const fallbackUrl = `https://maps.google.com/?daddr=${lat},${lon}`;
-                          // Try Yango deep link; if it doesn't open within 1.5s, fall back to Maps
                           const start = Date.now();
                           window.location.href = yangoUrl;
                           setTimeout(() => {
@@ -537,7 +617,7 @@ export function VenueDetails() {
                         <Car size={13} /> Open in Yango
                       </button>
                       <a
-                        href={`https://maps.google.com/?daddr=6.4550,3.3841`}
+                        href="https://maps.google.com/?daddr=6.4550,3.3841"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-2"
@@ -549,7 +629,6 @@ export function VenueDetails() {
                 </div>
               </div>
 
-              {/* Parking */}
               <div className="flex items-center gap-4 px-4 py-3.5">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-orange-600 bg-orange-50">
                   <MapPin size={16} />
@@ -561,7 +640,6 @@ export function VenueDetails() {
               </div>
             </div>
 
-            {/* Make a Night of It */}
             <div className="mb-6">
               <div className="flex justify-between items-end mb-3 px-1">
                 <div>
@@ -605,7 +683,6 @@ export function VenueDetails() {
               </div>
             </div>
 
-            {/* Neighbourhood context */}
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-5 text-white">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-xl">🏙️</div>
@@ -623,7 +700,7 @@ export function VenueDetails() {
 
       </div>
 
-      {/* Action Bottom */}
+      {/* ── ACTION BOTTOM ── */}
       <div className="fixed bottom-0 w-full max-w-[430px] bg-card border-t border-border p-6 flex gap-4 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
         <button className="w-14 h-14 rounded-xl border-2 border-border flex items-center justify-center text-foreground active:scale-95 transition-transform hover:bg-background hover:text-primary hover:border-primary/30">
           <Heart size={24} />
@@ -643,6 +720,64 @@ export function VenueDetails() {
           Add to Plan
         </button>
       </div>
+
+      {/* ── LIGHTBOX ── */}
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={() => setLightboxOpen(false)}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 pt-14 pb-4 shrink-0" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <p className="text-white/80 text-[13px] font-semibold">
+              Lumina Restaurant & Bar
+            </p>
+            <span className="text-white/50 text-[13px] font-medium">{imgIdx + 1} / {VENUE_IMAGES.length}</span>
+          </div>
+
+          {/* Image */}
+          <div className="flex-1 flex items-center justify-center relative px-2" onClick={e => e.stopPropagation()}>
+            <img
+              src={VENUE_IMAGES[imgIdx]}
+              alt="Venue"
+              className="max-w-full max-h-full object-contain rounded-2xl"
+            />
+            {imgIdx > 0 && (
+              <button
+                onClick={prevImg}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+            {imgIdx < VENUE_IMAGES.length - 1 && (
+              <button
+                onClick={nextImg}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              >
+                <ChevronRight size={22} />
+              </button>
+            )}
+          </div>
+
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2 pb-12 pt-5 shrink-0" onClick={e => e.stopPropagation()}>
+            {VENUE_IMAGES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setImgIdx(i)}
+                className={cn(
+                  "rounded-full transition-all",
+                  i === imgIdx ? "w-6 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
