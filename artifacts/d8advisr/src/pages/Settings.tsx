@@ -30,10 +30,10 @@ interface PrivacySettings {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const NEIGHBORHOODS = [
-  'Victoria Island', 'Lekki Phase 1', 'Ikoyi', 'Surulere',
-  'Yaba', 'Ikeja', 'Ajah', 'Gbagada',
-];
+const NEIGHBORHOODS_BY_CITY: Record<string, string[]> = {
+  lagos:  ['Victoria Island', 'Lekki Phase 1', 'Ikoyi', 'Surulere', 'Yaba', 'Ikeja', 'Ajah', 'Gbagada'],
+  lusaka: ['Kabulonga', 'Woodlands', 'Showgrounds', 'Rhodes Park', 'Northmead', 'Chelston', 'Emmasdale', 'Ibex Hill'],
+};
 const CITIES = [
   { id: 'lagos',  name: 'Lagos',  flag: '🇳🇬', live: true  },
   { id: 'lusaka', name: 'Lusaka', flag: '🇿🇲', live: true  },
@@ -382,6 +382,8 @@ export function Settings() {
                   if (c.live) {
                     setCity(c.id);
                     localStorage.setItem('d8advisr_city', c.id);
+                    setNeighborhood('');
+                    localStorage.removeItem('d8advisr_neighborhood');
                   }
                 }}
                 className={cn(
@@ -403,7 +405,7 @@ export function Settings() {
             <MapPin size={13} className="text-muted-foreground" /> Neighbourhood
           </p>
           <div className="flex gap-2 flex-wrap">
-            {NEIGHBORHOODS.map(n => (
+            {(NEIGHBORHOODS_BY_CITY[city] ?? NEIGHBORHOODS_BY_CITY.lagos).map(n => (
               <button
                 key={n}
                 onClick={() => {
@@ -645,7 +647,7 @@ export function Settings() {
       </Section>
 
       <p className="text-center text-[11px] text-muted-foreground font-medium pb-2">
-        D8Advisr · v1.0 · Made for Lagos
+        D8Advisr · v1.0
       </p>
     </div>
   );
