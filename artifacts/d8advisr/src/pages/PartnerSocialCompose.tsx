@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { ArrowLeft, Clock, Send, Calendar, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Send, Calendar, Check, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 
 interface Platform {
@@ -13,27 +13,91 @@ interface Platform {
   note?: string;
 }
 
+interface PostType {
+  id: string;
+  emoji: string;
+  label: string;
+  desc: string;
+  d8Signal: string;
+}
+
 const PLATFORMS: Platform[] = [
-  { id: 'instagram',  name: 'Instagram',         short: 'IG',  color: '#E1306C', charLimit: 2200, connected: true },
-  { id: 'facebook',   name: 'Facebook Page',      short: 'FB',  color: '#1877F2', charLimit: null, connected: true },
-  { id: 'whatsapp',   name: 'WhatsApp Business',  short: 'WA',  color: '#25D366', charLimit: null, connected: true,  note: 'Sends to your broadcast list' },
-  { id: 'x',          name: 'X (Twitter)',         short: 'X',   color: '#000000', charLimit: 280,  connected: false },
-  { id: 'tiktok',     name: 'TikTok',              short: 'TT',  color: '#010101', charLimit: 2200, connected: false },
-  { id: 'linkedin',   name: 'LinkedIn',            short: 'LI',  color: '#0A66C2', charLimit: 3000, connected: false },
+  { id: 'instagram', name: 'Instagram',        short: 'IG', color: '#E1306C', charLimit: 2200, connected: true },
+  { id: 'facebook',  name: 'Facebook Page',    short: 'FB', color: '#1877F2', charLimit: null, connected: true },
+  { id: 'whatsapp',  name: 'WhatsApp Business',short: 'WA', color: '#25D366', charLimit: null, connected: true, note: 'Sends to your broadcast list' },
+  { id: 'x',         name: 'X (Twitter)',       short: 'X',  color: '#000000', charLimit: 280,  connected: false },
+  { id: 'tiktok',    name: 'TikTok',            short: 'TT', color: '#010101', charLimit: 2200, connected: false },
+  { id: 'linkedin',  name: 'LinkedIn',          short: 'LI', color: '#0A66C2', charLimit: 3000, connected: false },
 ];
 
-// Demo event data matched by id param
-const DEMO_EVENTS: Record<string, { emoji: string; name: string; next: string; price: string; isFree: boolean; category: string }> = {
-  pe1: { emoji: '🎷', name: 'Jazz Night',        next: 'Thu, Apr 24 · 7:00 PM', price: 'K150/pp',  isFree: false, category: 'Music' },
-  pe2: { emoji: '🍳', name: 'Sunday Brunch',      next: 'Sun, Apr 27 · 10:00 AM', price: 'K200/pp', isFree: false, category: 'Dining' },
-  pe4: { emoji: '🏃', name: 'Lusaka City Run',    next: 'Sat, Jun 21 · 6:00 AM',  price: 'Free',    isFree: true,  category: 'Sports' },
+// These are the only post types allowed through D8's partner portal.
+// Everything routes through structured event/venue data — no freeform noise.
+const POST_TYPES: PostType[] = [
+  {
+    id: 'announce',
+    emoji: '📢',
+    label: 'Event announcement',
+    desc: 'New or upcoming event going live',
+    d8Signal: 'event.announced',
+  },
+  {
+    id: 'selling_fast',
+    emoji: '🎟️',
+    label: 'Tickets going fast',
+    desc: 'Spots filling up — create urgency',
+    d8Signal: 'event.selling_fast',
+  },
+  {
+    id: 'sold_out',
+    emoji: '🔴',
+    label: 'Sold out',
+    desc: 'Event is at capacity',
+    d8Signal: 'event.sold_out',
+  },
+  {
+    id: 'update',
+    emoji: '🔄',
+    label: 'Event update',
+    desc: 'Date, time, or location has changed',
+    d8Signal: 'event.updated',
+  },
+  {
+    id: 'venue_update',
+    emoji: '🏛️',
+    label: 'Venue update',
+    desc: 'New hours, menu change, photos',
+    d8Signal: 'venue.updated',
+  },
+];
+
+const DEMO_EVENTS: Record<string, { emoji: string; name: string; next: string; price: string; isFree: boolean; spotsLeft?: number }> = {
+  pe1: { emoji: '🎷', name: 'Jazz Night',      next: 'Thu, Apr 24 · 7:00 PM',  price: 'K150/pp', isFree: false, spotsLeft: 16 },
+  pe2: { emoji: '🍳', name: 'Sunday Brunch',   next: 'Sun, Apr 27 · 10:00 AM', price: 'K200/pp', isFree: false, spotsLeft: 28 },
+  pe4: { emoji: '🏃', name: 'Lusaka City Run', next: 'Sat, Jun 21 · 6:00 AM',  price: 'Free',    isFree: true },
 };
 
-function buildCaption(event: typeof DEMO_EVENTS[string], venueName: string): string {
-  if (event.isFree) {
-    return `${event.emoji} ${event.name} — ${event.next}\n\nFree and open to all. Come join us at ${venueName}.\n\nFind us on D8Advisr to add this to your plans. 📍`;
+function buildCaption(
+  event: typeof DEMO_EVENTS[string],
+  venueName: string,
+  postTypeId: string
+): string {
+  const { emoji, name, next, price, isFree, spotsLeft } = event;
+  switch (postTypeId) {
+    case 'announce':
+      return isFree
+        ? `${emoji} ${name} — ${next}\n\nFree and open to all. Join us at ${venueName}.\n\nFind us on D8Advisr to add this to your plans. 📍`
+        : `${emoji} ${name} is back!\n\n📅 ${next}\n💳 ${price} per person\n📍 ${venueName}\n\nSpots are limited — find us on D8Advisr to plan your visit.`;
+    case 'selling_fast':
+      return `🎟️ Only ${spotsLeft ?? 'a few'} spots left for ${name} this ${next.split(',')[0]}!\n\n📅 ${next}\n💳 ${price} · ${venueName}\n\nBook now via D8Advisr before it sells out. 🔥`;
+    case 'sold_out':
+      return `🔴 ${name} is SOLD OUT for ${next.split('·')[0].trim()}.\n\nThank you to everyone who booked! Stay tuned — next occurrence coming soon.\n\nFollow us on D8Advisr for the next available date.`;
+    case 'update':
+      return `🔄 Update on ${name}:\n\n[Describe what changed — new time, location, etc.]\n\n📅 [New details]\n📍 ${venueName}\n\nApologies for any inconvenience. We'll see you there.`;
+    case 'venue_update':
+      return `🏛️ Update from ${venueName}:\n\n[Describe the update — new hours, menu, photos, etc.]\n\nFind us on D8Advisr for full details. 📍`;
+    default:
+      return '';
   }
-  return `${event.emoji} ${event.name} is back!\n\n📅 ${event.next}\n💳 ${event.price} per person\n📍 ${venueName}\n\nSpots are limited — find us on D8Advisr to plan your visit.`;
 }
 
 export function PartnerSocialCompose() {
@@ -45,7 +109,8 @@ export function PartnerSocialCompose() {
   const event = DEMO_EVENTS[eventId] ?? DEMO_EVENTS.pe1;
   const venueName = localStorage.getItem('d8_partner_name') || 'Bo Jangles Restaurant';
 
-  const [caption, setCaption] = useState(buildCaption(event, venueName));
+  const [postTypeId, setPostTypeId] = useState('announce');
+  const [caption, setCaption] = useState(() => buildCaption(event, venueName, 'announce'));
   const [selected, setSelected] = useState<string[]>(
     PLATFORMS.filter(p => p.connected).map(p => p.id)
   );
@@ -55,8 +120,8 @@ export function PartnerSocialCompose() {
   const [posted, setPosted] = useState(false);
 
   const connectedSelected = selected.filter(id => PLATFORMS.find(p => p.id === id)?.connected);
+  const currentPostType = POST_TYPES.find(t => t.id === postTypeId)!;
 
-  // Most restrictive char limit among selected connected platforms
   const strictestLimit = connectedSelected
     .map(id => PLATFORMS.find(p => p.id === id)?.charLimit ?? Infinity)
     .reduce((a, b) => Math.min(a, b), Infinity);
@@ -66,9 +131,14 @@ export function PartnerSocialCompose() {
     : null;
   const overLimit = hasLimit && caption.length > strictestLimit;
 
+  const selectPostType = (id: string) => {
+    setPostTypeId(id);
+    setCaption(buildCaption(event, venueName, id));
+  };
+
   const toggle = (id: string) => {
     const p = PLATFORMS.find(pl => pl.id === id);
-    if (!p?.connected) return; // can't toggle unconnected
+    if (!p?.connected) return;
     setSelected(sel => sel.includes(id) ? sel.filter(s => s !== id) : [...sel, id]);
   };
 
@@ -77,7 +147,7 @@ export function PartnerSocialCompose() {
 
   const post = () => {
     setPosted(true);
-    setTimeout(() => setLocation('/partner/dashboard'), 1600);
+    setTimeout(() => setLocation('/partner/dashboard'), 1800);
   };
 
   if (posted) {
@@ -89,11 +159,17 @@ export function PartnerSocialCompose() {
         <p className="font-black text-gray-900 text-[20px]">
           {scheduleMode ? 'Scheduled' : 'Posted'}
         </p>
-        <p className="text-gray-400 text-[13px] mt-2">
+        <p className="text-gray-500 text-[13px] mt-2 leading-relaxed max-w-[240px]">
           {scheduleMode
-            ? `Going out on ${scheduleDate} at ${scheduleTime} to ${connectedSelected.length} platform${connectedSelected.length > 1 ? 's' : ''}.`
-            : `Live on ${connectedSelected.length} platform${connectedSelected.length > 1 ? 's' : ''} now.`}
+            ? `Going out ${scheduleDate} at ${scheduleTime} to ${connectedSelected.length} platform${connectedSelected.length > 1 ? 's' : ''}.`
+            : `Live on ${connectedSelected.length} platform${connectedSelected.length > 1 ? 's' : ''}.`}
         </p>
+        <div className="mt-5 flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-left">
+          <Check size={14} className="text-[#00C851] shrink-0" />
+          <p className="text-[12px] text-gray-500 font-medium leading-snug">
+            D8 received signal: <span className="font-black text-gray-800">{currentPostType.d8Signal}</span>
+          </p>
+        </div>
       </div>
     );
   }
@@ -129,6 +205,53 @@ export function PartnerSocialCompose() {
           }
         </div>
 
+        {/* Post type — the only gateway to posting */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-50 flex items-start gap-2">
+            <div className="flex-1">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">What kind of post?</p>
+              <p className="text-[11px] text-gray-300 mt-0.5 font-medium">Only event and venue content posts through D8</p>
+            </div>
+            <Info size={13} className="text-gray-200 shrink-0 mt-0.5" />
+          </div>
+          <div className="p-3 flex flex-col gap-1.5">
+            {POST_TYPES.map(pt => (
+              <button
+                key={pt.id}
+                onClick={() => selectPostType(pt.id)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-3 rounded-xl border-2 text-left transition-all active:scale-[0.98] w-full',
+                  postTypeId === pt.id
+                    ? 'border-gray-800 bg-gray-50'
+                    : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                )}
+              >
+                <span className="text-lg w-7 text-center shrink-0">{pt.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className={cn('font-bold text-[13px] leading-tight', postTypeId === pt.id ? 'text-gray-900' : 'text-gray-600')}>
+                    {pt.label}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{pt.desc}</p>
+                </div>
+                {postTypeId === pt.id && (
+                  <div className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
+                    <Check size={11} className="text-white" strokeWidth={3} />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* D8 signal indicator */}
+          <div className="mx-3 mb-3 flex items-center gap-2 bg-[#F0FFF4] border border-green-100 rounded-xl px-3 py-2.5">
+            <div className="w-2 h-2 rounded-full bg-[#00C851] shrink-0" />
+            <p className="text-[11px] text-gray-500 font-medium leading-snug">
+              D8 receives: <span className="font-black text-gray-800 font-mono">{currentPostType.d8Signal}</span>
+              <span className="text-gray-400 font-normal"> · D8 event index updated automatically</span>
+            </p>
+          </div>
+        </div>
+
         {/* Platforms */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
@@ -144,30 +267,23 @@ export function PartnerSocialCompose() {
                   className={cn(
                     'flex items-center gap-3 px-3 py-3 rounded-xl border-2 text-left transition-all w-full',
                     !p.connected
-                      ? 'border-gray-100 bg-gray-50 cursor-default opacity-70'
+                      ? 'border-gray-100 bg-gray-50 cursor-default opacity-60'
                       : isSelected
                         ? 'border-gray-200 bg-white'
-                        : 'border-gray-100 bg-white opacity-50'
+                        : 'border-gray-100 bg-white opacity-40'
                   )}
                 >
-                  {/* Icon */}
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-[11px] shrink-0"
                     style={{ backgroundColor: p.color }}
                   >
                     {p.short}
                   </div>
-
-                  {/* Name */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-[13px] leading-tight">{p.name}</p>
                     {p.note && <p className="text-[11px] text-gray-400 mt-0.5">{p.note}</p>}
-                    {p.charLimit && (
-                      <p className="text-[11px] text-gray-300 mt-0.5">{p.charLimit.toLocaleString()} char limit</p>
-                    )}
+                    {p.charLimit && <p className="text-[11px] text-gray-300 mt-0.5">{p.charLimit.toLocaleString()} char limit</p>}
                   </div>
-
-                  {/* State */}
                   {p.connected ? (
                     <div className={cn(
                       'w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all',
@@ -216,14 +332,12 @@ export function PartnerSocialCompose() {
               {caption.length - strictestLimit} characters over {limitingPlatform?.name}'s limit — shorten or deselect that platform.
             </div>
           )}
-          <div className="flex gap-2 pt-1 border-t border-gray-50">
-            <button
-              onClick={() => setCaption(buildCaption(event, venueName))}
-              className="text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              Reset to template
-            </button>
-          </div>
+          <button
+            onClick={() => setCaption(buildCaption(event, venueName, postTypeId))}
+            className="text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors text-left pt-1 border-t border-gray-50"
+          >
+            Reset to template
+          </button>
         </div>
 
         {/* Schedule */}
@@ -242,26 +356,17 @@ export function PartnerSocialCompose() {
               <Calendar size={12} /> Schedule
             </button>
           </div>
-
           {scheduleMode ? (
             <div className="p-4 flex gap-3">
               <div className="flex-1">
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Date</p>
-                <input
-                  type="date"
-                  value={scheduleDate}
-                  onChange={e => setScheduleDate(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-800 focus:outline-none focus:border-primary transition-all bg-white"
-                />
+                <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-800 focus:outline-none focus:border-primary transition-all bg-white" />
               </div>
               <div className="flex-1">
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Time</p>
-                <input
-                  type="time"
-                  value={scheduleTime}
-                  onChange={e => setScheduleTime(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-800 focus:outline-none focus:border-primary transition-all bg-white"
-                />
+                <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-800 focus:outline-none focus:border-primary transition-all bg-white" />
               </div>
             </div>
           ) : (
@@ -292,7 +397,7 @@ export function PartnerSocialCompose() {
           }
         </button>
         {connectedSelected.length === 0 && (
-          <p className="text-center text-[11px] text-gray-400 mt-2">Select at least one connected platform above</p>
+          <p className="text-center text-[11px] text-gray-400 mt-2">Select at least one connected platform</p>
         )}
       </div>
     </div>
