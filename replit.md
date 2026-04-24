@@ -76,6 +76,18 @@ Full high-fidelity mobile app mockup for D8Advisr (date and group planning app) 
 
 **Brand:** #FF5A5F (primary), #00C851 (success), #FF9500 (warning), #F7F7F7 (bg), Poppins font
 
+### `artifacts/d8advisr/src/lib/` — Shared constants layer
+
+All cross-page shared data lives here. Import from these files instead of defining locally in pages.
+
+| File | Contents |
+|---|---|
+| `lib/types.ts` | TypeScript interfaces: `PartnerEvent`, `Platform`, `PostType`, `City`, `D8Message`, etc. |
+| `lib/constants.ts` | `CITIES`, `PLATFORMS`, `POST_TYPES`, `LS_KEYS`, status pill maps, frequency labels |
+| `lib/demo.ts` | Demo seed data: `DEMO_PARTNER`, `DEMO_EVENTS`, `DEMO_EVENT_MAP`, `DEMO_DEMAND`, `DEMO_MESSAGES` |
+
+**Rule:** When a value (city list, platform list, localStorage key) is used in more than one page, it lives in `lib/`. Pages import, never redefine.
+
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)

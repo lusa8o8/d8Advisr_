@@ -2,86 +2,13 @@ import { useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { ArrowLeft, Clock, Send, Calendar, Check, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
+import type { PartnerEvent } from '@/lib/types';
+import { PLATFORMS, POST_TYPES, LS_KEYS } from '@/lib/constants';
+import { DEMO_EVENT_MAP, DEMO_PARTNER } from '@/lib/demo';
 
-interface Platform {
-  id: string;
-  name: string;
-  short: string;
-  color: string;
-  charLimit: number | null;
-  connected: boolean;
-  note?: string;
-}
-
-interface PostType {
-  id: string;
-  emoji: string;
-  label: string;
-  desc: string;
-  d8Signal: string;
-}
-
-const PLATFORMS: Platform[] = [
-  { id: 'instagram', name: 'Instagram',        short: 'IG', color: '#E1306C', charLimit: 2200, connected: true },
-  { id: 'facebook',  name: 'Facebook Page',    short: 'FB', color: '#1877F2', charLimit: null, connected: true },
-  { id: 'whatsapp',  name: 'WhatsApp Business',short: 'WA', color: '#25D366', charLimit: null, connected: true, note: 'Sends to your broadcast list' },
-  { id: 'x',         name: 'X (Twitter)',       short: 'X',  color: '#000000', charLimit: 280,  connected: false },
-  { id: 'tiktok',    name: 'TikTok',            short: 'TT', color: '#010101', charLimit: 2200, connected: false },
-  { id: 'linkedin',  name: 'LinkedIn',          short: 'LI', color: '#0A66C2', charLimit: 3000, connected: false },
-];
-
-// These are the only post types allowed through D8's partner portal.
-// Everything routes through structured event/venue data — no freeform noise.
-const POST_TYPES: PostType[] = [
-  {
-    id: 'announce',
-    emoji: '📢',
-    label: 'Event announcement',
-    desc: 'New or upcoming event going live',
-    d8Signal: 'event.announced',
-  },
-  {
-    id: 'selling_fast',
-    emoji: '🎟️',
-    label: 'Tickets going fast',
-    desc: 'Spots filling up — create urgency',
-    d8Signal: 'event.selling_fast',
-  },
-  {
-    id: 'sold_out',
-    emoji: '🔴',
-    label: 'Sold out',
-    desc: 'Event is at capacity',
-    d8Signal: 'event.sold_out',
-  },
-  {
-    id: 'update',
-    emoji: '🔄',
-    label: 'Event update',
-    desc: 'Date, time, or location has changed',
-    d8Signal: 'event.updated',
-  },
-  {
-    id: 'venue_update',
-    emoji: '🏛️',
-    label: 'Venue update',
-    desc: 'New hours, menu change, photos',
-    d8Signal: 'venue.updated',
-  },
-];
-
-const DEMO_EVENTS: Record<string, { emoji: string; name: string; next: string; price: string; isFree: boolean; spotsLeft?: number }> = {
-  pe1: { emoji: '🎷', name: 'Jazz Night',      next: 'Thu, Apr 24 · 7:00 PM',  price: 'K150/pp', isFree: false, spotsLeft: 16 },
-  pe2: { emoji: '🍳', name: 'Sunday Brunch',   next: 'Sun, Apr 27 · 10:00 AM', price: 'K200/pp', isFree: false, spotsLeft: 28 },
-  pe4: { emoji: '🏃', name: 'Lusaka City Run', next: 'Sat, Jun 21 · 6:00 AM',  price: 'Free',    isFree: true },
-};
-
-function buildCaption(
-  event: typeof DEMO_EVENTS[string],
-  venueName: string,
-  postTypeId: string
-): string {
-  const { emoji, name, next, price, isFree, spotsLeft } = event;
+function buildCaption(event: PartnerEvent, venueName: string, postTypeId: string): string {
+  const { emoji, name, nextOccurrence: next, price, isFree } = event;
+  const spotsLeft = event.spotsTotal > 0 ? event.spotsTotal - event.spotsFilled : null;
   switch (postTypeId) {
     case 'announce':
       return isFree
@@ -106,8 +33,8 @@ export function PartnerSocialCompose() {
   const params = new URLSearchParams(search);
   const eventId = params.get('event') || 'pe1';
 
-  const event = DEMO_EVENTS[eventId] ?? DEMO_EVENTS.pe1;
-  const venueName = localStorage.getItem('d8_partner_name') || 'Bo Jangles Restaurant';
+  const event = DEMO_EVENT_MAP[eventId] ?? DEMO_EVENT_MAP['pe1'];
+  const venueName = localStorage.getItem(LS_KEYS.partnerName) || DEMO_PARTNER.name;
 
   const [postTypeId, setPostTypeId] = useState('announce');
   const [caption, setCaption] = useState(() => buildCaption(event, venueName, 'announce'));

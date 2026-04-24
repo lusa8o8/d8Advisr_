@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
+import { CITIES as CITY_LIST, LS_KEYS } from '@/lib/constants';
 
 type PartnerType = 'venue' | 'organizer' | 'both';
 
-const CITIES = ['Lagos, Nigeria', 'Lusaka, Zambia'];
+const CITIES = CITY_LIST.map(c => `${c.name}, ${c.country}`);
 
 const TYPE_OPTIONS: { value: PartnerType; label: string; desc: string; emoji: string }[] = [
   {
@@ -37,7 +38,7 @@ export function PartnerPortal() {
   const [contact, setContact] = useState('');
 
   // Redirect if already onboarded
-  const existing = localStorage.getItem('d8_partner_name');
+  const existing = localStorage.getItem(LS_KEYS.partnerName);
   if (existing) {
     setLocation('/partner/dashboard');
     return null;
@@ -47,11 +48,11 @@ export function PartnerPortal() {
   const canSubmit = name.trim() && city && contact.trim();
 
   const submit = () => {
-    localStorage.setItem('d8_partner_name', name.trim());
-    localStorage.setItem('d8_partner_type', type!);
-    localStorage.setItem('d8_partner_city', city);
-    localStorage.setItem('d8_partner_contact', contact.trim());
-    localStorage.setItem('d8_partner_status', 'pending');
+    localStorage.setItem(LS_KEYS.partnerName,    name.trim());
+    localStorage.setItem(LS_KEYS.partnerType,    type!);
+    localStorage.setItem(LS_KEYS.partnerCity,    city);
+    localStorage.setItem(LS_KEYS.partnerContact, contact.trim());
+    localStorage.setItem(LS_KEYS.partnerStatus,  'pending');
     setLocation('/partner/dashboard');
   };
 

@@ -5,157 +5,15 @@ import {
   Clock, Pause, Users, Edit3, Trash2, Bell, X, Megaphone,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
-
-type EventStatus = 'live' | 'draft' | 'paused' | 'past';
-type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
-type ListingStatus = 'live' | 'pending' | 'needs_update';
-
-interface PartnerEvent {
-  id: string;
-  name: string;
-  emoji: string;
-  frequency: Frequency;
-  nextOccurrence: string;
-  spotsTotal: number;       // 0 = open / no cap
-  spotsFilled: number;
-  interestCount?: number;   // for open events — people going via D8
-  price: string;            // 'Free' or price string
-  isFree?: boolean;
-  status: EventStatus;
-  category: string;
-}
-
-interface DemandSignal {
-  eventId: string | null;
-  label: string;
-  count: number;
-  context: string;
-}
-
-interface D8Message {
-  id: string;
-  date: string;
-  text: string;
-  type: 'info' | 'action' | 'approved';
-}
-
-// ── Seed data for demo (Bo Jangles, Lusaka) ──────────────────────────────────
-
-const DEMO_NAME = 'Bo Jangles Restaurant';
-const DEMO_TYPE = 'both';
-const DEMO_CITY = 'Lusaka, Zambia';
-const DEMO_STATUS: ListingStatus = 'live';
-
-const DEMO_EVENTS: PartnerEvent[] = [
-  {
-    id: 'pe1',
-    name: 'Jazz Night',
-    emoji: '🎷',
-    frequency: 'weekly',
-    nextOccurrence: 'Thu, Apr 24 · 7:00 PM',
-    spotsTotal: 60,
-    spotsFilled: 44,
-    price: 'K150/pp',
-    status: 'live',
-    category: 'Music',
-  },
-  {
-    id: 'pe2',
-    name: 'Sunday Brunch',
-    emoji: '🍳',
-    frequency: 'weekly',
-    nextOccurrence: 'Sun, Apr 27 · 10:00 AM',
-    spotsTotal: 40,
-    spotsFilled: 12,
-    price: 'K200/pp',
-    status: 'live',
-    category: 'Dining',
-  },
-  {
-    id: 'pe3',
-    name: 'Comedy Open Mic',
-    emoji: '🎤',
-    frequency: 'monthly',
-    nextOccurrence: 'Sat, May 3 · 8:00 PM',
-    spotsTotal: 80,
-    spotsFilled: 0,
-    price: 'K100/pp',
-    status: 'draft',
-    category: 'Entertainment',
-  },
-  {
-    id: 'pe4',
-    name: 'Lusaka City Run',
-    emoji: '🏃',
-    frequency: 'annual',
-    nextOccurrence: 'Sat, Jun 21 · 6:00 AM',
-    spotsTotal: 0,
-    spotsFilled: 0,
-    interestCount: 47,
-    price: 'Free',
-    isFree: true,
-    status: 'live',
-    category: 'Sports & Fitness',
-  },
-];
-
-const DEMO_DEMAND: DemandSignal[] = [
-  {
-    eventId: null,
-    label: 'Plans including your venue',
-    count: 23,
-    context: 'this week across Lagos and Lusaka',
-  },
-  {
-    eventId: 'pe1',
-    label: 'Interest in Jazz Night',
-    count: 11,
-    context: 'users who haven\'t booked yet',
-  },
-  {
-    eventId: 'pe4',
-    label: 'Going to Lusaka City Run',
-    count: 47,
-    context: 'people planning via D8 — no cap, open event',
-  },
-];
-
-const DEMO_MESSAGES: D8Message[] = [
-  {
-    id: 'm1',
-    date: 'Today',
-    type: 'approved',
-    text: 'Your listing is live. You\'re now appearing in D8Advisr searches for Lusaka.',
-  },
-  {
-    id: 'm2',
-    date: 'Yesterday',
-    type: 'action',
-    text: 'Jazz Night has 16 spots left for this Thursday. Consider posting an update to your WhatsApp to fill remaining seats.',
-  },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-const STATUS_PILL: Record<ListingStatus, { label: string; color: string }> = {
-  live:         { label: 'Live',         color: 'bg-[#E8FFF0] text-[#00C851]' },
-  pending:      { label: 'Under review', color: 'bg-amber-50 text-amber-700' },
-  needs_update: { label: 'Needs update', color: 'bg-red-50 text-red-600' },
-};
-
-const EVENT_STATUS_PILL: Record<EventStatus, { label: string; color: string }> = {
-  live:   { label: 'Live',   color: 'bg-[#E8FFF0] text-[#00C851]' },
-  draft:  { label: 'Draft',  color: 'bg-gray-100 text-gray-500' },
-  paused: { label: 'Paused', color: 'bg-amber-50 text-amber-700' },
-  past:   { label: 'Past',   color: 'bg-gray-100 text-gray-400' },
-};
-
-const FREQ_LABEL: Record<Frequency, string> = {
-  'one-off': 'One-off',
-  weekly:    'Weekly',
-  monthly:   'Monthly',
-  annual:    'Annual',
-};
+import type { PartnerEvent, ListingStatus } from '@/lib/types';
+import {
+  PLATFORMS,
+  LISTING_STATUS_PILL as STATUS_PILL,
+  EVENT_STATUS_PILL,
+  FREQ_LABEL,
+  LS_KEYS,
+} from '@/lib/constants';
+import { DEMO_PARTNER, DEMO_EVENTS, DEMO_DEMAND, DEMO_MESSAGES } from '@/lib/demo';
 
 function SpotsBar({ filled, total }: { filled: number; total: number }) {
   const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
@@ -182,16 +40,16 @@ export function PartnerDashboard() {
   const [, setLocation] = useLocation();
 
   // Read from localStorage — fall back to demo seed
-  const storedName   = localStorage.getItem('d8_partner_name')   || DEMO_NAME;
-  const storedType   = localStorage.getItem('d8_partner_type')   || DEMO_TYPE;
-  const storedCity   = localStorage.getItem('d8_partner_city')   || DEMO_CITY;
-  const storedStatus = (localStorage.getItem('d8_partner_status') || DEMO_STATUS) as ListingStatus;
+  const storedName   = localStorage.getItem(LS_KEYS.partnerName)   || DEMO_PARTNER.name;
+  const storedType   = localStorage.getItem(LS_KEYS.partnerType)   || DEMO_PARTNER.type;
+  const storedCity   = localStorage.getItem(LS_KEYS.partnerCity)   || DEMO_PARTNER.city;
+  const storedStatus = (localStorage.getItem(LS_KEYS.partnerStatus) || DEMO_PARTNER.status) as ListingStatus;
 
   const [events, setEvents] = useState<PartnerEvent[]>(DEMO_EVENTS);
-  const [messages, setMessages] = useState<D8Message[]>(DEMO_MESSAGES);
+  const [messages, setMessages] = useState(DEMO_MESSAGES);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  const isDemo = !localStorage.getItem('d8_partner_name');
+  const isDemo = !localStorage.getItem(LS_KEYS.partnerName);
 
   const toggleStatus = (id: string) => {
     setEvents(evts => evts.map(e =>
@@ -251,7 +109,7 @@ export function PartnerDashboard() {
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
             <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
             <p className="text-[12px] text-amber-700 font-medium leading-relaxed">
-              You're viewing a demo account. <button onClick={() => { localStorage.removeItem('d8_partner_name'); setLocation('/partner'); }} className="underline font-bold">Set up your real profile →</button>
+              You're viewing a demo account. <button onClick={() => { localStorage.removeItem(LS_KEYS.partnerName); setLocation('/partner'); }} className="underline font-bold">Set up your real profile →</button>
             </p>
           </div>
         )}
@@ -452,16 +310,8 @@ export function PartnerDashboard() {
 
         {/* Channels */}
         {(() => {
-          const CHANNELS = [
-            { id: 'instagram', name: 'Instagram',        short: 'IG', color: '#E1306C', connected: true },
-            { id: 'facebook',  name: 'Facebook Page',    short: 'FB', color: '#1877F2', connected: true },
-            { id: 'whatsapp',  name: 'WhatsApp Business',short: 'WA', color: '#25D366', connected: true },
-            { id: 'x',         name: 'X (Twitter)',      short: 'X',  color: '#000000', connected: false },
-            { id: 'tiktok',    name: 'TikTok',           short: 'TT', color: '#010101', connected: false },
-            { id: 'linkedin',  name: 'LinkedIn',         short: 'LI', color: '#0A66C2', connected: false },
-          ];
-          const connected = CHANNELS.filter(c => c.connected);
-          const disconnected = CHANNELS.filter(c => !c.connected);
+          const connected    = PLATFORMS.filter(c => c.connected);
+          const disconnected = PLATFORMS.filter(c => !c.connected);
           return (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
