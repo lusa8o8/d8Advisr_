@@ -385,56 +385,65 @@ export function PartnerDashboard() {
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
-                  {event.status === 'draft' && (
-                    <button
-                      onClick={() => publishDraft(event.id)}
-                      className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
-                    >
-                      <CheckCircle size={13} /> Publish
-                    </button>
-                  )}
-                  {event.status === 'live' && (
-                    <>
+                {/* Actions — two rows to avoid overflow on narrow screens */}
+                <div className="pt-2 border-t border-gray-50 flex flex-col gap-2">
+
+                  {/* Row 1: primary status actions */}
+                  <div className="flex items-center gap-2">
+                    {event.status === 'draft' && (
+                      <button
+                        onClick={() => publishDraft(event.id)}
+                        className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
+                      >
+                        <CheckCircle size={13} /> Publish
+                      </button>
+                    )}
+                    {event.status === 'live' && (
                       <button
                         onClick={() => toggleStatus(event.id)}
                         className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
                       >
                         <Pause size={13} /> Pause
                       </button>
+                    )}
+                    {event.status === 'paused' && (
+                      <button
+                        onClick={() => toggleStatus(event.id)}
+                        className="flex items-center gap-1.5 bg-[#E8FFF0] text-[#00C851] text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
+                      >
+                        <CheckCircle size={13} /> Resume
+                      </button>
+                    )}
+                    {(event.status === 'live' || event.status === 'paused') && (
                       <button
                         onClick={() => setLocation(`/partner/social/compose?event=${event.id}`)}
                         className="flex items-center gap-1.5 bg-gray-900 text-white text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-800"
                       >
                         <Megaphone size={13} /> Promote
                       </button>
-                    </>
-                  )}
-                  {event.status === 'paused' && (
+                    )}
+                  </div>
+
+                  {/* Row 2: management actions */}
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => toggleStatus(event.id)}
-                      className="flex items-center gap-1.5 bg-[#E8FFF0] text-[#00C851] text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
+                      onClick={() => setLocation(`/partner/event/${event.id}/edit`)}
+                      className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
                     >
-                      <CheckCircle size={13} /> Resume
+                      <Edit3 size={13} /> Edit
                     </button>
-                  )}
-                  <button
-                    onClick={() => setLocation(`/partner/event/${event.id}/edit`)}
-                    className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
-                  >
-                    <Edit3 size={13} /> Edit
-                  </button>
-                  {event.spotsTotal > 0 && (
-                    <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200 ml-auto">
-                      <Users size={13} /> Attendees
-                    </button>
-                  )}
-                  {event.spotsTotal === 0 && event.interestCount !== undefined && (
-                    <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200 ml-auto">
-                      <Users size={13} /> {event.interestCount} going
-                    </button>
-                  )}
+                    {event.spotsTotal > 0 && (
+                      <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200">
+                        <Users size={13} /> Attendees
+                      </button>
+                    )}
+                    {event.spotsTotal === 0 && event.interestCount !== undefined && (
+                      <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200">
+                        <Users size={13} /> {event.interestCount} going
+                      </button>
+                    )}
+                  </div>
+
                 </div>
               </div>
             ))}
