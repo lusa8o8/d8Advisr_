@@ -134,7 +134,25 @@ function Sidebar() {
   );
 }
 
+const NO_SIDEBAR_PREFIXES = ['/partner', '/admin'];
+
 export function DesktopShell({ children }: { children: ReactNode }) {
+  const [location] = useLocation();
+  const hideSidebar = NO_SIDEBAR_PREFIXES.some(p => location === p || location.startsWith(p + '/'));
+
+  if (hideSidebar) {
+    return (
+      <div className="flex min-h-screen" style={{ background: '#F7F7F7' }}>
+        <main
+          className="flex-1 flex flex-col overflow-hidden"
+          style={{ height: '100vh', transform: 'translateZ(0)' }}
+        >
+          {children}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen" style={{ background: '#F7F7F7' }}>
       <Sidebar />
