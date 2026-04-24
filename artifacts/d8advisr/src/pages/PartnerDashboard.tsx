@@ -406,7 +406,7 @@ export function PartnerDashboard() {
           </div>
           <button
             className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors active:bg-gray-100"
-            onClick={() => {}}
+            onClick={() => setLocation('/partner/venue/edit')}
           >
             <div>
               <p className="font-semibold text-gray-800 text-[13px]">Edit venue details</p>
