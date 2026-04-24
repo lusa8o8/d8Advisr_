@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   ArrowLeft, Plus, ChevronRight, AlertCircle, CheckCircle,
-  Clock, Pause, Users, Edit3, Trash2, Bell, X,
+  Clock, Pause, Users, Edit3, Trash2, Bell, X, Megaphone,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 
@@ -396,12 +396,20 @@ export function PartnerDashboard() {
                     </button>
                   )}
                   {event.status === 'live' && (
-                    <button
-                      onClick={() => toggleStatus(event.id)}
-                      className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
-                    >
-                      <Pause size={13} /> Pause
-                    </button>
+                    <>
+                      <button
+                        onClick={() => toggleStatus(event.id)}
+                        className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
+                      >
+                        <Pause size={13} /> Pause
+                      </button>
+                      <button
+                        onClick={() => setLocation(`/partner/social/compose?event=${event.id}`)}
+                        className="flex items-center gap-1.5 bg-gray-900 text-white text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-800"
+                      >
+                        <Megaphone size={13} /> Promote
+                      </button>
+                    </>
                   )}
                   {event.status === 'paused' && (
                     <button
@@ -432,6 +440,74 @@ export function PartnerDashboard() {
             ))}
           </div>
         </div>
+
+        {/* Channels */}
+        {(() => {
+          const CHANNELS = [
+            { id: 'instagram', name: 'Instagram',        short: 'IG', color: '#E1306C', connected: true },
+            { id: 'facebook',  name: 'Facebook Page',    short: 'FB', color: '#1877F2', connected: true },
+            { id: 'whatsapp',  name: 'WhatsApp Business',short: 'WA', color: '#25D366', connected: true },
+            { id: 'x',         name: 'X (Twitter)',      short: 'X',  color: '#000000', connected: false },
+            { id: 'tiktok',    name: 'TikTok',           short: 'TT', color: '#010101', connected: false },
+            { id: 'linkedin',  name: 'LinkedIn',         short: 'LI', color: '#0A66C2', connected: false },
+          ];
+          const connected = CHANNELS.filter(c => c.connected);
+          const disconnected = CHANNELS.filter(c => !c.connected);
+          return (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Social channels</p>
+                <span className="text-[11px] font-bold text-[#00C851]">{connected.length} connected</span>
+              </div>
+
+              {/* Connected */}
+              <div className="px-4 pt-3 pb-2">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-2">Connected</p>
+                <div className="flex flex-wrap gap-2">
+                  {connected.map(ch => (
+                    <div key={ch.id} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
+                      <div
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-white font-black text-[10px] shrink-0"
+                        style={{ backgroundColor: ch.color }}
+                      >
+                        {ch.short}
+                      </div>
+                      <span className="text-[12px] font-semibold text-gray-700">{ch.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Not connected */}
+              <div className="px-4 pt-1 pb-3 border-t border-gray-50 mt-2">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-2 mt-2">Not connected</p>
+                <div className="flex flex-wrap gap-2">
+                  {disconnected.map(ch => (
+                    <button
+                      key={ch.id}
+                      className="flex items-center gap-2 bg-white border border-dashed border-gray-200 rounded-xl px-3 py-2 hover:border-gray-300 transition-colors active:scale-[0.97]"
+                    >
+                      <div
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-white font-black text-[10px] shrink-0 opacity-50"
+                        style={{ backgroundColor: ch.color }}
+                      >
+                        {ch.short}
+                      </div>
+                      <span className="text-[12px] font-semibold text-gray-400">{ch.name}</span>
+                      <span className="text-[10px] font-bold text-primary">+ Connect</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="px-4 py-3 border-t border-gray-50">
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Post to connected channels directly from each event. No need to open another app.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Listing management */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

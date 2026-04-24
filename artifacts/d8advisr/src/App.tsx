@@ -34,6 +34,7 @@ import { PartnerPortal } from "@/pages/PartnerPortal";
 import { PartnerDashboard } from "@/pages/PartnerDashboard";
 import { PartnerEventEditor } from "@/pages/PartnerEventEditor";
 import { PartnerVenueEditor } from "@/pages/PartnerVenueEditor";
+import { PartnerSocialCompose } from "@/pages/PartnerSocialCompose";
 import { SavedPlans } from "@/pages/SavedPlans";
 import { PostDateReview } from "@/pages/PostDateReview";
 import { ReviewComplete } from "@/pages/ReviewComplete";
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/partner/event/new" component={PartnerEventEditor} />
       <Route path="/partner/event/:id/edit" component={PartnerEventEditor} />
       <Route path="/partner/venue/edit" component={PartnerVenueEditor} />
+      <Route path="/partner/social/compose" component={PartnerSocialCompose} />
       
       <Route path="/review" component={PostDateReview} />
       <Route path="/review/complete" component={ReviewComplete} />
