@@ -16,9 +16,11 @@ interface PartnerEvent {
   emoji: string;
   frequency: Frequency;
   nextOccurrence: string;
-  spotsTotal: number;
+  spotsTotal: number;       // 0 = open / no cap
   spotsFilled: number;
-  price: string;
+  interestCount?: number;   // for open events — people going via D8
+  price: string;            // 'Free' or price string
+  isFree?: boolean;
   status: EventStatus;
   category: string;
 }
@@ -81,6 +83,20 @@ const DEMO_EVENTS: PartnerEvent[] = [
     status: 'draft',
     category: 'Entertainment',
   },
+  {
+    id: 'pe4',
+    name: 'Lusaka City Run',
+    emoji: '🏃',
+    frequency: 'annual',
+    nextOccurrence: 'Sat, Jun 21 · 6:00 AM',
+    spotsTotal: 0,
+    spotsFilled: 0,
+    interestCount: 47,
+    price: 'Free',
+    isFree: true,
+    status: 'live',
+    category: 'Sports & Fitness',
+  },
 ];
 
 const DEMO_DEMAND: DemandSignal[] = [
@@ -97,10 +113,10 @@ const DEMO_DEMAND: DemandSignal[] = [
     context: 'users who haven\'t booked yet',
   },
   {
-    eventId: 'pe3',
-    label: 'Interest in Comedy Open Mic',
-    count: 6,
-    context: 'users flagged interest before you published',
+    eventId: 'pe4',
+    label: 'Going to Lusaka City Run',
+    count: 47,
+    context: 'people planning via D8 — no cap, open event',
   },
 ];
 
@@ -342,17 +358,30 @@ export function PartnerDashboard() {
                 </div>
 
                 {/* Next occurrence */}
-                <div className="flex items-center gap-1.5 mb-3">
+                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                   <Clock size={12} className="text-gray-300 shrink-0" />
                   <span className="text-[12px] text-gray-500 font-medium">Next: {event.nextOccurrence}</span>
                   <span className="text-gray-300 mx-1">·</span>
-                  <span className="text-[12px] font-bold text-gray-700">{event.price}</span>
+                  {event.isFree ? (
+                    <span className="text-[11px] font-bold text-[#00C851] bg-[#E8FFF0] px-2 py-0.5 rounded-full">Free</span>
+                  ) : (
+                    <span className="text-[12px] font-bold text-gray-700">{event.price}</span>
+                  )}
                 </div>
 
-                {/* Spots bar — only if live */}
+                {/* Capped event: spots bar */}
                 {(event.status === 'live' || event.status === 'paused') && event.spotsTotal > 0 && (
                   <div className="mb-3">
                     <SpotsBar filled={event.spotsFilled} total={event.spotsTotal} />
+                  </div>
+                )}
+
+                {/* Open event: D8 interest count */}
+                {(event.status === 'live' || event.status === 'paused') && event.spotsTotal === 0 && event.interestCount !== undefined && (
+                  <div className="flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                    <Users size={13} className="text-gray-400 shrink-0" />
+                    <span className="text-[13px] font-bold text-gray-800">{event.interestCount}</span>
+                    <span className="text-[12px] text-gray-400 font-medium">people planning to attend via D8</span>
                   </div>
                 )}
 
@@ -391,6 +420,11 @@ export function PartnerDashboard() {
                   {event.spotsTotal > 0 && (
                     <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200 ml-auto">
                       <Users size={13} /> Attendees
+                    </button>
+                  )}
+                  {event.spotsTotal === 0 && event.interestCount !== undefined && (
+                    <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200 ml-auto">
+                      <Users size={13} /> {event.interestCount} going
                     </button>
                   )}
                 </div>

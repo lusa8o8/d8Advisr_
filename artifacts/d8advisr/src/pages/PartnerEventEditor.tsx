@@ -43,6 +43,8 @@ export function PartnerEventEditor() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [price, setPrice] = useState('');
+  const [isFree, setIsFree] = useState(false);
+  const [hasCapacity, setHasCapacity] = useState(false);
   const [capacity, setCapacity] = useState('');
   const [desc, setDesc] = useState('');
   const [status, setStatus] = useState<'draft' | 'live'>('draft');
@@ -345,19 +347,78 @@ export function PartnerEventEditor() {
               />
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={LABEL}>Start time *</label>
-              <input type="time" value={time} onChange={e => setTime(e.target.value)} className={INPUT} />
-            </div>
-            <div>
-              <label className={LABEL}>Price per person</label>
-              <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Free or K/₦ amount" className={INPUT} />
-            </div>
-          </div>
           <div>
-            <label className={LABEL}>Max capacity</label>
-            <input value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="e.g. 60 guests" className={INPUT} />
+            <label className={LABEL}>Start time *</label>
+            <input type="time" value={time} onChange={e => setTime(e.target.value)} className={INPUT} />
+          </div>
+
+          {/* Price */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className={cn(LABEL, 'mb-0')}>Price</label>
+              <button
+                onClick={() => { setIsFree(f => !f); setPrice(''); }}
+                className={cn(
+                  'flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-full border transition-all',
+                  isFree
+                    ? 'bg-[#E8FFF0] border-green-200 text-[#00C851]'
+                    : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+                )}
+              >
+                {isFree && <Check size={11} strokeWidth={3} />} Free event
+              </button>
+            </div>
+            {isFree ? (
+              <div className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl bg-[#E8FFF0] border border-green-100">
+                <span className="text-[13px] text-[#00C851] font-bold">Free admission</span>
+                <span className="text-[12px] text-green-400">· No payment collected</span>
+              </div>
+            ) : (
+              <input
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                placeholder="e.g. K150 or ₦5,000 per person"
+                className={INPUT}
+              />
+            )}
+          </div>
+
+          {/* Capacity */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <label className={cn(LABEL, 'mb-0')}>Attendance limit</label>
+              </div>
+              <button
+                onClick={() => setHasCapacity(c => !c)}
+                className={cn(
+                  'w-11 h-6 rounded-full relative transition-colors shrink-0',
+                  hasCapacity ? 'bg-primary' : 'bg-gray-200'
+                )}
+              >
+                <span className={cn(
+                  'absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all',
+                  hasCapacity ? 'left-6' : 'left-1'
+                )} />
+              </button>
+            </div>
+            {hasCapacity ? (
+              <input
+                value={capacity}
+                onChange={e => setCapacity(e.target.value)}
+                placeholder="e.g. 60 guests"
+                className={INPUT}
+              />
+            ) : (
+              <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-100">
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-700">Open attendance</p>
+                  <p className="text-[12px] text-gray-400 mt-0.5 leading-snug">
+                    No cap on numbers. D8 will track how many people plan to attend through the app — you'll see that count in your dashboard.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
