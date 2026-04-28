@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 
 // Auth
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 // Pages
 import { Welcome } from "@/pages/Welcome";
@@ -47,7 +48,7 @@ import { Settings } from "@/pages/Settings";
 
 const queryClient = new QueryClient();
 
-// Redirect authenticated users away from auth pages, unauthenticated from app pages
+// Redirect unauthenticated users to welcome screen
 function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
@@ -64,6 +65,46 @@ function AuthGuard({ children }: { children: ReactNode }) {
     setLocation('/');
     return null;
   }
+  return <>{children}</>;
+}
+
+// Blocks access to partner sub-routes unless the user has a partner_application record.
+// /partner (onboarding) is intentionally NOT wrapped — anyone can start the application.
+function PartnerGuard({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { setLocation('/'); return; }
+
+    supabase
+      .from('partner_applications')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setAllowed(true);
+        } else {
+          // No application — send to onboarding
+          setLocation('/partner');
+        }
+        setChecking(false);
+      });
+  }, [user, authLoading, setLocation]);
+
+  if (authLoading || checking) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!allowed) return null;
   return <>{children}</>;
 }
 
@@ -101,12 +142,24 @@ function Router() {
       
       <Route path="/admin" component={AdminPanel} />
       
+      {/* Partner onboarding — open to all authenticated users */}
       <Route path="/partner" component={PartnerPortal} />
-      <Route path="/partner/dashboard" component={PartnerDashboard} />
-      <Route path="/partner/event/new" component={PartnerEventEditor} />
-      <Route path="/partner/event/:id/edit" component={PartnerEventEditor} />
-      <Route path="/partner/venue/edit" component={PartnerVenueEditor} />
-      <Route path="/partner/social/compose" component={PartnerSocialCompose} />
+      {/* Partner sub-routes — require an existing partner_application record */}
+      <Route path="/partner/dashboard">
+        <PartnerGuard><PartnerDashboard /></PartnerGuard>
+      </Route>
+      <Route path="/partner/event/new">
+        <PartnerGuard><PartnerEventEditor /></PartnerGuard>
+      </Route>
+      <Route path="/partner/event/:id/edit">
+        <PartnerGuard><PartnerEventEditor /></PartnerGuard>
+      </Route>
+      <Route path="/partner/venue/edit">
+        <PartnerGuard><PartnerVenueEditor /></PartnerGuard>
+      </Route>
+      <Route path="/partner/social/compose">
+        <PartnerGuard><PartnerSocialCompose /></PartnerGuard>
+      </Route>
       
       <Route path="/review" component={PostDateReview} />
       <Route path="/review/complete" component={ReviewComplete} />
