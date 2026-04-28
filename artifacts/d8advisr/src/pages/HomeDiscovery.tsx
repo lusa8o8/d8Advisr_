@@ -234,7 +234,7 @@ export function HomeDiscovery() {
               {EXPERIENCES.map(exp => (
                 <div
                   key={exp.id}
-                  onClick={() => setLocation('/plan/generate')}
+                  onClick={() => setLocation(`/event/${exp.id}`)}
                   className="bg-white rounded-2xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group"
                 >
                   <div className="h-36 relative overflow-hidden">
@@ -553,7 +553,7 @@ export function HomeDiscovery() {
             {EXPERIENCES.map(exp => (
               <div
                 key={exp.id}
-                onClick={() => setLocation('/plan/generate')}
+                onClick={() => setLocation(`/event/${exp.id}`)}
                 className="snap-start shrink-0 w-60 bg-card rounded-2xl border border-border shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
               >
                 <div className="h-24 relative overflow-hidden">
