@@ -38,7 +38,7 @@ export function Welcome() {
           Get Started
         </button>
         <button 
-          onClick={() => setLocation('/home')}
+          onClick={() => setLocation('/signin')}
           className="w-full bg-white text-foreground border-2 border-border py-[18px] rounded-xl font-semibold text-lg active:scale-[0.98] transition-all hover:bg-gray-50"
         >
           Sign In

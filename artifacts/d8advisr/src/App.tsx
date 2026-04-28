@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,9 +10,13 @@ import { DesktopShell } from "@/components/DesktopShell";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useTheme } from "@/hooks/useTheme";
 
+// Auth
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+
 // Pages
 import { Welcome } from "@/pages/Welcome";
 import { SignUp } from "@/pages/SignUp";
+import { SignIn } from "@/pages/SignIn";
 import { InitialPreferences } from "@/pages/InitialPreferences";
 import { HomeDiscovery } from "@/pages/HomeDiscovery";
 import { MapView } from "@/pages/MapView";
@@ -43,11 +47,32 @@ import { Settings } from "@/pages/Settings";
 
 const queryClient = new QueryClient();
 
+// Redirect authenticated users away from auth pages, unauthenticated from app pages
+function AuthGuard({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    setLocation('/');
+    return null;
+  }
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Welcome} />
       <Route path="/signup" component={SignUp} />
+      <Route path="/signin" component={SignIn} />
       <Route path="/preferences" component={InitialPreferences} />
       
       <Route path="/home" component={HomeDiscovery} />
@@ -106,11 +131,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppShell>
-            <Router />
-          </AppShell>
-        </WouterRouter>
+        <AuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AppShell>
+              <Router />
+            </AppShell>
+          </WouterRouter>
+        </AuthProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,8 +1,8 @@
-# Workspace
+# D8Advisr Workspace
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo. Main artifact is D8Advisr — a mobile-first date & group planning app for Lagos (Nigeria) and Lusaka (Zambia). Philosophy: "boring but useful."
 
 ## Stack
 
@@ -10,11 +10,59 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **API framework**: Express 5 (api-server artifact)
+- **Database**: Supabase (PostgreSQL + RLS + Auth)
+- **Client DB**: @supabase/supabase-js with full TypeScript types
+- **Frontend**: React + Vite + TypeScript + Tailwind CSS + Wouter routing
+- **Auth**: Supabase Auth (email/password + Google OAuth) via AuthContext
+
+## D8Advisr App (`artifacts/d8advisr`)
+
+### Brand
+- Primary: #FF5A5F | Success: #00C851 | Warning: #FF9500 | BG: #F7F7F7
+- Font: Poppins | Dark mode supported via CSS variables + `.dark` class on `document.documentElement`
+- Theme stored in localStorage as `d8advisr_theme`
+
+### Architecture
+- `src/context/AuthContext.tsx` — AuthProvider + useAuth hook (session, signUp, signIn, signInWithGoogle, signOut)
+- `src/lib/supabase.ts` — Supabase client + full TypeScript types for all tables
+- `src/hooks/useVenues.ts` — useVenues(city?) and useEvents(city?, limit) hooks for live DB queries
+- `src/App.tsx` — Router with AuthProvider wrap, AuthGuard for protected routes
+
+### Auth Flow
+- Welcome → `/signup` (Get Started) or `/signin` (Sign In)
+- SignUp: email/password via Supabase, shows email confirmation screen after
+- SignIn: email/password + Google OAuth (needs redirect URL configured in Supabase dashboard)
+- After auth → `/home`; Google OAuth uses `redirectTo` with BASE_URL + `/auth/callback`
+- AuthGuard redirects unauthenticated users to `/`
+
+### Supabase Project
+- Project ref: `evfftzhrucwwfnertiup`
+- Secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`
+- Schema migration: `supabase/migrations/20260428100000_d8advisr_schema.sql`
+- Tables: profiles, venues, events, plans, plan_stops, stash_funds, stash_members, stash_transactions, saved_venues
+- All tables have RLS; venues + events publicly readable; profiles need auth
+
+### Data
+- **Lusaka seed**: `supabase/seed_lusaka.sql` — 15 venues (Verified / D8 Approved / Hidden Gem tiers) + 5 events
+- Hidden Gem venues lock behind "Link Stash" paywall (checked via `d8advisr_payment_linked` in localStorage)
+- HomeDiscovery fetches live from Supabase via `useVenues('Lusaka')` and `useEvents('Lusaka')`
+
+### CRITICAL React rules
+- No `import React from 'react'` — named imports only
+- No `import React` at all; use `{ useState, useEffect }` etc.
+
+### Revenue model
+- Curation packages, sinking fund (bank partnerships), paid promo events
+- D8 Partner Portal (B2B layer) — `is_partner` flag on profiles
+
+## Executing SQL against Supabase
+Direct psql is blocked (IPv6). Use the management API via Node.js:
+```js
+const body = JSON.stringify({ query: sqlString });
+// POST https://api.supabase.com/v1/projects/evfftzhrucwwfnertiup/database/query
+// Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}
+```
 
 ## Structure
 

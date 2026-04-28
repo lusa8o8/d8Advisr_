@@ -3,28 +3,28 @@ import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
-export function SignUp() {
+export function SignIn() {
   const [, setLocation] = useLocation();
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmSent, setConfirmSent] = useState(false);
 
-  const handleSignUp = async () => {
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+  const handleSignIn = async () => {
+    if (!email || !password) { setError('Please enter your email and password.'); return; }
     setLoading(true);
     setError(null);
-    const { error } = await signUp(email, password);
+    const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(error.message === 'Invalid login credentials'
+        ? 'Incorrect email or password. Try again.'
+        : error.message);
     } else {
-      setConfirmSent(true);
+      setLocation('/home');
     }
   };
 
@@ -33,26 +33,6 @@ export function SignUp() {
     const { error } = await signInWithGoogle();
     if (error) { setError(error.message); setGoogleLoading(false); }
   };
-
-  if (confirmSent) {
-    return (
-      <div className="flex-1 min-h-0 bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-20 h-20 rounded-full bg-[#E8FFF0] flex items-center justify-center mb-6">
-          <span className="text-4xl">📬</span>
-        </div>
-        <h1 className="text-2xl font-bold text-foreground mb-3 text-center">Check your email</h1>
-        <p className="text-muted-foreground text-center text-[15px] leading-relaxed mb-8 px-4">
-          We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Click it to activate your account.
-        </p>
-        <button
-          onClick={() => setLocation('/signin')}
-          className="text-primary font-semibold text-[15px] hover:underline"
-        >
-          Back to Sign In
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
@@ -64,7 +44,8 @@ export function SignUp() {
       </div>
 
       <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border">
-        <h1 className="text-2xl font-bold text-foreground mb-8 text-center">Create your account</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2 text-center">Welcome back</h1>
+        <p className="text-sm text-muted-foreground text-center mb-8">Sign in to your account</p>
 
         {error && (
           <div className="mb-5 p-3.5 rounded-xl bg-[#FFF0F1] border border-primary/20 text-primary text-sm font-medium">
@@ -72,13 +53,14 @@ export function SignUp() {
           </div>
         )}
 
-        <div className="flex flex-col gap-5 mb-8">
+        <div className="flex flex-col gap-5 mb-6">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-muted-foreground">Email Address</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSignIn()}
               placeholder="name@example.com"
               className="w-full px-4 py-3.5 rounded-xl border border-border bg-background focus:bg-card focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground placeholder:text-gray-400"
             />
@@ -91,7 +73,8 @@ export function SignUp() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Create a password"
+                onKeyDown={e => e.key === 'Enter' && handleSignIn()}
+                placeholder="Your password"
                 className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-border bg-background focus:bg-card focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground placeholder:text-gray-400"
               />
               <button
@@ -102,17 +85,16 @@ export function SignUp() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
           </div>
         </div>
 
         <button
-          onClick={handleSignUp}
+          onClick={handleSignIn}
           disabled={loading}
           className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all mb-6 hover:bg-primary/90 disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={18} className="animate-spin" />}
-          {loading ? 'Creating account…' : 'Sign Up'}
+          {loading ? 'Signing in…' : 'Sign In'}
         </button>
 
         <div className="flex items-center gap-4 mb-6">
@@ -143,9 +125,9 @@ export function SignUp() {
 
       <div className="mt-8 pb-10">
         <p className="text-muted-foreground font-medium text-[15px]">
-          Already have an account?{' '}
-          <button onClick={() => setLocation('/signin')} className="text-primary font-semibold hover:underline">
-            Sign In
+          Don't have an account?{' '}
+          <button onClick={() => setLocation('/signup')} className="text-primary font-semibold hover:underline">
+            Sign Up
           </button>
         </p>
       </div>

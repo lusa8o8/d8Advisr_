@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock } from 'lucide-react';
+import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock, Loader2 } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { useVenues, useEvents } from "@/hooks/useVenues";
 
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 
@@ -12,123 +13,34 @@ const TIER_STYLES: Record<Tier, { pill: string; dot: string; icon: React.Element
   'Hidden Gem':  { pill: 'bg-purple-600/80 text-white', dot: 'bg-purple-300',  icon: Gem },
 };
 
-const VENUES = [
-  {
-    id: 1,
-    name: "Lumina Restaurant & Bar",
-    type: "Romantic Dining",
-    tier: 'D8 Approved' as Tier,
-    rating: 4.8,
-    reviews: 324,
-    distance: "1.2 mi",
-    price: "$$$",
-    desc: "Intimate atmosphere with panoramic city views and modern fusion cuisine.",
-    color: "from-rose-400 to-red-500",
-    icon: "🍷",
-    eventBadge: "3 events this week",
-    image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=320&fit=crop&auto=format",
-  },
-  {
-    id: 2,
-    name: "The Jazz Corner",
-    type: "Live Music",
-    tier: 'Verified' as Tier,
-    rating: 4.6,
-    reviews: 120,
-    distance: "0.8 mi",
-    price: "$$",
-    desc: "Hidden speakeasy featuring local jazz bands every weekend.",
-    color: "from-amber-400 to-orange-500",
-    icon: "🎷",
-    eventBadge: null,
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=320&fit=crop&auto=format",
-  },
-  {
-    id: 3,
-    name: "Riverfront Park Walk",
-    type: "Outdoor",
-    tier: 'Verified' as Tier,
-    rating: 4.5,
-    reviews: 856,
-    distance: "2.1 mi",
-    price: "Free",
-    desc: "Beautiful paved trail along the river perfect for a sunset stroll.",
-    color: "from-emerald-400 to-green-500",
-    icon: "🌳",
-    eventBadge: null,
-    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=320&fit=crop&auto=format",
-  },
-  {
-    id: 4,
-    name: "The Terrace at Eko",
-    type: "Rooftop Bar",
-    tier: 'Hidden Gem' as Tier,
-    rating: 4.9,
-    reviews: 47,
-    distance: "0.5 mi",
-    price: "$$$$",
-    desc: "A secret rooftop with panoramic Lagos skyline views, craft cocktails, and a curated guest list — not listed anywhere else.",
-    color: "from-purple-600 to-violet-900",
-    icon: "🌃",
-    eventBadge: "Members only Fri",
-    image: "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=600&h=320&fit=crop&auto=format",
-  },
-  {
-    id: 5,
-    name: "House of Gidi",
-    type: "Afrobeats Lounge",
-    tier: 'Hidden Gem' as Tier,
-    rating: 4.7,
-    reviews: 23,
-    distance: "1.8 mi",
-    price: "$$$",
-    desc: "An underground Afrobeats experience in a converted warehouse — intimate, vibey, and undiscovered by the masses.",
-    color: "from-violet-700 to-purple-900",
-    icon: "🎵",
-    eventBadge: null,
-    image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&h=320&fit=crop&auto=format",
-  },
-];
+function categoryEmoji(cat: string): string {
+  const c = cat.toLowerCase();
+  if (c.includes('jazz') || c.includes('music')) return '🎷';
+  if (c.includes('rooftop') || c.includes('sky')) return '🌃';
+  if (c.includes('cafe') || c.includes('café') || c.includes('brunch') || c.includes('coffee')) return '☕';
+  if (c.includes('bar') || c.includes('cocktail') || c.includes('lounge')) return '🍸';
+  if (c.includes('restaurant') || c.includes('dining') || c.includes('brasserie')) return '🍽';
+  if (c.includes('live music') || c.includes('afrobeats')) return '🎵';
+  if (c.includes('market') || c.includes('street food')) return '🛍';
+  if (c.includes('cinema') || c.includes('film')) return '🎬';
+  if (c.includes('activity') || c.includes('canvas') || c.includes('paint')) return '🎨';
+  if (c.includes('outdoor') || c.includes('garden')) return '🌿';
+  if (c.includes('nightlife') || c.includes('dance')) return '🕺';
+  return '📍';
+}
 
-// Standalone experiences at non-listed venues (soft venue naming)
-const EXPERIENCES = [
-  {
-    id: "x1",
-    name: "Candlelight String Quartet",
-    location: "A historic venue · Downtown",
-    date: "Fri, Oct 18",
-    time: "8:00 PM",
-    price: "$35",
-    vibes: ["Romantic", "Culture"],
-    emoji: "🕯️",
-    image: "https://images.unsplash.com/photo-1501612780327-45045538702b?w=480&h=200&fit=crop&auto=format",
-    urgency: "Only 12 spots left",
-  },
-  {
-    id: "x2",
-    name: "Rooftop Cinema: La La Land",
-    location: "Rooftop venue · Midtown",
-    date: "Sat, Oct 19",
-    time: "9:00 PM",
-    price: "$18",
-    vibes: ["Date Night", "Relaxing"],
-    emoji: "🎬",
-    image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=480&h=200&fit=crop&auto=format",
-    urgency: null,
-  },
-  {
-    id: "x3",
-    name: "Night Market & Live Art",
-    location: "Open-air venue · Arts District",
-    date: "Sun, Oct 20",
-    time: "6:00 PM",
-    price: "Free",
-    vibes: ["Adventurous", "Group"],
-    emoji: "🎨",
-    image: "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=480&h=200&fit=crop&auto=format",
-    urgency: null,
-  },
-];
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtPrice(price: number, currency: string, isFree: boolean): string {
+  if (isFree) return 'Free';
+  return `${currency} ${price.toLocaleString()}`;
+}
 
 const VIBE_COLORS: Record<string, string> = {
   "Romantic":    "bg-[#FFF0F1] text-primary",
@@ -146,10 +58,40 @@ export function HomeDiscovery() {
   const [paymentLinked, setPaymentLinked] = useState(false);
   const [showGemGate, setShowGemGate] = useState(false);
   const isDesktop = useIsDesktop();
+  const { venues: rawVenues, loading: venuesLoading } = useVenues('Lusaka');
+  const { events: rawEvents, loading: eventsLoading } = useEvents('Lusaka', 6);
 
   useEffect(() => {
     setPaymentLinked(localStorage.getItem('d8advisr_payment_linked') === 'true');
   }, []);
+
+  const VENUES = rawVenues.map(v => ({
+    id: v.id,
+    name: v.name,
+    type: v.category,
+    tier: (v.tier as Tier) in TIER_STYLES ? v.tier as Tier : 'Verified' as Tier,
+    rating: Number(v.rating ?? 0),
+    reviews: v.review_count,
+    distance: v.area ?? v.city,
+    price: v.price_tier ?? '$',
+    desc: v.description ?? '',
+    icon: categoryEmoji(v.category),
+    eventBadge: null as string | null,
+    image: v.cover_image ?? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=320&fit=crop&auto=format',
+  }));
+
+  const EXPERIENCES = rawEvents.map(ev => ({
+    id: ev.id,
+    name: ev.title,
+    location: ev.city,
+    date: fmtDate(ev.starts_at),
+    time: fmtTime(ev.starts_at),
+    price: fmtPrice(ev.price_pp, ev.currency, ev.is_free),
+    vibes: ev.vibes ?? [],
+    emoji: categoryEmoji(ev.category ?? ''),
+    image: ev.cover_image ?? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=480&h=200&fit=crop&auto=format',
+    urgency: ev.spots_left ? `${ev.spots_left} spots left` : null as string | null,
+  }));
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
 
@@ -231,7 +173,11 @@ export function HomeDiscovery() {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              {EXPERIENCES.map(exp => (
+              {eventsLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-gray-100 animate-pulse rounded-2xl h-60" />
+                  ))
+                : EXPERIENCES.map(exp => (
                 <div
                   key={exp.id}
                   onClick={() => setLocation(`/event/${exp.id}`)}
@@ -290,13 +236,17 @@ export function HomeDiscovery() {
             </div>
 
             <div className="grid grid-cols-2 gap-5">
-              {VENUES.map(venue => {
+              {venuesLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="bg-gray-100 animate-pulse rounded-2xl h-72" />
+                  ))
+                : VENUES.map((venue, idx) => {
                 const t = TIER_STYLES[venue.tier];
                 const Icon = t.icon;
                 const isGemLocked = venue.tier === 'Hidden Gem' && !paymentLinked;
 
                 if (isGemLocked) {
-                  const isAlt = venue.id === 5;
+                  const isAlt = idx % 2 === 1;
                   return (
                     <div
                       key={venue.id}
@@ -574,7 +524,11 @@ export function HomeDiscovery() {
           </div>
 
           <div className="flex gap-3 overflow-x-auto no-scrollbar px-6 snap-x pb-1">
-            {EXPERIENCES.map(exp => (
+            {eventsLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="snap-start shrink-0 w-60 bg-card animate-pulse rounded-2xl h-44 border border-border" />
+                ))
+              : EXPERIENCES.map(exp => (
               <div
                 key={exp.id}
                 onClick={() => setLocation(`/event/${exp.id}`)}
@@ -622,11 +576,15 @@ export function HomeDiscovery() {
           <h2 className="text-[17px] font-bold text-foreground">Venues for You</h2>
         </div>
         <div className="px-6 flex flex-col gap-5 pb-6">
-          {VENUES.map((venue) => {
+          {venuesLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-card animate-pulse rounded-3xl h-64 border border-border" />
+              ))
+            : VENUES.map((venue, idx) => {
             const isGemLocked = venue.tier === 'Hidden Gem' && !paymentLinked;
 
             if (isGemLocked) {
-              const isAlt = venue.id === 5;
+              const isAlt = idx % 2 === 1;
               return (
                 <div
                   key={venue.id}
