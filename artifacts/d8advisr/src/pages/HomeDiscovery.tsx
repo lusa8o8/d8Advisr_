@@ -296,36 +296,60 @@ export function HomeDiscovery() {
                 const isGemLocked = venue.tier === 'Hidden Gem' && !paymentLinked;
 
                 if (isGemLocked) {
+                  const isAlt = venue.id === 5;
                   return (
                     <div
                       key={venue.id}
                       onClick={() => setShowGemGate(true)}
-                      className="bg-white rounded-2xl overflow-hidden border-2 border-purple-200 cursor-pointer hover:border-purple-400 transition-all group relative"
+                      className="rounded-2xl overflow-hidden cursor-pointer ring-1 ring-purple-500/30 shadow-lg shadow-purple-950/20 hover:ring-purple-400/50 transition-all group"
+                      style={{ background: 'linear-gradient(145deg, #2a1560 0%, #140930 100%)' }}
                     >
-                      {/* Blurred image */}
+                      {/* Blurred image hero */}
                       <div className="h-52 relative overflow-hidden">
-                        <img src={venue.image} alt="Hidden Gem" className="w-full h-full object-cover scale-110" style={{ filter: 'blur(6px)', opacity: 0.35 }} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-purple-950/80 via-purple-900/50 to-purple-800/30" />
-                        {/* Lock overlay */}
+                        <img src={venue.image} alt="Hidden Gem" className="w-full h-full object-cover scale-110 group-hover:scale-105 transition-transform duration-500" style={{ filter: 'blur(8px)', opacity: 0.22 }} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#140930]/95 via-purple-900/60 to-purple-800/20" />
+
+                        {/* Badge */}
+                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/50 text-white text-[11px] font-bold shadow-sm backdrop-blur-sm ring-1 ring-white/10">
+                          <Gem size={10} strokeWidth={2.5} /> Hidden Gem
+                        </div>
+
+                        {/* Center content */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
-                          <div className="w-12 h-12 rounded-2xl bg-purple-600/90 backdrop-blur-sm flex items-center justify-center shadow-lg mb-1">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl mb-0.5 ring-1 ring-white/10"
+                            style={{ background: 'linear-gradient(135deg, #7c3aed, #4c1d95)' }}>
                             <Gem size={22} className="text-white" strokeWidth={1.5} />
                           </div>
-                          <p className="font-bold text-white text-[15px] leading-tight">Hidden Gem</p>
-                          <p className="text-purple-200 text-[11px] font-medium leading-snug">Link your Stash to reveal this exclusive spot</p>
-                        </div>
-                        {/* Badge */}
-                        <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-600/80 text-white text-[11px] font-bold shadow-sm backdrop-blur-sm">
-                          <Gem size={11} strokeWidth={2.5} /> Hidden Gem
+                          <p className="font-bold text-white text-[15px] tracking-tight">Hidden Gem</p>
+                          <p className="text-purple-300 text-[11px] font-medium leading-snug">
+                            {isAlt ? "Underground. Unlisted. Unmissable." : "Exclusive. Curated. Members only."}
+                          </p>
                         </div>
                       </div>
-                      <div className="p-5">
-                        <div className="h-4 bg-purple-100 rounded-full w-3/4 mb-2" />
-                        <div className="h-3 bg-purple-50 rounded-full w-1/2 mb-3" />
+
+                      {/* Body */}
+                      <div className="px-4 pt-3.5 pb-4">
+                        {/* Teaser pills */}
+                        <div className="flex flex-wrap gap-1.5 mb-2.5">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
+                            {venue.type}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
+                            {venue.price}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-amber-300 flex items-center gap-1 border border-amber-800/40" style={{ background: 'rgba(120,53,15,0.30)' }}>
+                            <Star size={8} fill="currentColor" /> {venue.rating}
+                          </span>
+                        </div>
+                        {/* Blurred name */}
+                        <p className="text-[13px] font-bold text-white/25 blur-[5px] select-none mb-3 tracking-wide truncate">
+                          {venue.name}
+                        </p>
                         <button
-                          className="w-full py-3 rounded-xl bg-purple-600 text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-purple-700 transition-colors"
+                          className="w-full py-2.5 rounded-xl text-white font-bold text-[12px] flex items-center justify-center gap-2 shadow-lg"
+                          style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)' }}
                         >
-                          <Lock size={13} /> Link Stash to Unlock
+                          <Lock size={12} /> {isAlt ? 'Unlock Members Access' : 'Link Stash to Unlock'}
                         </button>
                       </div>
                     </div>
@@ -602,31 +626,65 @@ export function HomeDiscovery() {
             const isGemLocked = venue.tier === 'Hidden Gem' && !paymentLinked;
 
             if (isGemLocked) {
+              const isAlt = venue.id === 5;
               return (
                 <div
                   key={venue.id}
                   onClick={() => setShowGemGate(true)}
-                  className="bg-card rounded-3xl overflow-hidden shadow-sm border-2 border-purple-200 cursor-pointer"
+                  className="rounded-3xl overflow-hidden cursor-pointer ring-1 ring-purple-500/30 shadow-xl shadow-purple-950/20"
+                  style={{ background: 'linear-gradient(145deg, #2a1560 0%, #140930 100%)' }}
                 >
+                  {/* Blurred image hero */}
                   <div className="h-44 relative overflow-hidden">
-                    <img src={venue.image} alt="Hidden Gem" className="w-full h-full object-cover scale-110" style={{ filter: 'blur(6px)', opacity: 0.3 }} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-950/80 via-purple-900/50 to-purple-800/30" />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg mb-1">
-                        <Gem size={22} className="text-white" strokeWidth={1.5} />
-                      </div>
-                      <p className="font-bold text-white text-[16px]">Hidden Gem</p>
-                      <p className="text-purple-200 text-[12px] font-medium">Link your Stash to reveal this exclusive spot</p>
+                    <img src={venue.image} alt="Hidden Gem" className="w-full h-full object-cover scale-110" style={{ filter: 'blur(8px)', opacity: 0.25 }} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#140930]/95 via-purple-900/60 to-purple-800/20" />
+
+                    {/* Badge */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/50 text-white text-[11px] font-bold shadow-sm backdrop-blur-sm ring-1 ring-white/10">
+                      <Gem size={10} strokeWidth={2.5} /> Hidden Gem
                     </div>
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-600/80 text-white text-[11px] font-bold shadow-sm backdrop-blur-sm">
-                      <Gem size={11} strokeWidth={2.5} /> Hidden Gem
+
+                    {/* Center content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 px-6 text-center">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl mb-0.5 ring-1 ring-white/10"
+                        style={{ background: 'linear-gradient(135deg, #7c3aed, #4c1d95)' }}>
+                        <Gem size={26} className="text-white" strokeWidth={1.5} />
+                      </div>
+                      <p className="font-bold text-white text-[17px] tracking-tight">Hidden Gem</p>
+                      <p className="text-purple-300 text-[12px] font-medium leading-snug max-w-[240px]">
+                        {isAlt
+                          ? "An underground spot you won't find anywhere else"
+                          : "Exclusive. Curated. Unlocked only for Stash members."}
+                      </p>
                     </div>
                   </div>
-                  <div className="p-5">
-                    <div className="h-4 bg-purple-100 rounded-full w-3/4 mb-2" />
-                    <div className="h-3 bg-purple-50 rounded-full w-1/2 mb-4" />
-                    <button className="w-full py-3 rounded-2xl bg-purple-600 text-white font-bold text-[14px] flex items-center justify-center gap-2">
-                      <Lock size={14} /> Link Stash to Unlock
+
+                  {/* Body — real teaser info, no fake skeletons */}
+                  <div className="px-5 pt-4 pb-5">
+                    {/* Teaser pills */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
+                        {venue.type}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
+                        {venue.price}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-amber-300 flex items-center gap-1 border border-amber-800/40" style={{ background: 'rgba(120,53,15,0.30)' }}>
+                        <Star size={9} fill="currentColor" /> {venue.rating} · {venue.reviews} reviews
+                      </span>
+                    </div>
+
+                    {/* Blurred / redacted venue name */}
+                    <p className="text-[14px] font-bold text-white/30 blur-[5px] select-none mb-4 tracking-wide">
+                      {venue.name}
+                    </p>
+
+                    {/* Primary CTA */}
+                    <button
+                      className="w-full py-3 rounded-2xl text-white font-bold text-[14px] flex items-center justify-center gap-2 shadow-lg shadow-purple-950/40"
+                      style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)' }}
+                    >
+                      <Lock size={14} /> {isAlt ? 'Unlock Members Access' : 'Link Stash to Unlock'}
                     </button>
                   </div>
                 </div>
