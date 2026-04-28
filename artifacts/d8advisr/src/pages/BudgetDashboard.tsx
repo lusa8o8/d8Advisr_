@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ArrowLeft, Plus, X, Flame, Users, Heart, Sparkles, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { ArrowLeft, Plus, X, Flame, Users, Heart, Sparkles, ArrowUpRight, ArrowDownLeft, CalendarDays, Check } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
 
 type FundType = 'experience' | 'group' | 'anniversary' | 'milestone';
@@ -165,11 +165,33 @@ const NEW_FUND_TYPES: { type: FundType; emoji: string; label: string; desc: stri
   { type: "milestone",  emoji: "🏆", label: "Milestone",    desc: "A big goal worth celebrating" },
 ];
 
+// Plans available to link to a stash fund
+interface PlanOption {
+  id: string; name: string; emoji: string;
+  total: number; currency: string; date: string; stops: number;
+  alreadySaving?: boolean;
+}
+const PLAN_OPTIONS: PlanOption[] = [
+  { id: 'p1', name: 'Date Night Downtown',        emoji: '🍷', total: 115, currency: '$', date: 'Tonight, 7:00 PM', stops: 3 },
+  { id: 'p2', name: 'Jazz Night at Lumina',        emoji: '🎷', total: 80,  currency: '$', date: 'Fri, Oct 18',      stops: 2, alreadySaving: true },
+  { id: 'p3', name: 'Rooftop Cinema Night',        emoji: '🎬', total: 36,  currency: '$', date: 'Sat, Oct 19',      stops: 2, alreadySaving: true },
+  { id: 'p4', name: 'Weekend Rooftop Session',     emoji: '🌃', total: 240, currency: '$', date: 'Sun, Oct 20',      stops: 4 },
+  { id: 'p5', name: 'Surprise Night Out',          emoji: '✨', total: 60,  currency: '$', date: 'Next Friday',      stops: 2 },
+];
+
+function closeNewSheet(setShowNew: (v: boolean) => void, setNewType: (v: FundType | null) => void, setPlanPicker: (v: boolean) => void, setPickedPlan: (v: PlanOption | null) => void) {
+  setShowNew(false); setNewType(null); setPlanPicker(false); setPickedPlan(null);
+}
+
 export function BudgetDashboard() {
   const [, setLocation] = useLocation();
   const [showNew, setShowNew] = useState(false);
   const [newType, setNewType] = useState<FundType | null>(null);
   const [expandedFund, setExpandedFund] = useState<string | null>(null);
+  const [planPicker, setPlanPicker] = useState(false);
+  const [pickedPlan, setPickedPlan] = useState<PlanOption | null>(null);
+  const [prefillName, setPrefillName] = useState('');
+  const [prefillGoal, setPrefillGoal] = useState('');
 
   const totalSaved = FUNDS.reduce((s, f) => s + f.saved, 0);
   const totalGoal  = FUNDS.reduce((s, f) => s + f.goal, 0);
@@ -430,60 +452,143 @@ export function BudgetDashboard() {
       {/* New Stash Sheet */}
       {showNew && (
         <div className="absolute inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowNew(false); setNewType(null); }} />
-          <div className="relative bg-card rounded-t-3xl px-6 pt-5 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => closeNewSheet(setShowNew, setNewType, setPlanPicker, setPickedPlan)} />
+          <div className="relative bg-card rounded-t-3xl px-6 pt-5 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
+
+            {/* Sheet header */}
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[18px] font-bold text-foreground">Start a new stash</h3>
-              <button onClick={() => { setShowNew(false); setNewType(null); }} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground">
+              <div className="flex items-center gap-2">
+                {(newType || planPicker) && (
+                  <button
+                    onClick={() => { setNewType(null); setPlanPicker(false); setPickedPlan(null); }}
+                    className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground mr-1"
+                  >
+                    <ArrowLeft size={14} />
+                  </button>
+                )}
+                <h3 className="text-[18px] font-bold text-foreground">
+                  {planPicker && !newType ? 'Pick a plan' : newType ? 'Set up your stash' : 'Start a new stash'}
+                </h3>
+              </div>
+              <button onClick={() => closeNewSheet(setShowNew, setNewType, setPlanPicker, setPickedPlan)} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground">
                 <X size={16} />
               </button>
             </div>
-            <p className="text-sm text-muted-foreground mb-6">What are you saving for?</p>
+            <p className="text-sm text-muted-foreground mb-5">
+              {planPicker && !newType ? 'Import an existing plan as a savings goal' : newType ? 'Name your fund and set a target' : 'What are you saving for?'}
+            </p>
 
-            {!newType ? (
-              <div className="grid grid-cols-2 gap-3">
-                {NEW_FUND_TYPES.map(ft => (
+            {/* Step 1a: Type selector */}
+            {!newType && !planPicker && (
+              <>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  {NEW_FUND_TYPES.map(ft => (
+                    <button
+                      key={ft.type}
+                      onClick={() => setNewType(ft.type)}
+                      className="flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-background hover:border-primary hover:bg-primary/5 transition-all active:scale-95 text-left"
+                    >
+                      <span className="text-3xl">{ft.emoji}</span>
+                      <div>
+                        <p className="font-bold text-foreground text-[14px]">{ft.label}</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{ft.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {/* From a Plan — full-width option */}
+                <button
+                  onClick={() => setPlanPicker(true)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-border bg-background hover:border-primary hover:bg-primary/5 transition-all active:scale-95 text-left"
+                >
+                  <span className="text-3xl">📋</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground text-[14px]">Import from a Plan</p>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">Auto-fill the goal from an existing itinerary</p>
+                  </div>
+                  <CalendarDays size={18} className="text-muted-foreground shrink-0" />
+                </button>
+              </>
+            )}
+
+            {/* Step 1b: Plan picker */}
+            {planPicker && !newType && (
+              <div className="flex flex-col gap-3">
+                {PLAN_OPTIONS.map(plan => (
                   <button
-                    key={ft.type}
-                    onClick={() => setNewType(ft.type)}
-                    className="flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-background hover:border-primary hover:bg-primary/5 transition-all active:scale-95 text-left"
+                    key={plan.id}
+                    onClick={() => {
+                      if (plan.alreadySaving) return;
+                      setPickedPlan(plan);
+                      setPrefillName(plan.name);
+                      setPrefillGoal(String(plan.total));
+                      setNewType('experience');
+                    }}
+                    className={cn(
+                      'flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all',
+                      plan.alreadySaving
+                        ? 'border-border bg-background opacity-60 cursor-not-allowed'
+                        : 'border-border bg-background hover:border-primary hover:bg-primary/5 active:scale-[0.98]'
+                    )}
                   >
-                    <span className="text-3xl">{ft.emoji}</span>
-                    <div>
-                      <p className="font-bold text-foreground text-[14px]">{ft.label}</p>
-                      <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{ft.desc}</p>
+                    <span className="text-3xl shrink-0">{plan.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-foreground text-[14px] leading-tight truncate">{plan.name}</p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">{plan.date} · {plan.stops} stops</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      {plan.alreadySaving ? (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-[#00C851] bg-[#E8FFF0] px-2 py-1 rounded-full">
+                          <Check size={10} /> Saving
+                        </span>
+                      ) : (
+                        <span className="font-bold text-foreground text-[15px]">{plan.currency}{plan.total}</span>
+                      )}
                     </div>
                   </button>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {/* Step 2: Fund configuration form */}
+            {newType && (
               <div className="flex flex-col gap-4">
+                {/* Plan banner if imported */}
+                {pickedPlan && (
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-primary/8 border border-primary/20">
+                    <span className="text-2xl">{pickedPlan.emoji}</span>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground leading-tight">{pickedPlan.name}</p>
+                      <p className="text-[11px] text-primary font-semibold mt-0.5">Plan imported · {pickedPlan.date}</p>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Fund name</label>
                   <input
                     type="text"
+                    defaultValue={prefillName}
                     placeholder={`e.g. ${newType === 'experience' ? 'Jazz Night at Lumina' : newType === 'group' ? 'Group Ski Trip' : newType === 'anniversary' ? 'Anniversary Getaway' : 'Big Celebration'}`}
                     className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
                   />
                 </div>
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Goal</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold">$</span>
-                      <input type="number" placeholder="150" className="w-full bg-background border border-border rounded-xl pl-8 pr-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary" />
-                    </div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Goal ($)</label>
+                    <input
+                      type="number"
+                      defaultValue={prefillGoal}
+                      placeholder="150"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+                    />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Auto-save /wk</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold">$</span>
-                      <input type="number" placeholder="20" className="w-full bg-background border border-border rounded-xl pl-8 pr-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary" />
-                    </div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Auto-save /wk ($)</label>
+                    <input type="number" placeholder="20" className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary" />
                   </div>
                 </div>
                 <button
-                  onClick={() => { setShowNew(false); setNewType(null); }}
+                  onClick={() => closeNewSheet(setShowNew, setNewType, setPlanPicker, setPickedPlan)}
                   className="w-full bg-primary text-white py-4 rounded-xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all mt-2"
                 >
                   Create Stash ✨
