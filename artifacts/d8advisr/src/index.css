@@ -125,9 +125,34 @@
 .dark .bg-\[\#f7f7f7\]        { background-color: #111111 !important; }
 .dark .bg-\[F7F7F7\]          { background-color: #111111 !important; }
 
+/* Tinted / pastel backgrounds (notification cards, highlights, etc.) */
+.dark .bg-\[\#FFF0F1\]            { background-color: #2a1215 !important; }
+.dark .hover\:bg-\[\#ffe5e6\]:hover{ background-color: #341820 !important; }
+.dark .bg-amber-50                { background-color: #1e1505 !important; }
+.dark .bg-amber-100               { background-color: #231a05 !important; }
+.dark .hover\:bg-amber-100\/50:hover { background-color: #231a05 !important; }
+.dark .border-b-amber-100         { border-color: #2d2005 !important; }
+.dark .bg-sky-50                  { background-color: #051820 !important; }
+.dark .bg-sky-100                 { background-color: #061e28 !important; }
+.dark .hover\:bg-sky-100\/50:hover { background-color: #061e28 !important; }
+.dark .border-b-sky-100           { border-color: #072535 !important; }
+.dark .bg-purple-50               { background-color: #130d24 !important; }
+.dark .bg-purple-100              { background-color: #1a1230 !important; }
+.dark .bg-green-50                { background-color: #071a0e !important; }
+.dark .bg-green-100               { background-color: #0c2213 !important; }
+.dark .bg-red-50                  { background-color: #1f0a0b !important; }
+.dark .bg-orange-50               { background-color: #1e0f05 !important; }
+
 /* Text */
 .dark .text-black             { color: #EDEDED !important; }
 .dark .text-gray-900          { color: #EDEDED !important; }
+.dark .text-amber-600         { color: #f59e0b !important; }
+.dark .text-sky-600           { color: #38bdf8 !important; }
+.dark .text-sky-500           { color: #38bdf8 !important; }
+.dark .text-purple-600        { color: #a78bfa !important; }
+.dark .text-green-600         { color: #4ade80 !important; }
+.dark .text-red-600           { color: #f87171 !important; }
+.dark .text-orange-600        { color: #fb923c !important; }
 .dark .text-gray-800          { color: #D0D0D0 !important; }
 .dark .text-gray-700          { color: #BBBBBB !important; }
 .dark .text-gray-600          { color: #999999 !important; }
