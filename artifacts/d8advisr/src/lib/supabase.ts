@@ -60,6 +60,7 @@ export type Database = {
         Row: {
           id: string;
           venue_id: string | null;
+          partner_id: string | null;
           title: string;
           description: string | null;
           category: string | null;
@@ -74,9 +75,31 @@ export type Database = {
           is_free: boolean;
           is_featured: boolean;
           city: string;
+          frequency: string | null;
+          weekday: string | null;
+          next_occurrence: string | null;
+          spots_total: number;
+          spots_filled: number;
+          emoji: string | null;
+          event_status: string;
           created_at: string;
           updated_at: string;
         };
+      };
+      partner_applications: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          partner_type: 'venue' | 'organizer' | 'both';
+          city: string;
+          contact: string;
+          status: 'pending' | 'live' | 'needs_update';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['partner_applications']['Row'], 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<Database['public']['Tables']['partner_applications']['Row']>;
       };
       plans: {
         Row: {

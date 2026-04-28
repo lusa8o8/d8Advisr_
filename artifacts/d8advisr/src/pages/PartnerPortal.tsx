@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
-import { CITIES as CITY_LIST, LS_KEYS } from '@/lib/constants';
+import { CITIES as CITY_LIST } from '@/lib/constants';
+import { usePartner } from '@/hooks/usePartner';
 
 type PartnerType = 'venue' | 'organizer' | 'both';
 
@@ -31,15 +32,24 @@ const TYPE_OPTIONS: { value: PartnerType; label: string; desc: string; emoji: st
 
 export function PartnerPortal() {
   const [, setLocation] = useLocation();
+  const { profile, loading, applyAsPartner } = usePartner();
   const [step, setStep] = useState<1 | 2>(1);
   const [type, setType] = useState<PartnerType | null>(null);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [contact, setContact] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Redirect if already onboarded
-  const existing = localStorage.getItem(LS_KEYS.partnerName);
-  if (existing) {
+  if (loading) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-white">
+        <Loader2 size={24} className="text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (profile) {
     setLocation('/partner/dashboard');
     return null;
   }
@@ -47,19 +57,22 @@ export function PartnerPortal() {
   const canContinue = type !== null;
   const canSubmit = name.trim() && city && contact.trim();
 
-  const submit = () => {
-    localStorage.setItem(LS_KEYS.partnerName,    name.trim());
-    localStorage.setItem(LS_KEYS.partnerType,    type!);
-    localStorage.setItem(LS_KEYS.partnerCity,    city);
-    localStorage.setItem(LS_KEYS.partnerContact, contact.trim());
-    localStorage.setItem(LS_KEYS.partnerStatus,  'pending');
-    setLocation('/partner/dashboard');
+  const submit = async () => {
+    if (!type || !canSubmit) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await applyAsPartner({ name: name.trim(), partner_type: type, city, contact: contact.trim() });
+      setLocation('/partner/dashboard');
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="flex-1 min-h-0 bg-white flex flex-col overflow-y-auto no-scrollbar pb-28">
 
-      {/* Header */}
       <div className="px-6 pt-14 pb-6 border-b border-gray-100">
         <button
           onClick={() => step === 2 ? setStep(1) : setLocation('/home')}
@@ -177,6 +190,12 @@ export function PartnerPortal() {
               />
             </div>
 
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <p className="text-[13px] text-red-600 font-medium">{submitError}</p>
+              </div>
+            )}
+
             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mt-1">
               <p className="text-[12px] text-gray-500 leading-relaxed">
                 Our team reviews every new partner. You'll hear back within 48 hours. Once approved, your listing is live and you can manage everything from your dashboard.
@@ -185,15 +204,15 @@ export function PartnerPortal() {
 
             <button
               onClick={submit}
-              disabled={!canSubmit}
+              disabled={!canSubmit || submitting}
               className={cn(
-                'w-full py-4 rounded-xl font-bold text-[16px] transition-all mt-1',
-                canSubmit
+                'w-full py-4 rounded-xl font-bold text-[16px] transition-all mt-1 flex items-center justify-center gap-2',
+                canSubmit && !submitting
                   ? 'bg-primary text-white shadow-[0_8px_20px_-6px_rgba(255,90,95,0.45)] active:scale-[0.98]'
                   : 'bg-gray-100 text-gray-300 cursor-not-allowed'
               )}
             >
-              Submit for review
+              {submitting ? <><Loader2 size={16} className="animate-spin" /> Submitting…</> : 'Submit for review'}
             </button>
           </>
         )}

@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ImagePlus, X, Check } from 'lucide-react';
+import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
+import { usePartner } from '@/hooks/usePartner';
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
@@ -36,19 +37,28 @@ const MAX_PHOTOS = 6;
 
 export function PartnerVenueEditor() {
   const [, setLocation] = useLocation();
+  const { profile, saveVenue } = usePartner();
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Pre-fill from localStorage
-  const [venueName, setVenueName]   = useState(localStorage.getItem('d8_partner_name') || '');
+  const [venueName, setVenueName]   = useState(profile?.name ?? '');
   const [venueType, setVenueType]   = useState('');
   const [address, setAddress]       = useState('');
   const [area, setArea]             = useState('');
-  const city                        = localStorage.getItem('d8_partner_city') || '';
-  const [phone, setPhone]           = useState(localStorage.getItem('d8_partner_contact') || '');
+  const city                        = profile?.city ?? '';
+  const [phone, setPhone]           = useState(profile?.contact ?? '');
   const [website, setWebsite]       = useState('');
   const [desc, setDesc]             = useState('');
   const [hours, setHours]           = useState<DayHours[]>(DEFAULT_HOURS);
   const [photos, setPhotos]         = useState<MediaFile[]>([]);
+
+  useEffect(() => {
+    if (profile) {
+      setVenueName(profile.name);
+      setPhone(profile.contact);
+    }
+  }, [profile]);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,10 +89,32 @@ export function PartnerVenueEditor() {
 
   const canSave = venueName.trim() && venueType && address.trim();
 
-  const save = () => {
-    localStorage.setItem('d8_partner_name', venueName.trim());
-    setSaved(true);
-    setTimeout(() => setLocation('/partner/dashboard'), 1200);
+  const save = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const openHours: Record<string, string> = {};
+      DAYS.forEach((day, idx) => {
+        openHours[day] = hours[idx].open ? `${hours[idx].from}–${hours[idx].to}` : 'Closed';
+      });
+
+      await saveVenue({
+        name: venueName.trim(),
+        category: venueType,
+        description: desc || undefined,
+        address: address.trim(),
+        area: area.trim() || undefined,
+        phone: phone.trim() || undefined,
+        website: website.trim() || undefined,
+        openHours,
+      });
+      setSaved(true);
+      setTimeout(() => setLocation('/partner/dashboard'), 1200);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save venue. Please try again.');
+      setSaving(false);
+    }
   };
 
   if (saved) {
@@ -90,7 +122,7 @@ export function PartnerVenueEditor() {
       <div className="flex-1 min-h-0 bg-white flex flex-col items-center justify-center px-8 text-center">
         <div className="w-16 h-16 rounded-full bg-[#E8FFF0] flex items-center justify-center text-3xl mb-5">✅</div>
         <p className="font-black text-gray-900 text-[20px]">Listing updated</p>
-        <p className="text-gray-400 text-[13px] mt-2">Changes are live on D8Advisr.</p>
+        <p className="text-gray-400 text-[13px] mt-2">Redirecting to your dashboard…</p>
       </div>
     );
   }
@@ -107,7 +139,6 @@ export function PartnerVenueEditor() {
         onChange={handlePhotos}
       />
 
-      {/* Header */}
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0">
         <button
           onClick={() => setLocation('/partner/dashboard')}
@@ -122,7 +153,13 @@ export function PartnerVenueEditor() {
 
       <div className="px-5 pt-5 flex flex-col gap-4">
 
-        {/* ── Venue details ──────────────────────────────────────────────── */}
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <p className="text-[13px] text-red-600 font-medium">{saveError}</p>
+          </div>
+        )}
+
+        {/* Venue details */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Venue details</p>
 
@@ -169,7 +206,7 @@ export function PartnerVenueEditor() {
           </div>
         </div>
 
-        {/* ── Photos ─────────────────────────────────────────────────────── */}
+        {/* Photos */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <div className="flex items-center justify-between -mb-1">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Venue photos</p>
@@ -218,7 +255,7 @@ export function PartnerVenueEditor() {
           )}
         </div>
 
-        {/* ── Location ───────────────────────────────────────────────────── */}
+        {/* Location */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Location</p>
 
@@ -248,14 +285,13 @@ export function PartnerVenueEditor() {
           </div>
         </div>
 
-        {/* ── Opening hours ──────────────────────────────────────────────── */}
+        {/* Opening hours */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-3">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Opening hours</p>
 
           {DAYS.map((day, idx) => (
             <div key={day}>
               <div className="flex items-center gap-3">
-                {/* Toggle */}
                 <button
                   onClick={() => setDay(idx, { open: !hours[idx].open })}
                   className={cn(
@@ -298,7 +334,7 @@ export function PartnerVenueEditor() {
           ))}
         </div>
 
-        {/* ── Contact ────────────────────────────────────────────────────── */}
+        {/* Contact */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Contact</p>
 
@@ -324,19 +360,19 @@ export function PartnerVenueEditor() {
 
       </div>
 
-      {/* ── Bottom actions ─────────────────────────────────────────────────── */}
+      {/* Bottom actions */}
       <div className="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-gray-100 px-5 py-4 z-20 shadow-[0_-8px_24px_rgba(0,0,0,0.05)] flex flex-col gap-2">
         <button
           onClick={save}
-          disabled={!canSave}
+          disabled={!canSave || saving}
           className={cn(
-            'w-full py-3.5 rounded-xl font-bold text-[15px] transition-all',
-            canSave
+            'w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all',
+            canSave && !saving
               ? 'bg-primary text-white shadow-[0_6px_16px_-4px_rgba(255,90,95,0.45)] active:scale-[0.98]'
               : 'bg-gray-100 text-gray-300 cursor-not-allowed'
           )}
         >
-          Save changes
+          {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : 'Save changes'}
         </button>
         <button
           onClick={() => setLocation('/partner/dashboard')}

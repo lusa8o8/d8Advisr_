@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { useLocation } from 'wouter';
-import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play } from 'lucide-react';
+import { useLocation, useParams } from 'wouter';
+import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
+import { usePartner } from '@/hooks/usePartner';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
 
@@ -27,6 +28,8 @@ const CATEGORIES = [
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+const EMOJI_OPTIONS = ['📅', '🎷', '🍳', '🎤', '🏃', '🎵', '🍷', '🎭', '🏋️', '🎨', '🎪', '🌟'];
+
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
 
@@ -34,20 +37,28 @@ const MAX_IMAGES = 4;
 
 export function PartnerEventEditor() {
   const [, setLocation] = useLocation();
-  const [saved, setSaved] = useState(false);
+  const params = useParams<{ id?: string }>();
+  const editId = params?.id;
+  const { saveEvent, events } = usePartner();
 
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [frequency, setFrequency] = useState<Frequency>('weekly');
+  const existing = editId ? events.find(e => e.id === editId) : null;
+
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const [name, setName] = useState(existing?.name ?? '');
+  const [category, setCategory] = useState(existing?.category ?? '');
+  const [frequency, setFrequency] = useState<Frequency>((existing?.frequency as Frequency) ?? 'weekly');
   const [weekday, setWeekday] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const [price, setPrice] = useState('');
-  const [isFree, setIsFree] = useState(false);
-  const [hasCapacity, setHasCapacity] = useState(false);
-  const [capacity, setCapacity] = useState('');
+  const [price, setPrice] = useState(existing?.isFree ? '' : (existing?.price ?? ''));
+  const [isFree, setIsFree] = useState(existing?.isFree ?? false);
+  const [hasCapacity, setHasCapacity] = useState((existing?.spotsTotal ?? 0) > 0);
+  const [capacity, setCapacity] = useState(existing?.spotsTotal ? String(existing.spotsTotal) : '');
   const [desc, setDesc] = useState('');
-  const [status, setStatus] = useState<'draft' | 'live'>('draft');
+  const [emoji, setEmoji] = useState(existing?.emoji ?? '📅');
   const [media, setMedia] = useState<MediaFile[]>([]);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -94,9 +105,33 @@ export function PartnerEventEditor() {
     frequency === 'one-off' ? date : frequency === 'weekly' ? weekday : true
   );
 
-  const save = () => {
-    setSaved(true);
-    setTimeout(() => setLocation('/partner/dashboard'), 1200);
+  const save = async (publishNow: boolean) => {
+    if (!canSave && publishNow) return;
+    if (!name.trim()) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await saveEvent({
+        title: name.trim(),
+        category,
+        description: desc || undefined,
+        frequency,
+        weekday: weekday || undefined,
+        date: date || undefined,
+        time,
+        price,
+        isFree,
+        hasCapacity,
+        capacity: capacity || undefined,
+        emoji,
+        publishNow,
+      }, editId);
+      setSaved(true);
+      setTimeout(() => setLocation('/partner/dashboard'), 1200);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save event. Please try again.');
+      setSaving(false);
+    }
   };
 
   if (saved) {
@@ -104,11 +139,9 @@ export function PartnerEventEditor() {
       <div className="flex-1 min-h-0 bg-white flex flex-col items-center justify-center px-8 text-center">
         <div className="w-16 h-16 rounded-full bg-[#E8FFF0] flex items-center justify-center text-3xl mb-5">✅</div>
         <p className="font-black text-gray-900 text-[20px]">
-          {status === 'live' ? 'Event published' : 'Draft saved'}
+          {saving ? 'Saving…' : 'Event saved'}
         </p>
-        <p className="text-gray-400 text-[13px] mt-2">
-          {status === 'live' ? 'It\'s now appearing in D8Advisr.' : 'You can publish it from your dashboard.'}
-        </p>
+        <p className="text-gray-400 text-[13px] mt-2">Redirecting to your dashboard…</p>
       </div>
     );
   }
@@ -116,24 +149,9 @@ export function PartnerEventEditor() {
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-32">
 
-      {/* Hidden file inputs */}
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleImages}
-      />
-      <input
-        ref={videoInputRef}
-        type="file"
-        accept="video/*"
-        className="hidden"
-        onChange={handleVideo}
-      />
+      <input ref={imageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
+      <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideo} />
 
-      {/* Header */}
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0">
         <button
           onClick={() => setLocation('/partner/dashboard')}
@@ -142,15 +160,41 @@ export function PartnerEventEditor() {
           <ArrowLeft size={18} />
         </button>
         <p className="text-[11px] font-black text-primary tracking-widest uppercase mb-0.5">D8 Partner</p>
-        <h1 className="text-[22px] font-black text-gray-900">New event</h1>
+        <h1 className="text-[22px] font-black text-gray-900">{editId ? 'Edit event' : 'New event'}</h1>
         <p className="text-[13px] text-gray-400 mt-1">Saved events go live immediately or sit as a draft — your choice.</p>
       </div>
 
       <div className="px-5 pt-5 flex flex-col gap-4">
 
-        {/* ── Event details ─────────────────────────────────────────────── */}
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <p className="text-[13px] text-red-600 font-medium">{saveError}</p>
+          </div>
+        )}
+
+        {/* Event details */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Event details</p>
+
+          {/* Emoji picker */}
+          <div>
+            <label className={LABEL}>Event icon</label>
+            <div className="flex flex-wrap gap-2">
+              {EMOJI_OPTIONS.map(e => (
+                <button
+                  key={e}
+                  onClick={() => setEmoji(e)}
+                  className={cn(
+                    'w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all active:scale-95',
+                    emoji === e ? 'bg-primary/10 ring-2 ring-primary' : 'bg-gray-50 hover:bg-gray-100'
+                  )}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className={LABEL}>Event name *</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Thursday Jazz Night" className={INPUT} />
@@ -174,7 +218,7 @@ export function PartnerEventEditor() {
           </div>
         </div>
 
-        {/* ── Media upload ──────────────────────────────────────────────── */}
+        {/* Media upload */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <div className="flex items-center justify-between -mb-1">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Event media</p>
@@ -183,7 +227,6 @@ export function PartnerEventEditor() {
             </p>
           </div>
 
-          {/* Image grid */}
           {images.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {images.map((img, idx) => (
@@ -202,8 +245,6 @@ export function PartnerEventEditor() {
                   </button>
                 </div>
               ))}
-
-              {/* Add more slot */}
               {images.length < MAX_IMAGES && (
                 <button
                   onClick={() => imageInputRef.current?.click()}
@@ -216,14 +257,9 @@ export function PartnerEventEditor() {
             </div>
           )}
 
-          {/* Video block */}
           {video && (
             <div className="relative rounded-xl overflow-hidden bg-black">
-              <video
-                src={video.url}
-                className="w-full max-h-48 object-cover"
-                preload="metadata"
-              />
+              <video src={video.url} className="w-full max-h-48 object-cover" preload="metadata" />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
                   <Play size={20} className="text-white fill-white ml-0.5" />
@@ -241,32 +277,27 @@ export function PartnerEventEditor() {
             </div>
           )}
 
-          {/* Upload buttons */}
           <div className="flex gap-2">
             {images.length === 0 && !video && (
-              /* First-time state — bigger prompt */
-              <button
-                onClick={() => imageInputRef.current?.click()}
-                className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
-              >
-                <ImagePlus size={24} />
-                <span className="text-[13px] font-bold">Add photos</span>
-                <span className="text-[11px] text-gray-300">Up to 4 · First becomes cover</span>
-              </button>
+              <>
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
+                >
+                  <ImagePlus size={24} />
+                  <span className="text-[13px] font-bold">Add photos</span>
+                  <span className="text-[11px] text-gray-300">Up to 4 · First becomes cover</span>
+                </button>
+                <button
+                  onClick={() => videoInputRef.current?.click()}
+                  className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
+                >
+                  <Film size={24} />
+                  <span className="text-[13px] font-bold">Add video</span>
+                  <span className="text-[11px] text-gray-300">Short clip or promo</span>
+                </button>
+              </>
             )}
-
-            {images.length === 0 && !video && (
-              <button
-                onClick={() => videoInputRef.current?.click()}
-                className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
-              >
-                <Film size={24} />
-                <span className="text-[13px] font-bold">Add video</span>
-                <span className="text-[11px] text-gray-300">Short clip or promo</span>
-              </button>
-            )}
-
-            {/* Secondary add buttons shown when something already uploaded */}
             {(images.length > 0 || video) && (
               <div className="flex gap-2 w-full">
                 {images.length > 0 && images.length < MAX_IMAGES && (
@@ -298,7 +329,7 @@ export function PartnerEventEditor() {
           </div>
         </div>
 
-        {/* ── Frequency ─────────────────────────────────────────────────── */}
+        {/* Frequency */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-3">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">How often</p>
           <div className="grid grid-cols-2 gap-2">
@@ -323,7 +354,7 @@ export function PartnerEventEditor() {
           </div>
         </div>
 
-        {/* ── When ──────────────────────────────────────────────────────── */}
+        {/* When */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">When</p>
           {frequency === 'weekly' && (
@@ -386,9 +417,7 @@ export function PartnerEventEditor() {
           {/* Capacity */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <div>
-                <label className={cn(LABEL, 'mb-0')}>Attendance limit</label>
-              </div>
+              <label className={cn(LABEL, 'mb-0')}>Attendance limit</label>
               <button
                 onClick={() => setHasCapacity(c => !c)}
                 className={cn(
@@ -414,7 +443,7 @@ export function PartnerEventEditor() {
                 <div>
                   <p className="text-[13px] font-semibold text-gray-700">Open attendance</p>
                   <p className="text-[12px] text-gray-400 mt-0.5 leading-snug">
-                    No cap on numbers. D8 will track how many people plan to attend through the app — you'll see that count in your dashboard.
+                    No cap on numbers. D8 will track how many people plan to attend through the app.
                   </p>
                 </div>
               </div>
@@ -424,26 +453,26 @@ export function PartnerEventEditor() {
 
       </div>
 
-      {/* ── Bottom actions ────────────────────────────────────────────────── */}
+      {/* Bottom actions */}
       <div className="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-gray-100 px-5 py-4 z-20 shadow-[0_-8px_24px_rgba(0,0,0,0.05)] flex flex-col gap-2">
         <button
-          onClick={() => { setStatus('live'); save(); }}
-          disabled={!canSave}
+          onClick={() => save(true)}
+          disabled={!canSave || saving}
           className={cn(
             'w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all',
-            canSave
+            canSave && !saving
               ? 'bg-primary text-white shadow-[0_6px_16px_-4px_rgba(255,90,95,0.45)] active:scale-[0.98]'
               : 'bg-gray-100 text-gray-300 cursor-not-allowed'
           )}
         >
-          <Send size={16} /> Publish now
+          {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Send size={16} /> Publish now</>}
         </button>
         <button
-          onClick={() => { setStatus('draft'); save(); }}
-          disabled={!name.trim()}
+          onClick={() => save(false)}
+          disabled={!name.trim() || saving}
           className={cn(
             'w-full py-3 rounded-xl font-bold text-[14px] transition-all',
-            name.trim() ? 'bg-gray-100 text-gray-600 active:scale-[0.98] hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+            name.trim() && !saving ? 'bg-gray-100 text-gray-600 active:scale-[0.98] hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'
           )}
         >
           Save as draft

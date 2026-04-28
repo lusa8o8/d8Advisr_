@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   ArrowLeft, Plus, ChevronRight, AlertCircle, CheckCircle,
-  Clock, Pause, Users, Edit3, Trash2, Bell, X, Megaphone,
+  Clock, Pause, Users, Edit3, Trash2, Bell, X, Megaphone, Loader2,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
-import type { PartnerEvent, ListingStatus } from '@/lib/types';
+import type { PartnerEvent } from '@/lib/types';
 import {
   PLATFORMS,
   LISTING_STATUS_PILL as STATUS_PILL,
   EVENT_STATUS_PILL,
   FREQ_LABEL,
-  LS_KEYS,
 } from '@/lib/constants';
-import { DEMO_PARTNER, DEMO_EVENTS, DEMO_DEMAND, DEMO_MESSAGES } from '@/lib/demo';
+import { DEMO_DEMAND, DEMO_MESSAGES } from '@/lib/demo';
+import { usePartner } from '@/hooks/usePartner';
 
 function SpotsBar({ filled, total }: { filled: number; total: number }) {
   const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
@@ -38,36 +38,47 @@ function SpotsBar({ filled, total }: { filled: number; total: number }) {
 
 export function PartnerDashboard() {
   const [, setLocation] = useLocation();
-
-  // Read from localStorage — fall back to demo seed
-  const storedName   = localStorage.getItem(LS_KEYS.partnerName)   || DEMO_PARTNER.name;
-  const storedType   = localStorage.getItem(LS_KEYS.partnerType)   || DEMO_PARTNER.type;
-  const storedCity   = localStorage.getItem(LS_KEYS.partnerCity)   || DEMO_PARTNER.city;
-  const storedStatus = (localStorage.getItem(LS_KEYS.partnerStatus) || DEMO_PARTNER.status) as ListingStatus;
-
-  const [events, setEvents] = useState<PartnerEvent[]>(DEMO_EVENTS);
+  const { profile, events, loading, error, toggleEventStatus, publishEvent } = usePartner();
   const [messages, setMessages] = useState(DEMO_MESSAGES);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
-
-  const isDemo = !localStorage.getItem(LS_KEYS.partnerName);
-
-  const toggleStatus = (id: string) => {
-    setEvents(evts => evts.map(e =>
-      e.id === id
-        ? { ...e, status: e.status === 'live' ? 'paused' : 'live' }
-        : e
-    ));
-  };
-
-  const publishDraft = (id: string) => {
-    setEvents(evts => evts.map(e => e.id === id ? { ...e, status: 'live' } : e));
-  };
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const activeMessages = messages.filter(m => !dismissedIds.includes(m.id));
 
+  const handleToggle = async (event: PartnerEvent) => {
+    try {
+      setActionError(null);
+      await toggleEventStatus(event.id, event.status);
+    } catch {
+      setActionError('Failed to update event status. Please try again.');
+    }
+  };
+
+  const handlePublish = async (id: string) => {
+    try {
+      setActionError(null);
+      await publishEvent(id);
+    } catch {
+      setActionError('Failed to publish event. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-[#F7F7F7]">
+        <Loader2 size={24} className="text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    setLocation('/partner');
+    return null;
+  }
+
   const typeLabel =
-    storedType === 'venue' ? 'Venue' :
-    storedType === 'organizer' ? 'Organiser' :
+    profile.partner_type === 'venue' ? 'Venue' :
+    profile.partner_type === 'organizer' ? 'Organiser' :
     'Venue & Organiser';
 
   return (
@@ -93,23 +104,31 @@ export function PartnerDashboard() {
         <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest mb-0.5">D8 Partner</p>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-white font-black text-[20px] leading-tight">{storedName}</h1>
-            <p className="text-white/50 text-[12px] font-medium mt-0.5">{typeLabel} · {storedCity}</p>
+            <h1 className="text-white font-black text-[20px] leading-tight">{profile.name}</h1>
+            <p className="text-white/50 text-[12px] font-medium mt-0.5">{typeLabel} · {profile.city}</p>
           </div>
-          <span className={cn('text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 mt-1', STATUS_PILL[storedStatus].color)}>
-            {STATUS_PILL[storedStatus].label}
+          <span className={cn('text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 mt-1', STATUS_PILL[profile.status].color)}>
+            {STATUS_PILL[profile.status].label}
           </span>
         </div>
       </div>
 
       <div className="px-4 pt-5 flex flex-col gap-5">
 
-        {/* Demo notice */}
-        {isDemo && (
+        {/* Error notice */}
+        {(error || actionError) && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <p className="text-[12px] text-red-700 font-medium leading-relaxed">{error || actionError}</p>
+          </div>
+        )}
+
+        {/* Pending review notice */}
+        {profile.status === 'pending' && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
             <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
             <p className="text-[12px] text-amber-700 font-medium leading-relaxed">
-              You're viewing a demo account. <button onClick={() => { localStorage.removeItem(LS_KEYS.partnerName); setLocation('/partner'); }} className="underline font-bold">Set up your real profile →</button>
+              Your application is under review. You'll be notified within 48 hours once it's approved.
             </p>
           </div>
         )}
@@ -146,7 +165,7 @@ export function PartnerDashboard() {
           </div>
         )}
 
-        {/* Demand signals — numbers only, no graphs */}
+        {/* Demand signals */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">This week</p>
@@ -199,7 +218,6 @@ export function PartnerDashboard() {
             {events.map(event => (
               <div key={event.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
 
-                {/* Top row */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{event.emoji}</span>
@@ -215,7 +233,6 @@ export function PartnerDashboard() {
                   </span>
                 </div>
 
-                {/* Next occurrence */}
                 <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                   <Clock size={12} className="text-gray-300 shrink-0" />
                   <span className="text-[12px] text-gray-500 font-medium">Next: {event.nextOccurrence}</span>
@@ -227,14 +244,12 @@ export function PartnerDashboard() {
                   )}
                 </div>
 
-                {/* Capped event: spots bar */}
                 {(event.status === 'live' || event.status === 'paused') && event.spotsTotal > 0 && (
                   <div className="mb-3">
                     <SpotsBar filled={event.spotsFilled} total={event.spotsTotal} />
                   </div>
                 )}
 
-                {/* Open event: D8 interest count */}
                 {(event.status === 'live' || event.status === 'paused') && event.spotsTotal === 0 && event.interestCount !== undefined && (
                   <div className="flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
                     <Users size={13} className="text-gray-400 shrink-0" />
@@ -243,14 +258,11 @@ export function PartnerDashboard() {
                   </div>
                 )}
 
-                {/* Actions — two rows to avoid overflow on narrow screens */}
                 <div className="pt-2 border-t border-gray-50 flex flex-col gap-2">
-
-                  {/* Row 1: primary status actions */}
                   <div className="flex items-center gap-2">
                     {event.status === 'draft' && (
                       <button
-                        onClick={() => publishDraft(event.id)}
+                        onClick={() => handlePublish(event.id)}
                         className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
                       >
                         <CheckCircle size={13} /> Publish
@@ -258,7 +270,7 @@ export function PartnerDashboard() {
                     )}
                     {event.status === 'live' && (
                       <button
-                        onClick={() => toggleStatus(event.id)}
+                        onClick={() => handleToggle(event)}
                         className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
                       >
                         <Pause size={13} /> Pause
@@ -266,7 +278,7 @@ export function PartnerDashboard() {
                     )}
                     {event.status === 'paused' && (
                       <button
-                        onClick={() => toggleStatus(event.id)}
+                        onClick={() => handleToggle(event)}
                         className="flex items-center gap-1.5 bg-[#E8FFF0] text-[#00C851] text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
                       >
                         <CheckCircle size={13} /> Resume
@@ -282,7 +294,6 @@ export function PartnerDashboard() {
                     )}
                   </div>
 
-                  {/* Row 2: management actions */}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setLocation(`/partner/event/${event.id}/edit`)}
@@ -301,14 +312,13 @@ export function PartnerDashboard() {
                       </button>
                     )}
                   </div>
-
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Channels */}
+        {/* Social channels */}
         {(() => {
           const connected    = PLATFORMS.filter(c => c.connected);
           const disconnected = PLATFORMS.filter(c => !c.connected);
@@ -319,7 +329,6 @@ export function PartnerDashboard() {
                 <span className="text-[11px] font-bold text-[#00C851]">{connected.length} connected</span>
               </div>
 
-              {/* Connected */}
               <div className="px-4 pt-3 pb-2">
                 <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-2">Connected</p>
                 <div className="flex flex-wrap gap-2">
@@ -337,7 +346,6 @@ export function PartnerDashboard() {
                 </div>
               </div>
 
-              {/* Not connected */}
               <div className="px-4 pt-1 pb-3 border-t border-gray-50 mt-2">
                 <p className="text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-2 mt-2">Not connected</p>
                 <div className="flex flex-wrap gap-2">
@@ -392,22 +400,6 @@ export function PartnerDashboard() {
               <p className="text-[11px] text-gray-400 mt-0.5">Jazz night, brunch, fitness class — propagates automatically</p>
             </div>
             <ChevronRight size={16} className="text-gray-300" />
-          </button>
-          <button
-            className="w-full flex items-center justify-between px-4 py-3.5 border-t border-gray-50 hover:bg-gray-50 transition-colors active:bg-gray-100 text-red-500"
-            onClick={() => {
-              if (confirm('Remove your D8 partner account?')) {
-                localStorage.removeItem('d8_partner_name');
-                localStorage.removeItem('d8_partner_type');
-                localStorage.removeItem('d8_partner_city');
-                localStorage.removeItem('d8_partner_contact');
-                localStorage.removeItem('d8_partner_status');
-                setLocation('/partner');
-              }
-            }}
-          >
-            <p className="font-semibold text-[13px]">Leave partner programme</p>
-            <Trash2 size={15} />
           </button>
         </div>
 
