@@ -20,7 +20,7 @@ export default defineConfig({
     runtimeErrorOverlay(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icon.svg", "icon-maskable.svg"],
+      includeAssets: ["icon.svg", "apple-touch-icon.png", "icon-*.png"],
       manifest: {
         name: "D8Advisr",
         short_name: "D8Advisr",
@@ -32,18 +32,14 @@ export default defineConfig({
         scope: basePath,
         start_url: basePath,
         icons: [
-          {
-            src: "icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "any",
-          },
-          {
-            src: "icon-maskable.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "maskable",
-          },
+          { src: "icon-72.png",  sizes: "72x72",   type: "image/png" },
+          { src: "icon-96.png",  sizes: "96x96",   type: "image/png" },
+          { src: "icon-128.png", sizes: "128x128", type: "image/png" },
+          { src: "icon-144.png", sizes: "144x144", type: "image/png" },
+          { src: "icon-152.png", sizes: "152x152", type: "image/png" },
+          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "icon-384.png", sizes: "384x384", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
         categories: ["lifestyle", "social", "travel"],
       },
