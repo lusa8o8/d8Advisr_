@@ -124,7 +124,7 @@ export function PartnerSocialCompose() {
           <span className="text-xl shrink-0">{event.emoji}</span>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-[14px] leading-tight">{event.name}</p>
-            <p className="text-[11px] text-gray-400 font-medium mt-0.5">{event.next}</p>
+            <p className="text-[11px] text-gray-400 font-medium mt-0.5">{event.nextOccurrence}</p>
           </div>
           {event.isFree
             ? <span className="text-[11px] font-bold text-[#00C851] bg-[#E8FFF0] px-2 py-0.5 rounded-full shrink-0">Free</span>
