@@ -1,7 +1,13 @@
 {
   "outputDirectory": "artifacts/d8advisr/dist/public",
+  "redirects": [
+    { "source": "/",     "destination": "/partner", "permanent": false },
+    { "source": "/home", "destination": "/partner/dashboard", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/partner/(.*)", "destination": "/index.html" },
+    { "source": "/partner",      "destination": "/index.html" },
+    { "source": "/(.*)",         "destination": "/index.html" }
   ],
   "headers": [
     {
