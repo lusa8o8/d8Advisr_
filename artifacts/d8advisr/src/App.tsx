@@ -53,6 +53,10 @@ function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (!loading && !user) setLocation('/');
+  }, [user, loading, setLocation]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-background">
@@ -61,10 +65,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user) {
-    setLocation('/');
-    return null;
-  }
+  if (!user) return null;
   return <>{children}</>;
 }
 
@@ -111,40 +112,40 @@ function PartnerGuard({ children }: { children: ReactNode }) {
 function Router() {
   return (
     <Switch>
+      {/* ── Public routes ─────────────────────────────────────── */}
       <Route path="/" component={Welcome} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
-      <Route path="/preferences" component={InitialPreferences} />
-      
-      <Route path="/home" component={HomeDiscovery} />
-      <Route path="/map" component={MapView} />
-      <Route path="/venue/:id" component={VenueDetails} />
-      <Route path="/event/:id" component={EventDetail} />
-      <Route path="/submit" component={VenueSubmit} />
-      
-      <Route path="/plan/generate" component={PlanGenerator} />
-      <Route path="/plan/overview" component={PlanOverview} />
-      <Route path="/plan/:id" component={PlanDetail} />
-      <Route path="/plan/:id/edit" component={PlanEdit} />
-      
-      <Route path="/tracker" component={ExecutionTracker} />
-      
-      <Route path="/plans" component={SavedPlans} />
-      
-      <Route path="/profile" component={ProfileOverview} />
-      <Route path="/profile/badges" component={BadgesPage} />
-      <Route path="/profile/preferences" component={PreferenceEdit} />
-      <Route path="/profile/budget" component={BudgetDashboard} />
-      
-      <Route path="/group/create" component={CreateGroupPlan} />
-      
-      <Route path="/notifications" component={NotificationsCenter} />
-      
-      <Route path="/admin" component={AdminPanel} />
-      
-      {/* Partner onboarding — open to all authenticated users */}
-      <Route path="/partner" component={PartnerPortal} />
-      {/* Partner sub-routes — require an existing partner_application record */}
+
+      {/* ── Authenticated routes ──────────────────────────────── */}
+      <Route path="/preferences"><AuthGuard><InitialPreferences /></AuthGuard></Route>
+
+      <Route path="/home"><AuthGuard><HomeDiscovery /></AuthGuard></Route>
+      <Route path="/map"><AuthGuard><MapView /></AuthGuard></Route>
+      <Route path="/venue/:id"><AuthGuard><VenueDetails /></AuthGuard></Route>
+      <Route path="/event/:id"><AuthGuard><EventDetail /></AuthGuard></Route>
+      <Route path="/submit"><AuthGuard><VenueSubmit /></AuthGuard></Route>
+
+      <Route path="/plan/generate"><AuthGuard><PlanGenerator /></AuthGuard></Route>
+      <Route path="/plan/overview"><AuthGuard><PlanOverview /></AuthGuard></Route>
+      <Route path="/plan/:id/edit"><AuthGuard><PlanEdit /></AuthGuard></Route>
+      <Route path="/plan/:id"><AuthGuard><PlanDetail /></AuthGuard></Route>
+
+      <Route path="/tracker"><AuthGuard><ExecutionTracker /></AuthGuard></Route>
+      <Route path="/plans"><AuthGuard><SavedPlans /></AuthGuard></Route>
+
+      <Route path="/profile/badges"><AuthGuard><BadgesPage /></AuthGuard></Route>
+      <Route path="/profile/preferences"><AuthGuard><PreferenceEdit /></AuthGuard></Route>
+      <Route path="/profile/budget"><AuthGuard><BudgetDashboard /></AuthGuard></Route>
+      <Route path="/profile"><AuthGuard><ProfileOverview /></AuthGuard></Route>
+
+      <Route path="/group/create"><AuthGuard><CreateGroupPlan /></AuthGuard></Route>
+      <Route path="/notifications"><AuthGuard><NotificationsCenter /></AuthGuard></Route>
+      <Route path="/admin"><AuthGuard><AdminPanel /></AuthGuard></Route>
+
+      {/* Partner onboarding — authenticated but no application required */}
+      <Route path="/partner"><AuthGuard><PartnerPortal /></AuthGuard></Route>
+      {/* Partner sub-routes — also require an existing partner_application record */}
       <Route path="/partner/dashboard">
         <PartnerGuard><PartnerDashboard /></PartnerGuard>
       </Route>
@@ -160,14 +161,14 @@ function Router() {
       <Route path="/partner/social/compose">
         <PartnerGuard><PartnerSocialCompose /></PartnerGuard>
       </Route>
-      
-      <Route path="/review" component={PostDateReview} />
-      <Route path="/review/complete" component={ReviewComplete} />
-      
-      <Route path="/settings" component={Settings} />
-      
-      {/* Fallback to Home if unknown route */}
-      <Route component={HomeDiscovery} />
+
+      <Route path="/review/complete"><AuthGuard><ReviewComplete /></AuthGuard></Route>
+      <Route path="/review"><AuthGuard><PostDateReview /></AuthGuard></Route>
+
+      <Route path="/settings"><AuthGuard><Settings /></AuthGuard></Route>
+
+      {/* Fallback — unauthenticated users see Welcome, authenticated see Home */}
+      <Route><AuthGuard><HomeDiscovery /></AuthGuard></Route>
     </Switch>
   );
 }
