@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "FvnjfU9VxBhQmSupGklIo"
+uri = "file://d8advisr-vercel.txt"
+type = "text"
+title = "d8advisr Vercel Environment Variables (.env)"
