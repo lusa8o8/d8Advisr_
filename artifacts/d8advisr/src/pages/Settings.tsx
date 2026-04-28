@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { TopBar, BottomNav, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { applyTheme, type ThemeValue } from "@/hooks/useTheme";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface PaymentMethod {
@@ -573,6 +574,7 @@ export function Settings() {
                 onClick={() => {
                   setTheme(t.id);
                   localStorage.setItem('d8advisr_theme', t.id);
+                  applyTheme(t.id as ThemeValue);
                 }}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-semibold text-[13px] border transition-all',

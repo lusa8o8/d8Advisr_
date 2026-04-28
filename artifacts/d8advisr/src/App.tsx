@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileFrame } from "@/components/MobileFrame";
 import { DesktopShell } from "@/components/DesktopShell";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { useTheme } from "@/hooks/useTheme";
 
 // Pages
 import { Welcome } from "@/pages/Welcome";
@@ -101,6 +102,7 @@ function AppShell({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  useTheme();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

@@ -70,6 +70,38 @@
   --radius: 0.75rem;
 }
 
+.dark {
+  --background: 0 0% 7%;            /* #111111 */
+  --foreground: 0 0% 93%;           /* #EDEDED */
+
+  --card: 0 0% 12%;                 /* #1E1E1E */
+  --card-foreground: 0 0% 93%;
+  --card-border: 0 0% 18%;
+
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 93%;
+  --popover-border: 0 0% 18%;
+
+  --primary: 357.7 100% 67.3%;      /* #FF5A5F — brand stays */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 0 0% 17%;
+  --secondary-foreground: 0 0% 93%;
+
+  --muted: 0 0% 17%;
+  --muted-foreground: 0 0% 58%;
+
+  --accent: 357.7 100% 14%;
+  --accent-foreground: 357.7 100% 67.3%;
+
+  --destructive: 357.7 100% 67.3%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 357.7 100% 67.3%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -80,7 +112,45 @@
   }
 }
 
-/* Custom utility to hide scrollbars but keep functionality */
+/* ─── Dark mode overrides for hardcoded Tailwind utilities ─────────────────── */
+/* These cover pages that use hardcoded color classes instead of semantic vars. */
+.dark body                    { background-color: #111111; color: #EDEDED; }
+
+/* Backgrounds */
+.dark .bg-white               { background-color: #1E1E1E !important; }
+.dark .bg-gray-50             { background-color: #161616 !important; }
+.dark .bg-gray-100            { background-color: #1E1E1E !important; }
+.dark .bg-gray-200            { background-color: #2A2A2A !important; }
+.dark .bg-\[\#F7F7F7\]        { background-color: #111111 !important; }
+.dark .bg-\[\#f7f7f7\]        { background-color: #111111 !important; }
+.dark .bg-\[F7F7F7\]          { background-color: #111111 !important; }
+
+/* Text */
+.dark .text-black             { color: #EDEDED !important; }
+.dark .text-gray-900          { color: #EDEDED !important; }
+.dark .text-gray-800          { color: #D0D0D0 !important; }
+.dark .text-gray-700          { color: #BBBBBB !important; }
+.dark .text-gray-600          { color: #999999 !important; }
+.dark .text-gray-500          { color: #777777 !important; }
+.dark .text-gray-400          { color: #666666 !important; }
+
+/* Borders */
+.dark .border-gray-100        { border-color: #2A2A2A !important; }
+.dark .border-gray-200        { border-color: #333333 !important; }
+.dark .border-gray-300        { border-color: #444444 !important; }
+
+/* Inputs */
+.dark input,
+.dark textarea,
+.dark select                  { background-color: #2A2A2A !important; color: #EDEDED !important; border-color: #444444 !important; }
+.dark input::placeholder,
+.dark textarea::placeholder   { color: #666666 !important; }
+
+/* Dividers */
+.dark .divide-gray-100 > *   { border-color: #2A2A2A !important; }
+.dark .divide-gray-200 > *   { border-color: #333333 !important; }
+
+/* ─── Custom utility to hide scrollbars but keep functionality ─────────────── */
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
