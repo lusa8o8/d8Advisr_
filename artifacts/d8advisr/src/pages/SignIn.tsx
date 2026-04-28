@@ -24,7 +24,7 @@ export function SignIn() {
         ? 'Incorrect email or password. Try again.'
         : error.message);
     } else {
-      setLocation('/home');
+      setLocation(import.meta.env.VITE_POST_AUTH_REDIRECT || '/home');
     }
   };
 
