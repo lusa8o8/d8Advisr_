@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   Plus, ChevronRight, AlertCircle, CheckCircle,
-  Clock, Pause, Users, Edit3, Bell, Loader2,
+  Clock, Pause, Users, Edit3, Bell, Loader2, LogOut,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import type { PartnerEvent } from '@/lib/types';
@@ -14,6 +14,7 @@ import {
 import { usePartner } from '@/hooks/usePartner';
 import { usePartnerNotifications } from '@/hooks/usePartnerNotifications';
 import { canManageEvents, canManageVenues } from '@/lib/partnerCapabilities';
+import { useAuth } from '@/context/AuthContext';
 
 function SpotsBar({ filled, total }: { filled: number; total: number }) {
   const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
@@ -38,9 +39,15 @@ function SpotsBar({ filled, total }: { filled: number; total: number }) {
 
 export function PartnerDashboard() {
   const [, setLocation] = useLocation();
-  const { profile, events, loading, error, toggleEventStatus, publishEvent } = usePartner();
+  const { signOut } = useAuth();
+  const { profile, events, demandSignals, reviewInsights, loading, error, toggleEventStatus, publishEvent } = usePartner();
   const { unreadCount } = usePartnerNotifications();
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    await signOut();
+    setLocation('/');
+  };
 
   const handleToggle = async (event: PartnerEvent) => {
     try {
@@ -79,16 +86,6 @@ export function PartnerDashboard() {
     'Venue & Organiser';
   const canCreateEvents = canManageEvents(profile.partner_type);
   const canEditVenue = canManageVenues(profile.partner_type);
-  const demandSignals = events
-    .filter(event => event.status === 'live')
-    .slice(0, 3)
-    .map(event => ({
-      label: event.spotsTotal > 0 ? `${event.name} capacity` : `Interest in ${event.name}`,
-      count: event.spotsTotal > 0 ? event.spotsFilled : event.interestCount ?? 0,
-      context: event.spotsTotal > 0
-        ? `${Math.max(event.spotsTotal - event.spotsFilled, 0)} spots still available`
-        : 'people planning via D8',
-    }));
 
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-10">
@@ -108,6 +105,13 @@ export function PartnerDashboard() {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => void handleSignOut()}
+              className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
             </button>
             {canCreateEvents && (
               <button
@@ -180,6 +184,47 @@ export function PartnerDashboard() {
                 <div>
                   <p className="font-semibold text-gray-800 text-[13px] leading-tight">{sig.label}</p>
                   <p className="text-[11px] text-gray-400 font-medium mt-0.5">{sig.context}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Review insights */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Review insights</p>
+          </div>
+          {reviewInsights.length === 0 ? (
+            <div className="px-4 py-5">
+              <p className="text-[13px] text-gray-500 font-semibold">No review insights yet</p>
+              <p className="text-[11px] text-gray-400 font-medium mt-1">
+                Aggregates will appear after users review plans that include your venue.
+              </p>
+            </div>
+          ) : (
+            reviewInsights.map(insight => (
+              <div key={insight.venueId} className="px-4 py-3.5 border-b border-gray-50 last:border-b-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-800 text-[13px] leading-tight">{insight.venueName}</p>
+                    <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                      {insight.reviewCount} review{insight.reviewCount === 1 ? '' : 's'} in the last 30 days
+                    </p>
+                  </div>
+                  <span className="text-[18px] font-black text-gray-900 leading-none">
+                    {insight.avgRating?.toFixed(1) ?? '-'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="rounded-xl bg-gray-50 px-3 py-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">Vibe</p>
+                    <p className="text-[13px] font-bold text-gray-800">{insight.avgVibe?.toFixed(1) ?? '-'}/5</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">Value</p>
+                    <p className="text-[13px] font-bold text-gray-800">{insight.avgValue?.toFixed(1) ?? '-'}/5</p>
+                  </div>
                 </div>
               </div>
             ))

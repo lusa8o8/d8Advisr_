@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { PartnerEvent, ListingStatus } from '@/lib/types';
+import type { DemandSignal, PartnerEvent, ListingStatus, PartnerReviewInsight } from '@/lib/types';
 import { canManageEvents, canManageVenues, type PartnerType } from '@/lib/partnerCapabilities';
 
 export interface PartnerProfile {
@@ -10,6 +10,23 @@ export interface PartnerProfile {
   city: string;
   contact: string;
   status: ListingStatus;
+}
+
+interface DemandSummaryRow {
+  signal_type: string;
+  event_id: string | null;
+  venue_id: string | null;
+  label: string;
+  count: number;
+}
+
+interface ReviewSummaryRow {
+  venue_id: string;
+  venue_name: string;
+  review_count: number;
+  avg_vibe: number | null;
+  avg_value: number | null;
+  avg_rating: number | null;
 }
 
 function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
@@ -97,9 +114,81 @@ function buildNextStartsAt(eventData: {
   return fallback.toISOString();
 }
 
+function demandSignalCopy(row: DemandSummaryRow): DemandSignal {
+  const count = Number(row.count ?? 0);
+
+  switch (row.signal_type) {
+    case 'event_add_to_plan':
+      return {
+        eventId: row.event_id,
+        label: `${row.label} added to plans`,
+        count,
+        context: 'users added this event to a plan',
+      };
+    case 'event_reminder_enabled':
+      return {
+        eventId: row.event_id,
+        label: `${row.label} reminders`,
+        count,
+        context: 'users asked to be reminded',
+      };
+    case 'event_view':
+      return {
+        eventId: row.event_id,
+        label: `${row.label} views`,
+        count,
+        context: 'users opened this event',
+      };
+    case 'venue_add_to_plan':
+      return {
+        eventId: null,
+        label: `${row.label} added to plans`,
+        count,
+        context: 'users built plans around this venue',
+      };
+    case 'venue_saved':
+      return {
+        eventId: null,
+        label: `${row.label} saves`,
+        count,
+        context: 'users saved this venue',
+      };
+    case 'venue_view':
+    default:
+      return {
+        eventId: null,
+        label: `${row.label} views`,
+        count,
+        context: 'users opened this venue',
+      };
+  }
+}
+
+function reviewInsightCopy(row: ReviewSummaryRow): PartnerReviewInsight {
+  return {
+    venueId: row.venue_id,
+    venueName: row.venue_name,
+    reviewCount: Number(row.review_count ?? 0),
+    avgVibe: row.avg_vibe === null ? null : Number(row.avg_vibe),
+    avgValue: row.avg_value === null ? null : Number(row.avg_value),
+    avgRating: row.avg_rating === null ? null : Number(row.avg_rating),
+  };
+}
+
+function logPartnerIssue(message: string, detail?: unknown) {
+  if (!import.meta.env.DEV) return;
+  if (detail === undefined) {
+    console.warn(`[D8 partner] ${message}`);
+  } else {
+    console.warn(`[D8 partner] ${message}`, detail);
+  }
+}
+
 export function usePartner() {
   const [profile, setProfile] = useState<PartnerProfile | null>(null);
   const [events, setEvents] = useState<PartnerEvent[]>([]);
+  const [demandSignals, setDemandSignals] = useState<DemandSignal[]>([]);
+  const [reviewInsights, setReviewInsights] = useState<PartnerReviewInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,6 +225,29 @@ export function usePartner() {
 
       if (evtErr) throw evtErr;
       setEvents((evts ?? []).map(dbEventToPartnerEvent));
+
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: demandRows, error: demandErr } = await supabase.rpc('get_partner_demand_summary', {
+        p_since: since,
+      });
+
+      if (demandErr) {
+        setDemandSignals([]);
+        logPartnerIssue('Could not load demand summary', demandErr.message);
+      } else {
+        setDemandSignals(((demandRows ?? []) as DemandSummaryRow[]).map(demandSignalCopy).slice(0, 3));
+      }
+
+      const { data: reviewRows, error: reviewErr } = await supabase.rpc('get_partner_review_summary', {
+        p_since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+      if (reviewErr) {
+        setReviewInsights([]);
+        logPartnerIssue('Could not load review summary', reviewErr.message);
+      } else {
+        setReviewInsights(((reviewRows ?? []) as ReviewSummaryRow[]).map(reviewInsightCopy).slice(0, 3));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load partner data');
     } finally {
@@ -333,5 +445,5 @@ export function usePartner() {
     }
   }, []);
 
-  return { profile, events, loading, error, reload: load, applyAsPartner, saveEvent, toggleEventStatus, publishEvent, saveVenue };
+  return { profile, events, demandSignals, reviewInsights, loading, error, reload: load, applyAsPartner, saveEvent, toggleEventStatus, publishEvent, saveVenue };
 }

@@ -139,6 +139,43 @@ export type Database = {
         };
         Update: Partial<Database['public']['Tables']['partner_notifications']['Row']>;
       };
+      plan_reviews: {
+        Row: {
+          id: string;
+          plan_id: string;
+          user_id: string;
+          mood_score: number;
+          mood_emoji: string | null;
+          note: string | null;
+          tags: string[];
+          submitted_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['plan_reviews']['Row'], 'id' | 'submitted_at' | 'updated_at'> & {
+          id?: string;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['plan_reviews']['Row']>;
+      };
+      venue_reviews: {
+        Row: {
+          id: string;
+          plan_review_id: string;
+          plan_id: string;
+          plan_stop_id: string | null;
+          venue_id: string;
+          user_id: string;
+          vibe_score: number;
+          value_score: number;
+          submitted_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['venue_reviews']['Row'], 'id' | 'submitted_at'> & {
+          id?: string;
+          submitted_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['venue_reviews']['Row']>;
+      };
       plans: {
         Row: {
           id: string;
@@ -155,6 +192,21 @@ export type Database = {
           is_group: boolean;
           created_at: string;
           updated_at: string;
+        };
+      };
+      plan_stops: {
+        Row: {
+          id: string;
+          plan_id: string;
+          venue_id: string | null;
+          position: number;
+          label: string | null;
+          time: string | null;
+          cost_pp: number;
+          is_free: boolean;
+          transport: Record<string, unknown> | null;
+          notes: string | null;
+          created_at: string;
         };
       };
       stash_funds: {

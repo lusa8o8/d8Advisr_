@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { authPathWithNext, getPostAuthRedirectPath, getSafeNextPath } from '@/lib/authRedirect';
+import { authPathWithNext, consumeOAuthError, getPostAuthRedirectPath, getSafeNextPath } from '@/lib/authRedirect';
 
 export function SignIn() {
   const [, setLocation] = useLocation();
@@ -15,6 +15,13 @@ export function SignIn() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateAccountPrompt, setShowCreateAccountPrompt] = useState(false);
+
+  useEffect(() => {
+    const oauthError = consumeOAuthError();
+    if (oauthError) {
+      setError(`Google sign-in could not be completed. ${oauthError}`);
+    }
+  }, []);
 
   const handleSignIn = async () => {
     if (!email || !password) { setError('Please enter your email and password.'); return; }
@@ -37,6 +44,8 @@ export function SignIn() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
+    setError(null);
+    setShowCreateAccountPrompt(false);
     const { error } = await signInWithGoogle(nextPath);
     if (error) { setError(error.message); setGoogleLoading(false); }
   };

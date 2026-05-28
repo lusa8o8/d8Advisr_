@@ -4,6 +4,7 @@ import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock,
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useVenues, useEvents } from "@/hooks/useVenues";
+import { useDemandSignals } from "@/hooks/useDemandSignals";
 
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 
@@ -53,6 +54,7 @@ const VIBE_COLORS: Record<string, string> = {
 
 export function HomeDiscovery() {
   const [, setLocation] = useLocation();
+  const { recordEventView, recordVenueView } = useDemandSignals();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [paymentLinked, setPaymentLinked] = useState(false);
@@ -94,6 +96,14 @@ export function HomeDiscovery() {
   }));
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
+  const openEvent = (eventId: string) => {
+    void recordEventView(eventId);
+    setLocation(`/event/${eventId}`);
+  };
+  const openVenue = (venueId: string) => {
+    void recordVenueView(venueId);
+    setLocation(`/venue/${venueId}`);
+  };
 
   if (isDesktop) {
     return (
@@ -189,7 +199,7 @@ export function HomeDiscovery() {
                   ) : EXPERIENCES.map(exp => (
                 <div
                   key={exp.id}
-                  onClick={() => setLocation(`/event/${exp.id}`)}
+                  onClick={() => openEvent(exp.id)}
                   className="bg-white rounded-2xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group"
                 >
                   <div className="h-36 relative overflow-hidden">
@@ -323,7 +333,7 @@ export function HomeDiscovery() {
                 return (
                   <div
                     key={venue.id}
-                    onClick={() => setLocation(`/venue/${venue.id}`)}
+                    onClick={() => openVenue(venue.id)}
                     className="bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group"
                   >
                     <div className="h-52 relative overflow-hidden">
@@ -554,7 +564,7 @@ export function HomeDiscovery() {
                 ) : EXPERIENCES.map(exp => (
               <div
                 key={exp.id}
-                onClick={() => setLocation(`/event/${exp.id}`)}
+                onClick={() => openEvent(exp.id)}
                 className="snap-start shrink-0 w-60 bg-card rounded-2xl border border-border shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
               >
                 <div className="h-24 relative overflow-hidden">
@@ -680,7 +690,7 @@ export function HomeDiscovery() {
             return (
               <div
                 key={venue.id}
-                onClick={() => setLocation(`/venue/${venue.id}`)}
+                onClick={() => openVenue(venue.id)}
                 className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div className="h-44 relative overflow-hidden">

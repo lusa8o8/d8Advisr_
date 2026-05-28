@@ -1,5 +1,7 @@
 const DEFAULT_POST_AUTH_PATH = '/home';
 
+const OAUTH_ERROR_KEY = 'd8advisr_oauth_error';
+
 export function getSafeNextPath(search = window.location.search) {
   const next = new URLSearchParams(search).get('next');
 
@@ -17,4 +19,14 @@ export function getPostAuthRedirectPath() {
 export function authPathWithNext(path: '/signin' | '/signup', nextPath: string | null) {
   if (!nextPath) return path;
   return `${path}?next=${encodeURIComponent(nextPath)}`;
+}
+
+export function storeOAuthError(message: string) {
+  sessionStorage.setItem(OAUTH_ERROR_KEY, message);
+}
+
+export function consumeOAuthError() {
+  const message = sessionStorage.getItem(OAUTH_ERROR_KEY);
+  if (message) sessionStorage.removeItem(OAUTH_ERROR_KEY);
+  return message;
 }

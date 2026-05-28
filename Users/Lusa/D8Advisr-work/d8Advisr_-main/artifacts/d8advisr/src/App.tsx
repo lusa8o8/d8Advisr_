@@ -48,7 +48,7 @@ import { ReviewComplete } from "@/pages/ReviewComplete";
 import { Settings } from "@/pages/Settings";
 import { hasPartnerCapability, type PartnerCapability, type PartnerType } from "@/lib/partnerCapabilities";
 import { useAdminStatus } from "@/hooks/useAdminStatus";
-import { authPathWithNext, getPostAuthRedirectPath } from "@/lib/authRedirect";
+import { authPathWithNext, getPostAuthRedirectPath, storeOAuthError } from "@/lib/authRedirect";
 
 const queryClient = new QueryClient();
 
@@ -220,6 +220,19 @@ function AuthCallback() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const oauthError = params.get('error_description')
+      ?? hashParams.get('error_description')
+      ?? params.get('error')
+      ?? hashParams.get('error');
+
+    if (oauthError) {
+      storeOAuthError(oauthError);
+      setLocation(authPathWithNext('/signin', getPostAuthRedirectPath()));
+      return;
+    }
+
     if (loading) return;
     setLocation(user ? getPostAuthRedirectPath() : authPathWithNext('/signin', getPostAuthRedirectPath()));
   }, [user, loading, setLocation]);

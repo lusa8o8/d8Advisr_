@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { authPathWithNext, getSafeNextPath } from '@/lib/authRedirect';
+import { authPathWithNext, consumeOAuthError, getSafeNextPath } from '@/lib/authRedirect';
 
 export function SignUp() {
   const [, setLocation] = useLocation();
@@ -15,6 +15,13 @@ export function SignUp() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
+
+  useEffect(() => {
+    const oauthError = consumeOAuthError();
+    if (oauthError) {
+      setError(`Google sign-in could not be completed. ${oauthError}`);
+    }
+  }, []);
 
   const handleSignUp = async () => {
     if (!email || !password) { setError('Please fill in all fields.'); return; }
@@ -32,6 +39,7 @@ export function SignUp() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
+    setError(null);
     const { error } = await signInWithGoogle(nextPath);
     if (error) { setError(error.message); setGoogleLoading(false); }
   };

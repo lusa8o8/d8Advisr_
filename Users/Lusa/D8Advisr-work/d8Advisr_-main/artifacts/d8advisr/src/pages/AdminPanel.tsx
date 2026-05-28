@@ -3,10 +3,11 @@ import { useLocation } from 'wouter';
 import {
   ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle,
   ClipboardList, Search, Shield, Star, Eye, Edit3, Save,
-  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, TrendingUp, Hourglass
+  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, TrendingUp, Hourglass, LogOut
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -288,6 +289,7 @@ function logAdminIssue(message: string, detail?: unknown) {
 
 export function AdminPanel() {
   const [, setLocation] = useLocation();
+  const { signOut } = useAuth();
   const [view, setView]       = useState<AdminView>('list');
   const [venues, setVenues]   = useState<Venue[]>(SEED);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -310,6 +312,11 @@ export function AdminPanel() {
   const [activeSection, setActiveSection] = useState<'listing' | 'experience' | 'log'>('listing');
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
+
+  const handleSignOut = async () => {
+    await signOut();
+    setLocation('/');
+  };
 
   const loadSubmissions = async () => {
     setSubmissionsLoading(true);
@@ -439,9 +446,18 @@ export function AdminPanel() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-[#00C851] animate-pulse" />
-          <span className="text-white/50 text-[11px] font-semibold">Live</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-[#00C851] animate-pulse" />
+            <span className="text-white/50 text-[11px] font-semibold">Live</span>
+          </div>
+          <button
+            onClick={() => void handleSignOut()}
+            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all"
+            aria-label="Sign out of admin"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
 
