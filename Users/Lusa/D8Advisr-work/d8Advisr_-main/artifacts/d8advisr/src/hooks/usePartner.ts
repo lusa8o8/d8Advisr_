@@ -35,6 +35,68 @@ function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
   };
 }
 
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+function parseTimeParts(time: string) {
+  const [hours, minutes] = time.split(':').map(part => Number.parseInt(part, 10));
+  return {
+    hours: Number.isFinite(hours) ? hours : 0,
+    minutes: Number.isFinite(minutes) ? minutes : 0,
+  };
+}
+
+function buildNextStartsAt(eventData: {
+  frequency: string;
+  weekday?: string;
+  date?: string;
+  time: string;
+}) {
+  const now = new Date();
+  const { hours, minutes } = parseTimeParts(eventData.time);
+
+  if (eventData.frequency === 'one-off' && eventData.date) {
+    const exact = new Date(`${eventData.date}T${eventData.time}`);
+    if (!Number.isNaN(exact.getTime())) return exact.toISOString();
+  }
+
+  if (eventData.frequency === 'weekly' && eventData.weekday && eventData.weekday in WEEKDAY_INDEX) {
+    const next = new Date(now);
+    next.setHours(hours, minutes, 0, 0);
+    const daysUntil = (WEEKDAY_INDEX[eventData.weekday] - next.getDay() + 7) % 7;
+    next.setDate(next.getDate() + daysUntil);
+    if (next <= now) next.setDate(next.getDate() + 7);
+    return next.toISOString();
+  }
+
+  if (eventData.frequency === 'monthly') {
+    const next = new Date(now);
+    next.setHours(hours, minutes, 0, 0);
+    if (next <= now) next.setMonth(next.getMonth() + 1);
+    return next.toISOString();
+  }
+
+  if (eventData.frequency === 'annual' && eventData.date) {
+    const annual = new Date(`${eventData.date}T${eventData.time}`);
+    if (!Number.isNaN(annual.getTime())) {
+      if (annual <= now) annual.setFullYear(annual.getFullYear() + 1);
+      return annual.toISOString();
+    }
+  }
+
+  const fallback = new Date(now);
+  fallback.setHours(hours, minutes, 0, 0);
+  if (fallback <= now) fallback.setDate(fallback.getDate() + 1);
+  return fallback.toISOString();
+}
+
 export function usePartner() {
   const [profile, setProfile] = useState<PartnerProfile | null>(null);
   const [events, setEvents] = useState<PartnerEvent[]>([]);
@@ -160,7 +222,7 @@ export function usePartner() {
     }
 
     const now = new Date().toISOString();
-    const startsAt = eventData.date ? new Date(`${eventData.date}T${eventData.time}`).toISOString() : now;
+    const startsAt = buildNextStartsAt(eventData);
 
     const payload = {
       title: eventData.title,

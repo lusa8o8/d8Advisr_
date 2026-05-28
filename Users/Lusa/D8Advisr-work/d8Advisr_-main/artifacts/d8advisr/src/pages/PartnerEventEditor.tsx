@@ -368,12 +368,11 @@ export function PartnerEventEditor() {
           )}
           {(frequency === 'one-off' || frequency === 'annual') && (
             <div>
-              <label className={LABEL}>{frequency === 'annual' ? 'Date (month and day) *' : 'Date *'}</label>
+              <label className={LABEL}>Date *</label>
               <input
-                type={frequency === 'one-off' ? 'date' : 'text'}
+                type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                placeholder={frequency === 'annual' ? 'e.g. June 14' : ''}
                 className={INPUT}
               />
             </div>
