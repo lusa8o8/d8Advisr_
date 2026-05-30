@@ -5,6 +5,7 @@ import { cn } from '@/components/SharedUI';
 import { usePartner } from '@/hooks/usePartner';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
+type LocationChoice = 'owned_venue' | 'existing_venue' | 'external' | 'undisclosed';
 
 interface MediaFile {
   id: string;
@@ -39,7 +40,7 @@ export function PartnerEventEditor() {
   const [, setLocation] = useLocation();
   const params = useParams<{ id?: string }>();
   const editId = params?.id;
-  const { saveEvent, events } = usePartner();
+  const { saveEvent, events, venueOptions } = usePartner();
 
   const existing = editId ? events.find(e => e.id === editId) : null;
 
@@ -60,6 +61,16 @@ export function PartnerEventEditor() {
   const [desc, setDesc] = useState('');
   const [emoji, setEmoji] = useState(existing?.emoji ?? '📅');
   const [media, setMedia] = useState<MediaFile[]>([]);
+  const [locationChoice, setLocationChoice] = useState<LocationChoice>(
+    existing?.locationKind === 'd8_venue'
+      ? 'existing_venue'
+      : existing?.locationKind === 'external'
+        ? 'external'
+        : 'undisclosed'
+  );
+  const [venueId, setVenueId] = useState(existing?.venueId ?? '');
+  const [externalLocationName, setExternalLocationName] = useState(existing?.externalLocationName ?? '');
+  const [externalLocationAddress, setExternalLocationAddress] = useState(existing?.externalLocationAddress ?? '');
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -101,7 +112,16 @@ export function PartnerEventEditor() {
     });
   };
 
-  const canSave = name.trim() && category && time && (
+  const ownedVenues = venueOptions.filter(venue => venue.isOwnedByCurrentPartner);
+  const selectedVenue = venueOptions.find(venue => venue.id === venueId);
+  const hasValidLocation =
+    locationChoice === 'owned_venue' || locationChoice === 'existing_venue'
+      ? Boolean(venueId)
+      : locationChoice === 'external'
+        ? Boolean(externalLocationName.trim())
+        : true;
+
+  const canSave = name.trim() && category && time && hasValidLocation && (
     frequency === 'one-off' ? date : frequency === 'weekly' ? weekday : true
   );
 
@@ -125,6 +145,10 @@ export function PartnerEventEditor() {
         capacity: capacity || undefined,
         emoji,
         publishNow,
+        locationKind: locationChoice,
+        venueId: venueId || undefined,
+        externalLocationName,
+        externalLocationAddress,
       }, editId);
       setSaved(true);
       setTimeout(() => setLocation('/partner/dashboard'), 1200);
@@ -216,6 +240,99 @@ export function PartnerEventEditor() {
               className={cn(INPUT, 'resize-none')}
             />
           </div>
+        </div>
+
+        {/* Location policy */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Location</p>
+            <p className="text-[12px] text-gray-400 mt-2 leading-relaxed">
+              Events appear in the public events feed. They only appear on a venue page when that venue approves the placement.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: 'owned_venue' as const, label: 'My D8 venue', desc: 'Auto-approved for your page' },
+              { value: 'existing_venue' as const, label: 'D8 venue', desc: 'Requests venue-page approval' },
+              { value: 'external' as const, label: 'External location', desc: 'Shown on the event only' },
+              { value: 'undisclosed' as const, label: 'No public venue yet', desc: 'Keep location off venue pages' },
+            ].map(option => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  setLocationChoice(option.value);
+                  setVenueId('');
+                  if (option.value !== 'external') {
+                    setExternalLocationName('');
+                    setExternalLocationAddress('');
+                  }
+                }}
+                className={cn(
+                  'flex flex-col gap-0.5 p-3.5 rounded-xl border-2 text-left transition-all active:scale-[0.98]',
+                  locationChoice === option.value ? 'border-primary bg-[#FFF0F1]' : 'border-gray-100 bg-white'
+                )}
+              >
+                <p className={cn('font-bold text-[13px]', locationChoice === option.value ? 'text-primary' : 'text-gray-800')}>
+                  {option.label}
+                </p>
+                <p className="text-[11px] text-gray-400 leading-snug">{option.desc}</p>
+              </button>
+            ))}
+          </div>
+
+          {(locationChoice === 'owned_venue' || locationChoice === 'existing_venue') && (
+            <div>
+              <label className={LABEL}>
+                {locationChoice === 'owned_venue' ? 'Your venue *' : 'Existing D8 venue *'}
+              </label>
+              <select
+                value={venueId}
+                onChange={e => setVenueId(e.target.value)}
+                className={cn(INPUT, 'bg-white')}
+              >
+                <option value="">Select venue</option>
+                {(locationChoice === 'owned_venue' ? ownedVenues : venueOptions).map(venue => (
+                  <option key={venue.id} value={venue.id}>
+                    {venue.name}{venue.area ? ` - ${venue.area}` : ''}
+                  </option>
+                ))}
+              </select>
+              {locationChoice === 'existing_venue' && selectedVenue && (
+                <p className="text-[11px] text-amber-600 font-semibold mt-2">
+                  This event will stay off the venue page until the venue owner or D8 approves it.
+                </p>
+              )}
+              {locationChoice === 'owned_venue' && ownedVenues.length === 0 && (
+                <p className="text-[11px] text-gray-400 font-medium mt-2">
+                  Add your venue listing first, then link events to it.
+                </p>
+              )}
+            </div>
+          )}
+
+          {locationChoice === 'external' && (
+            <div className="grid gap-3">
+              <div>
+                <label className={LABEL}>Location name *</label>
+                <input
+                  value={externalLocationName}
+                  onChange={e => setExternalLocationName(e.target.value)}
+                  placeholder="e.g. St. Mary's Church Hall"
+                  className={INPUT}
+                />
+              </div>
+              <div>
+                <label className={LABEL}>Address or area</label>
+                <input
+                  value={externalLocationAddress}
+                  onChange={e => setExternalLocationAddress(e.target.value)}
+                  placeholder="e.g. Kabulonga, Lusaka"
+                  className={INPUT}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Media upload */}

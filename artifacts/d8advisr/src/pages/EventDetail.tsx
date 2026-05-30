@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   ArrowLeft, Calendar, Clock, MapPin, Users, Repeat,
-  Star, Ticket, Share, Bell, BellOff, ChevronRight,
+  Star, Ticket, Share, Bell, BellOff, ChevronRight, Loader2,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { useDemandSignals } from '@/hooks/useDemandSignals';
+import { supabase } from '@/lib/supabase';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
 
@@ -15,8 +16,10 @@ interface EventData {
   emoji: string;
   category: string;
   venueName: string;
-  venueId: string;
+  venueId: string | null;
+  venueIsLink?: boolean;
   venueAddress: string;
+  venueRating?: number | null;
   date: string;
   time: string;
   endTime?: string;
@@ -31,6 +34,78 @@ interface EventData {
   organizer: string;
   organizerVerified: boolean;
   highlights: string[];
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string) {
+  return UUID_RE.test(value);
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtPrice(price: number, currency: string, isFree: boolean): string {
+  if (isFree) return 'Free';
+  return `${currency} ${price.toLocaleString()} /pp`;
+}
+
+function toRecurrence(value: unknown): Recurrence {
+  return value === 'weekly' || value === 'monthly' || value === 'annual' ? value : null;
+}
+
+function liveEventToEventData(row: Record<string, any>): EventData {
+  const venue = row.venues && !Array.isArray(row.venues) ? row.venues : null;
+  const locationKind = row.event_location_kind ?? (row.venue_id ? 'd8_venue' : 'undisclosed');
+  const hasVenueLink = locationKind === 'd8_venue' && Boolean(row.venue_id && venue);
+  const spotsTotal = Number(row.spots_total ?? row.capacity ?? 0);
+  const spotsFilled = Number(row.spots_filled ?? 0);
+  const spotsLeft = Number(row.spots_left ?? Math.max(0, spotsTotal - spotsFilled));
+  const totalCapacity = spotsTotal > 0 ? spotsTotal : Math.max(spotsLeft, 1);
+
+  return {
+    id: String(row.id),
+    name: String(row.title),
+    emoji: String(row.emoji ?? '📅'),
+    category: String(row.category ?? 'Event'),
+    venueName: hasVenueLink
+      ? String(venue.name)
+      : locationKind === 'external'
+        ? String(row.external_location_name ?? 'External location')
+        : 'Location to be announced',
+    venueId: hasVenueLink ? String(row.venue_id) : null,
+    venueIsLink: hasVenueLink,
+    venueAddress: hasVenueLink
+      ? String(venue.address ?? venue.area ?? venue.city ?? '')
+      : locationKind === 'external'
+        ? String(row.external_location_address ?? row.city ?? '')
+        : 'The organizer has not published the location yet.',
+    venueRating: hasVenueLink && venue.rating !== null ? Number(venue.rating) : null,
+    date: fmtDate(String(row.starts_at)),
+    time: fmtTime(String(row.starts_at)),
+    endTime: row.ends_at ? fmtTime(String(row.ends_at)) : undefined,
+    recurrence: toRecurrence(row.frequency),
+    recurrenceLabel: row.next_occurrence ?? null,
+    price: fmtPrice(Number(row.price_pp ?? 0), String(row.currency ?? 'K'), Boolean(row.is_free)),
+    vibes: Array.isArray(row.vibes) ? row.vibes : [],
+    desc: row.description ?? 'Details will be added by the organizer soon.',
+    image: row.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
+    spotsLeft,
+    totalCapacity,
+    organizer: row.partner_id ? 'D8 Partner' : 'D8 Organizer',
+    organizerVerified: Boolean(row.partner_id),
+    highlights: [
+      row.category ?? 'Curated experience',
+      locationKind === 'external' ? 'External location' : hasVenueLink ? 'Hosted at a D8 venue' : 'Location pending',
+      row.is_free ? 'Free admission' : 'Paid admission',
+      row.frequency && row.frequency !== 'one-off' ? 'Recurring event' : 'One-off event',
+    ],
+  };
 }
 
 const ALL_EVENTS: Record<string, EventData> = {
@@ -191,14 +266,80 @@ const RECURRENCE_META: Record<NonNullable<Recurrence>, { color: string; icon: st
 export function EventDetail() {
   const [, setLocation] = useLocation();
   const [notifyOn, setNotifyOn] = useState(false);
+  const [liveEvent, setLiveEvent] = useState<EventData | null>(null);
+  const [loadingLiveEvent, setLoadingLiveEvent] = useState(false);
+  const [liveEventError, setLiveEventError] = useState<string | null>(null);
   const { recordEventAddToPlan, recordEventReminderEnabled, recordVenueView } = useDemandSignals();
 
   const pathParts = window.location.pathname.split('/');
   const eventId = pathParts[pathParts.length - 1];
-  const event = ALL_EVENTS[eventId] ?? ALL_EVENTS['e1'];
+  const isPersistedEvent = isUuid(eventId);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLiveEvent() {
+      if (!isPersistedEvent) {
+        setLiveEvent(null);
+        setLiveEventError(null);
+        setLoadingLiveEvent(false);
+        return;
+      }
+
+      setLoadingLiveEvent(true);
+      setLiveEventError(null);
+      const { data, error } = await supabase
+        .from('events')
+        .select('*, venues(id,name,address,area,city,rating,review_count)')
+        .eq('id', eventId)
+        .eq('event_status', 'live')
+        .maybeSingle();
+
+      if (!active) return;
+      if (error) {
+        setLiveEvent(null);
+        setLiveEventError(error.message);
+      } else if (data) {
+        setLiveEvent(liveEventToEventData(data as Record<string, any>));
+      } else {
+        setLiveEvent(null);
+        setLiveEventError('This event is not available.');
+      }
+      setLoadingLiveEvent(false);
+    }
+
+    loadLiveEvent();
+    return () => { active = false; };
+  }, [eventId, isPersistedEvent]);
+
+  const event = liveEvent ?? (!isPersistedEvent ? (ALL_EVENTS[eventId] ?? ALL_EVENTS['e1']) : null);
+
+  if (loadingLiveEvent) {
+    return (
+      <div className="flex-1 min-h-0 bg-[#F7F7F7] flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col items-center justify-center px-8 text-center">
+        <p className="font-black text-gray-900 text-[20px]">Event unavailable</p>
+        <p className="text-[13px] text-gray-500 mt-2">{liveEventError ?? 'This event could not be loaded.'}</p>
+        <button
+          onClick={() => setLocation('/home')}
+          className="mt-5 px-5 py-3 rounded-xl bg-primary text-white text-[13px] font-bold"
+        >
+          Back to discovery
+        </button>
+      </div>
+    );
+  }
 
   const spotsPercent = Math.round((1 - event.spotsLeft / event.totalCapacity) * 100);
   const isAlmostFull = event.spotsLeft <= 5;
+  const hasVenueLink = Boolean(event.venueId && event.venueIsLink !== false);
 
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col relative overflow-y-auto no-scrollbar pb-28">
@@ -257,14 +398,21 @@ export function EventDetail() {
             </div>
             <button
               onClick={() => {
+                if (!hasVenueLink || !event.venueId) return;
                 void recordVenueView(event.venueId);
                 setLocation(`/venue/${event.venueId}`);
               }}
-              className="flex items-center gap-2 bg-[#FFF0F1] rounded-xl px-3 py-2 border border-[#FFD5D6] active:scale-95 transition-transform"
+              disabled={!hasVenueLink}
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-3 py-2 border transition-transform",
+                hasVenueLink
+                  ? "bg-[#FFF0F1] border-[#FFD5D6] active:scale-95"
+                  : "bg-gray-50 border-gray-100 cursor-default"
+              )}
             >
               <MapPin size={13} className="text-primary shrink-0" />
-              <span className="font-semibold text-primary text-[13px]">{event.venueName}</span>
-              <ChevronRight size={12} className="text-primary/60" />
+              <span className={cn("font-semibold text-[13px]", hasVenueLink ? "text-primary" : "text-gray-600")}>{event.venueName}</span>
+              {hasVenueLink && <ChevronRight size={12} className="text-primary/60" />}
             </button>
           </div>
 
@@ -386,13 +534,18 @@ export function EventDetail() {
           </button>
         </div>
 
-        {/* Venue link */}
+        {/* Location */}
         <button
           onClick={() => {
+            if (!hasVenueLink || !event.venueId) return;
             void recordVenueView(event.venueId);
             setLocation(`/venue/${event.venueId}`);
           }}
-          className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform"
+          disabled={!hasVenueLink}
+          className={cn(
+            "bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center justify-between transition-transform",
+            hasVenueLink ? "active:scale-[0.98]" : "cursor-default"
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl">🍷</div>
@@ -401,10 +554,12 @@ export function EventDetail() {
               <p className="text-[12px] text-gray-400 font-medium">{event.venueAddress}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Star size={13} className="fill-[#FF9500] text-[#FF9500]" />
-            <span className="text-[13px] font-bold text-gray-700">4.8</span>
-          </div>
+          {hasVenueLink && (
+            <div className="flex items-center gap-1">
+              <Star size={13} className="fill-[#FF9500] text-[#FF9500]" />
+              <span className="text-[13px] font-bold text-gray-700">{event.venueRating?.toFixed(1) ?? 'D8'}</span>
+            </div>
+          )}
         </button>
 
       </div>

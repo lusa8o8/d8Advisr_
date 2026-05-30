@@ -121,8 +121,8 @@ export function PartnerVenueEditor() {
     return (
       <div className="flex-1 min-h-0 bg-white flex flex-col items-center justify-center px-8 text-center">
         <div className="w-16 h-16 rounded-full bg-[#E8FFF0] flex items-center justify-center text-3xl mb-5">✅</div>
-        <p className="font-black text-gray-900 text-[20px]">Listing updated</p>
-        <p className="text-gray-400 text-[13px] mt-2">Redirecting to your dashboard…</p>
+        <p className="font-black text-gray-900 text-[20px]">Listing saved</p>
+        <p className="text-gray-400 text-[13px] mt-2">D8 will review sensitive listing changes before they affect public discovery.</p>
       </div>
     );
   }
@@ -148,7 +148,7 @@ export function PartnerVenueEditor() {
         </button>
         <p className="text-[11px] font-black text-primary tracking-widest uppercase mb-0.5">D8 Partner</p>
         <h1 className="text-[22px] font-black text-gray-900">Edit venue listing</h1>
-        <p className="text-[13px] text-gray-400 mt-1">This is what users see when they find your venue on D8Advisr.</p>
+        <p className="text-[13px] text-gray-400 mt-1">Your partner account gives you access here. D8 approves the public listing separately.</p>
       </div>
 
       <div className="px-5 pt-5 flex flex-col gap-4">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { DemandSignal, PartnerEvent, ListingStatus, PartnerReviewInsight } from '@/lib/types';
+import type { DemandSignal, PartnerEvent, ListingStatus, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@/lib/types';
 import { canManageEvents, canManageVenues, type PartnerType } from '@/lib/partnerCapabilities';
 
 export interface PartnerProfile {
@@ -29,6 +29,19 @@ interface ReviewSummaryRow {
   avg_rating: number | null;
 }
 
+interface VenuePlacementRequestRow {
+  id: string;
+  title: string;
+  category: string | null;
+  starts_at: string | null;
+  event_status: string | null;
+  venue_id: string;
+  venue_page_status: string;
+  partner_id: string | null;
+  created_at: string | null;
+  venues?: { name?: string | null } | { name?: string | null }[] | null;
+}
+
 function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
   const spotsTotal = Number(row.spots_total ?? 0);
   const spotsFilled = Number(row.spots_filled ?? 0);
@@ -49,6 +62,11 @@ function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
     isFree,
     status: (row.event_status as PartnerEvent['status']) ?? 'live',
     category: String(row.category ?? ''),
+    locationKind: row.event_location_kind as PartnerEvent['locationKind'],
+    venueId: row.venue_id ? String(row.venue_id) : null,
+    venuePageStatus: row.venue_page_status as PartnerEvent['venuePageStatus'],
+    externalLocationName: row.external_location_name ? String(row.external_location_name) : null,
+    externalLocationAddress: row.external_location_address ? String(row.external_location_address) : null,
   };
 }
 
@@ -175,6 +193,27 @@ function reviewInsightCopy(row: ReviewSummaryRow): PartnerReviewInsight {
   };
 }
 
+function venueNameFromRequest(row: VenuePlacementRequestRow) {
+  const venue = Array.isArray(row.venues) ? row.venues[0] : row.venues;
+  return venue?.name ?? 'Venue';
+}
+
+function venuePlacementRequestCopy(row: VenuePlacementRequestRow): VenuePlacementRequest {
+  return {
+    eventId: row.id,
+    eventName: row.title,
+    eventCategory: row.category ?? 'Event',
+    eventStartsAt: row.starts_at ?? row.created_at ?? '',
+    eventStatus: (row.event_status as VenuePlacementRequest['eventStatus']) ?? 'draft',
+    venueId: row.venue_id,
+    venueName: venueNameFromRequest(row),
+    organizerId: row.partner_id,
+    organizerName: 'Event organiser',
+    status: row.venue_page_status as VenuePlacementRequest['status'],
+    createdAt: row.created_at ?? '',
+  };
+}
+
 function logPartnerIssue(message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;
   if (detail === undefined) {
@@ -187,6 +226,9 @@ function logPartnerIssue(message: string, detail?: unknown) {
 export function usePartner() {
   const [profile, setProfile] = useState<PartnerProfile | null>(null);
   const [events, setEvents] = useState<PartnerEvent[]>([]);
+  const [venueListing, setVenueListing] = useState<PartnerVenueListing | null>(null);
+  const [venueOptions, setVenueOptions] = useState<PartnerVenueOption[]>([]);
+  const [venuePlacementRequests, setVenuePlacementRequests] = useState<VenuePlacementRequest[]>([]);
   const [demandSignals, setDemandSignals] = useState<DemandSignal[]>([]);
   const [reviewInsights, setReviewInsights] = useState<PartnerReviewInsight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,6 +257,9 @@ export function usePartner() {
           contact: app.contact,
           status: app.status as ListingStatus,
         });
+      } else {
+        setProfile(null);
+        setVenueListing(null);
       }
 
       const { data: evts, error: evtErr } = await supabase
@@ -225,6 +270,78 @@ export function usePartner() {
 
       if (evtErr) throw evtErr;
       setEvents((evts ?? []).map(dbEventToPartnerEvent));
+
+      if (app) {
+        const { data: ownedVenue, error: ownedVenueErr } = await supabase
+          .from('venues')
+          .select('id,name,listing_status,verification_status,reverification_reason,is_active')
+          .eq('partner_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (ownedVenueErr) {
+          setVenueListing(null);
+          logPartnerIssue('Could not load owned venue listing status', ownedVenueErr.message);
+        } else {
+          setVenueListing(ownedVenue ? {
+            id: ownedVenue.id,
+            name: ownedVenue.name,
+            status: ownedVenue.listing_status,
+            verificationStatus: ownedVenue.verification_status,
+            reverificationReason: ownedVenue.reverification_reason,
+            isActive: ownedVenue.is_active,
+          } : null);
+        }
+
+        const appCity = app.city?.split(',')[0]?.trim();
+        const venueQuery = supabase
+          .from('venues')
+          .select('id,name,city,area,partner_id')
+          .eq('is_active', true)
+          .eq('listing_status', 'live')
+          .order('name', { ascending: true });
+
+        if (appCity) venueQuery.eq('city', appCity);
+
+        const { data: venueRows, error: venueErr } = await venueQuery;
+        if (venueErr) {
+          setVenueOptions([]);
+          logPartnerIssue('Could not load D8 venue options for event location linking', venueErr.message);
+        } else {
+          const nextVenueOptions = (venueRows ?? []).map(row => ({
+            id: row.id,
+            name: row.name,
+            city: row.city,
+            area: row.area,
+            partnerId: row.partner_id,
+            isOwnedByCurrentPartner: row.partner_id === user.id,
+          }));
+          setVenueOptions(nextVenueOptions);
+
+          const ownedVenueIds = nextVenueOptions
+            .filter(venue => venue.isOwnedByCurrentPartner)
+            .map(venue => venue.id);
+
+          if (ownedVenueIds.length === 0) {
+            setVenuePlacementRequests([]);
+          } else {
+            const { data: placementRows, error: placementErr } = await supabase
+              .from('events')
+              .select('id,title,category,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name)')
+              .in('venue_id', ownedVenueIds)
+              .eq('venue_page_status', 'requested')
+              .order('created_at', { ascending: false });
+
+            if (placementErr) {
+              setVenuePlacementRequests([]);
+              logPartnerIssue('Could not load venue page placement requests', placementErr.message);
+            } else {
+              setVenuePlacementRequests(((placementRows ?? []) as VenuePlacementRequestRow[]).map(venuePlacementRequestCopy));
+            }
+          }
+        }
+      }
 
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data: demandRows, error: demandErr } = await supabase.rpc('get_partner_demand_summary', {
@@ -287,6 +404,32 @@ export function usePartner() {
     await load();
   }, [load]);
 
+  const updateVenuePlacementStatus = useCallback(async (
+    eventId: string,
+    status: 'approved' | 'rejected' | 'hidden',
+  ) => {
+    const previous = venuePlacementRequests;
+    setVenuePlacementRequests(current => current.filter(request => request.eventId !== eventId));
+
+    const { error } = await supabase.rpc('set_event_venue_page_status', {
+      p_event_id: eventId,
+      p_status: status,
+    });
+
+    if (error) {
+      setVenuePlacementRequests(previous);
+      throw error;
+    }
+
+    setEvents(current =>
+      current.map(event =>
+        event.id === eventId
+          ? { ...event, venuePageStatus: status }
+          : event
+      )
+    );
+  }, [venuePlacementRequests]);
+
   const saveEvent = useCallback(async (eventData: {
     title: string;
     category: string;
@@ -301,6 +444,10 @@ export function usePartner() {
     capacity?: string;
     emoji?: string;
     publishNow: boolean;
+    locationKind?: 'owned_venue' | 'existing_venue' | 'external' | 'undisclosed';
+    venueId?: string;
+    externalLocationName?: string;
+    externalLocationAddress?: string;
   }, editId?: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -319,6 +466,20 @@ export function usePartner() {
     }
 
     const city = app?.city?.split(',')[0]?.trim() ?? 'Lusaka';
+    const selectedVenue = eventData.venueId
+      ? venueOptions.find(venue => venue.id === eventData.venueId)
+      : null;
+    const hasLinkedVenue = Boolean(selectedVenue);
+    const locationKind = hasLinkedVenue
+      ? 'd8_venue'
+      : eventData.locationKind === 'external'
+        ? 'external'
+        : 'undisclosed';
+    const venuePageStatus = hasLinkedVenue && selectedVenue?.isOwnedByCurrentPartner
+      ? 'approved'
+      : hasLinkedVenue
+        ? 'requested'
+        : 'hidden';
     const spotsTotal = eventData.hasCapacity ? (parseInt(eventData.capacity ?? '0') || 0) : 0;
     const pricePp = eventData.isFree ? 0 : parseFloat(eventData.price.replace(/[^0-9.]/g, '')) || 0;
 
@@ -349,6 +510,11 @@ export function usePartner() {
       is_free: eventData.isFree,
       emoji: eventData.emoji ?? '📅',
       event_status: eventData.publishNow ? 'live' : 'draft',
+      event_location_kind: locationKind,
+      venue_id: selectedVenue?.id ?? null,
+      external_location_name: locationKind === 'external' ? eventData.externalLocationName?.trim() || null : null,
+      external_location_address: locationKind === 'external' ? eventData.externalLocationAddress?.trim() || null : null,
+      venue_page_status: venuePageStatus,
       partner_id: user.id,
       city,
       currency: city === 'Lusaka' ? 'K' : '₦',
@@ -365,7 +531,7 @@ export function usePartner() {
       if (error) throw error;
     }
     await load();
-  }, [load]);
+  }, [load, venueOptions]);
 
   const toggleEventStatus = useCallback(async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'live' ? 'paused' : 'live';
@@ -420,7 +586,7 @@ export function usePartner() {
       .eq('partner_id', user.id)
       .maybeSingle();
 
-    const payload = {
+    const insertPayload = {
       name: venueData.name,
       category: venueData.category,
       description: venueData.description ?? null,
@@ -429,7 +595,19 @@ export function usePartner() {
       city,
       open_hours: venueData.openHours,
       partner_id: user.id,
-      is_active: true,
+      vibes: [],
+      images: [],
+      review_count: 0,
+      updated_at: new Date().toISOString(),
+    };
+    const updatePayload = {
+      name: venueData.name,
+      category: venueData.category,
+      description: venueData.description ?? null,
+      address: venueData.address,
+      area: venueData.area ?? null,
+      city,
+      open_hours: venueData.openHours,
       vibes: [],
       images: [],
       review_count: 0,
@@ -437,13 +615,14 @@ export function usePartner() {
     };
 
     if (existing) {
-      const { error } = await supabase.from('venues').update(payload).eq('id', existing.id);
+      const { error } = await supabase.from('venues').update(updatePayload).eq('id', existing.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from('venues').insert({ ...payload, tier: 'Verified', created_at: new Date().toISOString() });
+      const { error } = await supabase.from('venues').insert({ ...insertPayload, created_at: new Date().toISOString() });
       if (error) throw error;
     }
-  }, []);
+    await load();
+  }, [load]);
 
-  return { profile, events, demandSignals, reviewInsights, loading, error, reload: load, applyAsPartner, saveEvent, toggleEventStatus, publishEvent, saveVenue };
+  return { profile, events, venueListing, venueOptions, venuePlacementRequests, demandSignals, reviewInsights, loading, error, reload: load, applyAsPartner, saveEvent, toggleEventStatus, publishEvent, saveVenue, updateVenuePlacementStatus };
 }

@@ -215,6 +215,62 @@ interface PartnerApplicationRow {
   updated_at: string;
 }
 
+interface VenuePlacementAdminRow {
+  id: string;
+  title: string;
+  category: string | null;
+  starts_at: string | null;
+  event_status: string | null;
+  venue_id: string;
+  venue_page_status: string;
+  partner_id: string | null;
+  created_at: string | null;
+  venues?: { name?: string | null; city?: string | null; area?: string | null } | { name?: string | null; city?: string | null; area?: string | null }[] | null;
+}
+
+interface VenuePlacementAdminRequest {
+  eventId: string;
+  eventName: string;
+  category: string;
+  startsAt: string;
+  eventStatus: string;
+  venueId: string;
+  venueName: string;
+  venueCity: string;
+  venueArea: string;
+  organizerId: string | null;
+  createdAt: string;
+}
+
+interface VenueListingReviewRow {
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  area: string | null;
+  address: string | null;
+  partner_id: string | null;
+  listing_status: string;
+  verification_status: string;
+  reverification_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface VenueListingReview {
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  area: string | null;
+  address: string | null;
+  partnerId: string | null;
+  listingStatus: string;
+  verificationStatus: string;
+  reverificationReason: string | null;
+  submittedAt: string;
+}
+
 const MOCK_SUBMISSIONS: Submission[] = [
   {
     id: 's1', kind: 'venue', name: 'Bo Jangles Restaurant', city: 'Lusaka',
@@ -276,6 +332,43 @@ function partnerApplicationToSubmission(row: PartnerApplicationRow): Submission 
   };
 }
 
+function venueFromPlacement(row: VenuePlacementAdminRow) {
+  return Array.isArray(row.venues) ? row.venues[0] : row.venues;
+}
+
+function venuePlacementAdminRequestFromRow(row: VenuePlacementAdminRow): VenuePlacementAdminRequest {
+  const venue = venueFromPlacement(row);
+  return {
+    eventId: row.id,
+    eventName: row.title,
+    category: row.category ?? 'Event',
+    startsAt: row.starts_at ?? '',
+    eventStatus: row.event_status ?? 'draft',
+    venueId: row.venue_id,
+    venueName: venue?.name ?? 'Venue',
+    venueCity: venue?.city ?? '',
+    venueArea: venue?.area ?? '',
+    organizerId: row.partner_id,
+    createdAt: row.created_at ?? '',
+  };
+}
+
+function venueListingReviewFromRow(row: VenueListingReviewRow): VenueListingReview {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    city: row.city,
+    area: row.area,
+    address: row.address,
+    partnerId: row.partner_id,
+    listingStatus: row.listing_status,
+    verificationStatus: row.verification_status,
+    reverificationReason: row.reverification_reason,
+    submittedAt: new Date(row.updated_at ?? row.created_at).toISOString().slice(0, 10),
+  };
+}
+
 function logAdminIssue(message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;
   if (detail === undefined) {
@@ -297,6 +390,8 @@ export function AdminPanel() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [submissionsError, setSubmissionsError] = useState<string | null>(null);
+  const [venuePlacementRequests, setVenuePlacementRequests] = useState<VenuePlacementAdminRequest[]>([]);
+  const [venueListingReviews, setVenueListingReviews] = useState<VenueListingReview[]>([]);
 
   // Filter state
   const [filterTier, setFilterTier]     = useState<string>('All');
@@ -336,6 +431,33 @@ export function AdminPanel() {
         logAdminIssue('No partner applications returned for admin submissions');
       }
     }
+
+    const { data: placementRows, error: placementErr } = await supabase
+      .from('events')
+      .select('id,title,category,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name,city,area)')
+      .eq('venue_page_status', 'requested')
+      .order('created_at', { ascending: false });
+
+    if (placementErr) {
+      setSubmissionsError(placementErr.message);
+      logAdminIssue('Could not load venue page placement requests', placementErr.message);
+    } else {
+      setVenuePlacementRequests(((placementRows ?? []) as VenuePlacementAdminRow[]).map(venuePlacementAdminRequestFromRow));
+    }
+
+    const { data: listingRows, error: listingErr } = await supabase
+      .from('venues')
+      .select('id,name,category,city,area,address,partner_id,listing_status,verification_status,reverification_reason,created_at,updated_at')
+      .in('listing_status', ['draft', 'submitted', 'under_review', 'needs_update'])
+      .order('updated_at', { ascending: false });
+
+    if (listingErr) {
+      setSubmissionsError(listingErr.message);
+      logAdminIssue('Could not load venue listing reviews', listingErr.message);
+    } else {
+      setVenueListingReviews(((listingRows ?? []) as VenueListingReviewRow[]).map(venueListingReviewFromRow));
+    }
+
     setSubmissionsLoading(false);
   };
 
@@ -367,6 +489,39 @@ export function AdminPanel() {
       setSubmissions(previous);
       setSubmissionsError(error.message);
       logAdminIssue('Could not update partner application status', { id, status, error: error.message });
+    }
+  };
+
+  const updateVenuePlacementStatus = async (eventId: string, status: 'approved' | 'rejected') => {
+    const previous = venuePlacementRequests;
+    setVenuePlacementRequests(current => current.filter(request => request.eventId !== eventId));
+
+    const { error } = await supabase.rpc('set_event_venue_page_status', {
+      p_event_id: eventId,
+      p_status: status,
+    });
+
+    if (error) {
+      setVenuePlacementRequests(previous);
+      setSubmissionsError(error.message);
+      logAdminIssue('Could not update venue page placement request', { eventId, status, error: error.message });
+    }
+  };
+
+  const updateVenueListingStatus = async (venueId: string, status: 'live' | 'needs_update' | 'hidden') => {
+    const previous = venueListingReviews;
+    setVenueListingReviews(current => current.filter(review => review.id !== venueId));
+
+    const { error } = await supabase.rpc('admin_update_venue_listing_status', {
+      venue_id: venueId,
+      new_status: status,
+      reason: status === 'live' ? null : 'admin_review',
+    });
+
+    if (error) {
+      setVenueListingReviews(previous);
+      setSubmissionsError(error.message);
+      logAdminIssue('Could not update venue listing status', { venueId, status, error: error.message });
     }
   };
 
@@ -483,9 +638,9 @@ export function AdminPanel() {
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
               navTab === 'submissions' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Plus size={13} /> Submissions
-            {submissions.filter(s => s.status === 'pending').length > 0 && (
+            {(submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length) > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-black flex items-center justify-center">
-                {submissions.filter(s => s.status === 'pending').length}
+                {submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length}
               </span>
             )}
           </button>
@@ -1093,6 +1248,7 @@ export function AdminPanel() {
       {view === 'submissions' && (() => {
         const pending  = submissions.filter(s => s.status === 'pending' || s.status === 'needs_update');
         const resolved = submissions.filter(s => s.status !== 'pending' && s.status !== 'needs_update');
+        const totalPending = pending.length + venuePlacementRequests.length + venueListingReviews.length;
 
         const approve = (id: string) => {
           void updatePartnerApplicationStatus(id, 'live');
@@ -1165,12 +1321,108 @@ export function AdminPanel() {
           </div>
         );
 
+        const PlacementCard = ({ request }: { request: VenuePlacementAdminRequest }) => (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-600">
+                  <Plus size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 text-[14px] leading-tight">{request.eventName}</p>
+                  <p className="text-[12px] text-gray-400 font-medium mt-0.5">
+                    Wants placement on {request.venueName}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1 italic">
+                    {request.category} - {request.venueArea || request.venueCity || 'D8 venue'}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ml-2 bg-amber-50 text-amber-700 border-amber-200">
+                Review
+              </span>
+            </div>
+
+            <div className="flex gap-3 mb-3 text-[12px] text-gray-500">
+              <span className="font-medium">{request.eventStatus}</span>
+              <span>-</span>
+              <span>{request.startsAt ? new Date(request.startsAt).toISOString().slice(0, 10) : 'No date'}</span>
+              <span>-</span>
+              <span>{request.organizerId ? `${request.organizerId.slice(0, 8)}...` : 'Unknown organiser'}</span>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => void updateVenuePlacementStatus(request.eventId, 'approved')}
+                className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle size={14} /> Approve placement
+              </button>
+              <button
+                onClick={() => void updateVenuePlacementStatus(request.eventId, 'rejected')}
+                className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors"
+              >
+                <XCircle size={14} /> Reject
+              </button>
+            </div>
+          </div>
+        );
+
+        const ListingCard = ({ review }: { review: VenueListingReview }) => (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#FFF0F1] text-[#FF5A5F]">
+                  <ClipboardList size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 text-[14px] leading-tight">{review.name}</p>
+                  <p className="text-[12px] text-gray-400 font-medium mt-0.5">
+                    {review.category} · {review.area || review.city}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1 italic">
+                    {review.reverificationReason
+                      ? `Reverification: ${review.reverificationReason.replaceAll('_', ' ')}`
+                      : review.address || 'New venue listing'}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ml-2 bg-amber-50 text-amber-700 border-amber-200">
+                {review.listingStatus.replace('_', ' ')}
+              </span>
+            </div>
+
+            <div className="flex gap-3 mb-3 text-[12px] text-gray-500">
+              <span className="font-medium">{review.verificationStatus.replace('_', ' ')}</span>
+              <span>-</span>
+              <span>{review.submittedAt}</span>
+              <span>-</span>
+              <span>{review.partnerId ? `${review.partnerId.slice(0, 8)}...` : 'No partner'}</span>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => void updateVenueListingStatus(review.id, 'live')}
+                className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle size={14} /> Approve listing
+              </button>
+              <button
+                onClick={() => void updateVenueListingStatus(review.id, 'needs_update')}
+                className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors"
+              >
+                <XCircle size={14} /> Needs update
+              </button>
+            </div>
+          </div>
+        );
+
         return (
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-8">
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-2.5 mb-5">
               {[
-                { label: 'Pending', count: submissions.filter(s => s.status === 'pending' || s.status === 'needs_update').length, color: 'bg-amber-50 text-amber-700' },
+                { label: 'Pending', count: totalPending, color: 'bg-amber-50 text-amber-700' },
                 { label: 'Approved', count: submissions.filter(s => s.status === 'approved').length, color: 'bg-green-50 text-[#00C851]' },
                 { label: 'Rejected', count: submissions.filter(s => s.status === 'rejected').length, color: 'bg-red-50 text-red-500' },
               ].map(stat => (
@@ -1192,6 +1444,28 @@ export function AdminPanel() {
               <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4 text-center">
                 <p className="text-[13px] font-bold text-gray-500">Loading partner applications...</p>
               </div>
+            )}
+
+            {venuePlacementRequests.length > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Venue page requests ({venuePlacementRequests.length})
+                </p>
+                <div className="flex flex-col gap-3 mb-6">
+                  {venuePlacementRequests.map(request => <PlacementCard key={request.eventId} request={request} />)}
+                </div>
+              </>
+            )}
+
+            {venueListingReviews.length > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Venue listing reviews ({venueListingReviews.length})
+                </p>
+                <div className="flex flex-col gap-3 mb-6">
+                  {venueListingReviews.map(review => <ListingCard key={review.id} review={review} />)}
+                </div>
+              </>
             )}
 
             {pending.length > 0 && (
@@ -1216,7 +1490,7 @@ export function AdminPanel() {
               </>
             )}
 
-            {submissions.length === 0 && (
+            {submissions.length === 0 && venuePlacementRequests.length === 0 && venueListingReviews.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <p className="text-4xl mb-4">📥</p>
                 <p className="font-bold text-gray-700 text-[16px]">No submissions yet</p>

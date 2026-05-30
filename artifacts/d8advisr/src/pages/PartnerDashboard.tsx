@@ -40,7 +40,19 @@ function SpotsBar({ filled, total }: { filled: number; total: number }) {
 export function PartnerDashboard() {
   const [, setLocation] = useLocation();
   const { signOut } = useAuth();
-  const { profile, events, demandSignals, reviewInsights, loading, error, toggleEventStatus, publishEvent } = usePartner();
+  const {
+    profile,
+    events,
+    venueListing,
+    venuePlacementRequests,
+    demandSignals,
+    reviewInsights,
+    loading,
+    error,
+    toggleEventStatus,
+    publishEvent,
+    updateVenuePlacementStatus,
+  } = usePartner();
   const { unreadCount } = usePartnerNotifications();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -67,6 +79,15 @@ export function PartnerDashboard() {
     }
   };
 
+  const handleVenuePlacement = async (eventId: string, status: 'approved' | 'rejected') => {
+    try {
+      setActionError(null);
+      await updateVenuePlacementStatus(eventId, status);
+    } catch {
+      setActionError('Failed to update venue page request. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center bg-[#F7F7F7]">
@@ -86,6 +107,31 @@ export function PartnerDashboard() {
     'Venue & Organiser';
   const canCreateEvents = canManageEvents(profile.partner_type);
   const canEditVenue = canManageVenues(profile.partner_type);
+  const venueListingCopy = !venueListing
+    ? {
+        title: 'Complete your venue listing',
+        body: 'Your partner account is approved. Add venue details so D8 can review the listing before it appears publicly.',
+        action: 'Complete listing',
+      }
+    : venueListing.status === 'live' && venueListing.verificationStatus === 'reverify_required'
+      ? {
+          title: 'Listing live - reverification needed',
+          body: 'Your venue remains visible while D8 reviews the recent sensitive changes.',
+          action: 'Review listing',
+        }
+      : venueListing.status === 'live'
+        ? {
+            title: 'Your venue listing is live',
+            body: 'Your venue is visible in D8Advisr search and discovery.',
+            action: 'Edit listing',
+          }
+        : {
+            title: venueListing.status === 'needs_update' ? 'Listing needs an update' : 'Listing under review',
+            body: venueListing.status === 'needs_update'
+              ? 'D8 needs a few changes before this venue can appear publicly.'
+              : 'Your partner account is active. Your venue listing will appear publicly after D8 approves it.',
+            action: 'Edit listing',
+          };
 
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-10">
@@ -153,6 +199,82 @@ export function PartnerDashboard() {
             <p className="text-[12px] text-amber-700 font-medium leading-relaxed">
               Your application is under review. You'll be notified within 48 hours once it's approved.
             </p>
+          </div>
+        )}
+
+        {/* Venue listing status */}
+        {canEditVenue && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
+            <div className={cn(
+              'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
+              venueListing?.status === 'live' && venueListing.verificationStatus !== 'reverify_required'
+                ? 'bg-[#E8FFF0] text-[#00C851]'
+                : 'bg-amber-50 text-amber-600'
+            )}>
+              {venueListing?.status === 'live' && venueListing.verificationStatus !== 'reverify_required'
+                ? <CheckCircle size={17} />
+                : <AlertCircle size={17} />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-black text-gray-900 text-[14px] leading-tight">{venueListingCopy.title}</p>
+                  <p className="text-[12px] text-gray-500 font-medium mt-1 leading-relaxed">{venueListingCopy.body}</p>
+                </div>
+                {venueListing && (
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100 shrink-0">
+                    {venueListing.status.replace('_', ' ')}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setLocation('/partner/venue/edit')}
+                className="mt-3 text-[12px] font-bold text-primary"
+              >
+                {venueListingCopy.action}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Venue page requests */}
+        {canEditVenue && venuePlacementRequests.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Venue page requests</p>
+              <span className="text-[11px] font-black text-primary">{venuePlacementRequests.length}</span>
+            </div>
+            <div className="flex flex-col divide-y divide-gray-50">
+              {venuePlacementRequests.map(request => (
+                <div key={request.eventId} className="px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-900 text-[14px] leading-tight">{request.eventName}</p>
+                      <p className="text-[11px] text-gray-400 font-medium mt-1">
+                        {request.eventCategory} wants to appear on {request.venueName}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 shrink-0">
+                      Review
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <button
+                      onClick={() => void handleVenuePlacement(request.eventId, 'approved')}
+                      className="bg-[#00C851] text-white rounded-xl font-bold text-[12px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle size={13} /> Approve
+                    </button>
+                    <button
+                      onClick={() => void handleVenuePlacement(request.eventId, 'rejected')}
+                      className="bg-gray-100 text-gray-600 rounded-xl font-bold text-[12px] py-2.5 active:scale-95 transition-transform hover:bg-red-50 hover:text-red-600"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -298,6 +420,23 @@ export function PartnerDashboard() {
                     <Users size={13} className="text-gray-400 shrink-0" />
                     <span className="text-[13px] font-bold text-gray-800">{event.interestCount}</span>
                     <span className="text-[12px] text-gray-400 font-medium">people planning to attend via D8</span>
+                  </div>
+                )}
+
+                {event.locationKind === 'd8_venue' && event.venuePageStatus && (
+                  <div className="mb-3">
+                    <span className={cn(
+                      'inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold border',
+                      event.venuePageStatus === 'approved' ? 'bg-green-50 text-[#00C851] border-green-100' :
+                      event.venuePageStatus === 'requested' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                      event.venuePageStatus === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' :
+                      'bg-gray-50 text-gray-500 border-gray-100'
+                    )}>
+                      {event.venuePageStatus === 'approved' ? 'On venue page' :
+                       event.venuePageStatus === 'requested' ? 'Venue page requested' :
+                       event.venuePageStatus === 'rejected' ? 'Venue page rejected' :
+                       'Venue page hidden'}
+                    </span>
                   </div>
                 )}
 

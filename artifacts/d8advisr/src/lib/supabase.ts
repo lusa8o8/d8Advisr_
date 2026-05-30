@@ -70,6 +70,11 @@ export type Database = {
           open_hours: Record<string, string> | null;
           is_active: boolean;
           is_hidden_gem: boolean;
+          listing_status: 'draft' | 'submitted' | 'under_review' | 'live' | 'needs_update' | 'hidden';
+          verification_status: 'unverified' | 'verified' | 'reverify_required' | 'expired';
+          reverification_reason: string | null;
+          last_verified_at: string | null;
+          next_verification_due_at: string | null;
           partner_id: string | null;
           created_at: string;
           updated_at: string;
@@ -94,6 +99,10 @@ export type Database = {
           is_free: boolean;
           is_featured: boolean;
           city: string;
+          event_location_kind: 'd8_venue' | 'external' | 'undisclosed';
+          external_location_name: string | null;
+          external_location_address: string | null;
+          venue_page_status: 'hidden' | 'requested' | 'approved' | 'rejected';
           frequency: string | null;
           weekday: string | null;
           next_occurrence: string | null;

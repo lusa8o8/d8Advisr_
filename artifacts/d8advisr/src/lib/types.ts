@@ -1,6 +1,10 @@
 export type EventStatus = 'live' | 'draft' | 'paused' | 'past' | 'cancelled';
 export type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
 export type ListingStatus = 'live' | 'pending' | 'needs_update' | 'rejected';
+export type VenueListingStatus = 'draft' | 'submitted' | 'under_review' | 'live' | 'needs_update' | 'hidden';
+export type VenueVerificationStatus = 'unverified' | 'verified' | 'reverify_required' | 'expired';
+export type EventLocationKind = 'd8_venue' | 'external' | 'undisclosed';
+export type VenuePageStatus = 'hidden' | 'requested' | 'approved' | 'rejected';
 
 export interface PartnerEvent {
   id: string;
@@ -15,6 +19,43 @@ export interface PartnerEvent {
   isFree?: boolean;
   status: EventStatus;
   category: string;
+  locationKind?: EventLocationKind;
+  venueId?: string | null;
+  venuePageStatus?: VenuePageStatus;
+  externalLocationName?: string | null;
+  externalLocationAddress?: string | null;
+}
+
+export interface PartnerVenueOption {
+  id: string;
+  name: string;
+  city: string;
+  area: string | null;
+  partnerId: string | null;
+  isOwnedByCurrentPartner: boolean;
+}
+
+export interface PartnerVenueListing {
+  id: string;
+  name: string;
+  status: VenueListingStatus;
+  verificationStatus: VenueVerificationStatus;
+  reverificationReason: string | null;
+  isActive: boolean;
+}
+
+export interface VenuePlacementRequest {
+  eventId: string;
+  eventName: string;
+  eventCategory: string;
+  eventStartsAt: string;
+  eventStatus: EventStatus;
+  venueId: string;
+  venueName: string;
+  organizerId: string | null;
+  organizerName: string;
+  status: VenuePageStatus;
+  createdAt: string;
 }
 
 export interface DemandSignal {

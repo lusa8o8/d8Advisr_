@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
 import { useDemandSignals } from "@/hooks/useDemandSignals";
+import { useVenueEvents } from "@/hooks/useVenues";
 
 const VENUE_IMAGES = [
   "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&auto=format",
@@ -141,6 +142,23 @@ const NEARBY_VENUES = [
   },
 ];
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtPrice(price: number, currency: string, isFree: boolean): string {
+  if (isFree) return 'Free';
+  return `${currency} ${price.toLocaleString()}`;
+}
+
 export function VenueDetails() {
   const [, setLocation] = useLocation();
   const { recordVenueAddToPlan, recordVenueSaved, recordVenueView } = useDemandSignals();
@@ -150,6 +168,24 @@ export function VenueDetails() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const pathParts = window.location.pathname.split('/');
   const venueId = pathParts[pathParts.length - 1];
+  const hasLiveVenueId = isUuid(venueId);
+  const { events: approvedVenueEvents, loading: venueEventsLoading, error: venueEventsError } = useVenueEvents(hasLiveVenueId ? venueId : undefined, 8);
+  const displayedVenueEvents = hasLiveVenueId
+    ? approvedVenueEvents.map(event => ({
+        id: event.id,
+        name: event.title,
+        date: fmtDate(event.starts_at),
+        time: fmtTime(event.starts_at),
+        vibes: event.vibes ?? [],
+        price: fmtPrice(event.price_pp, event.currency, event.is_free),
+        emoji: event.emoji ?? 'ðŸ“…',
+        desc: event.description ?? '',
+        image: event.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format',
+        spotsLeft: event.spots_left ?? Math.max(0, event.spots_total - event.spots_filled),
+        recurrence: event.frequency === 'weekly' || event.frequency === 'monthly' || event.frequency === 'annual' ? event.frequency : null,
+        recurrenceLabel: event.next_occurrence,
+      }))
+    : VENUE_EVENTS;
 
   useEffect(() => {
     void recordVenueView(venueId);
@@ -291,8 +327,8 @@ export function VenueDetails() {
               )}
             >
               {tab}
-              {tab === 'Events' && (
-                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold align-middle">3</span>
+              {tab === 'Events' && displayedVenueEvents.length > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold align-middle">{displayedVenueEvents.length}</span>
               )}
               {activeTab === tab && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-t-full"></div>
@@ -398,7 +434,21 @@ export function VenueDetails() {
             </div>
 
             <div className="flex flex-col gap-4">
-              {VENUE_EVENTS.map(event => (
+              {venueEventsLoading && hasLiveVenueId ? (
+                <div className="bg-card border border-border rounded-2xl h-44 animate-pulse" />
+              ) : venueEventsError ? (
+                <div className="bg-card border border-dashed border-border rounded-2xl p-5">
+                  <p className="text-[14px] font-bold text-foreground">Events could not load</p>
+                  <p className="text-[12px] text-muted-foreground mt-1">{venueEventsError}</p>
+                </div>
+              ) : displayedVenueEvents.length === 0 ? (
+                <div className="bg-card border border-dashed border-border rounded-2xl p-5">
+                  <p className="text-[14px] font-bold text-foreground">No approved venue events yet</p>
+                  <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                    Organizer events linked to this venue appear here only after venue approval.
+                  </p>
+                </div>
+              ) : displayedVenueEvents.map(event => (
                 <div
                   key={event.id}
                   onClick={() => setLocation(`/event/${event.id}`)}

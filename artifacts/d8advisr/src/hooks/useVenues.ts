@@ -28,6 +28,7 @@ export function useVenues(city?: string) {
         .from('venues')
         .select('*')
         .eq('is_active', true)
+        .eq('listing_status', 'live')
         .order('rating', { ascending: false });
 
       if (city) query.eq('city', city);
@@ -114,6 +115,61 @@ export function useEvents(city?: string, limit = 10) {
 
     return () => { active = false; };
   }, [city, limit]);
+
+  return { events, loading, error };
+}
+
+export function useVenueEvents(venueId?: string, limit = 10) {
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const now = new Date().toISOString();
+    setLoading(true);
+
+    async function loadVenueEvents() {
+      if (!venueId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(venueId)) {
+        setEvents([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('venue_id', venueId)
+          .eq('event_status', 'live')
+          .eq('venue_page_status', 'approved')
+          .gte('starts_at', now)
+          .order('starts_at', { ascending: true })
+          .limit(limit);
+
+        if (!active) return;
+        if (error) {
+          setError(error.message);
+          logDataIssue('venue-events', 'Supabase query failed', { venueId, from: now, limit, error: error.message });
+        } else {
+          setError(null);
+          setEvents(data ?? []);
+        }
+      } catch (error) {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : 'Unknown venue event query failure';
+        setError(message);
+        logDataIssue('venue-events', 'Supabase query threw before completion', { venueId, from: now, limit, error: message });
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadVenueEvents();
+
+    return () => { active = false; };
+  }, [venueId, limit]);
 
   return { events, loading, error };
 }
