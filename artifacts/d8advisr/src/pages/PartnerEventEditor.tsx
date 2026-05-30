@@ -34,7 +34,7 @@ const EMOJI_OPTIONS = ['📅', '🎷', '🍳', '🎤', '🏃', '🎵', '🍷', '
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
 
-const MAX_IMAGES = 4;
+const MAX_IMAGES = 3;
 
 export function PartnerEventEditor() {
   const [, setLocation] = useLocation();
@@ -185,7 +185,7 @@ export function PartnerEventEditor() {
         </button>
         <p className="text-[11px] font-black text-primary tracking-widest uppercase mb-0.5">D8 Partner</p>
         <h1 className="text-[22px] font-black text-gray-900">{editId ? 'Edit event' : 'New event'}</h1>
-        <p className="text-[13px] text-gray-400 mt-1">Saved events go live immediately or sit as a draft — your choice.</p>
+        <p className="text-[13px] text-gray-400 mt-1">Saved events go live immediately or sit as a draft. Use square or portrait images so they are ready for future IG/Facebook posting.</p>
       </div>
 
       <div className="px-5 pt-5 flex flex-col gap-4">
@@ -340,14 +340,26 @@ export function PartnerEventEditor() {
           <div className="flex items-center justify-between -mb-1">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Event media</p>
             <p className="text-[10px] text-gray-300 font-medium">
-              {images.length}/{MAX_IMAGES} photos{video ? ' · 1 video' : ''}
+              {images.length}/{MAX_IMAGES} photos
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 border border-gray-100 px-3.5 py-3">
+            <p className="text-[12px] text-gray-600 font-semibold">
+              Event images should be social-ready: 1080x1080 square or 1080x1350 portrait is recommended.
+            </p>
+            <p className="text-[11px] text-gray-400 font-medium mt-1">
+              Up to 3 images, JPG/PNG/WebP, max 3 MB each, minimum 800px wide.
+            </p>
+            <p className="text-[11px] text-amber-600 font-semibold mt-1">
+              Video support is coming soon.
             </p>
           </div>
 
           {images.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {images.map((img, idx) => (
-                <div key={img.id} className="relative rounded-xl overflow-hidden aspect-[4/3] bg-gray-100">
+                <div key={img.id} className="relative rounded-xl overflow-hidden aspect-square bg-gray-100">
                   <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
                   {idx === 0 && (
                     <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] font-bold px-2 py-1 text-center tracking-wider uppercase">
@@ -365,7 +377,7 @@ export function PartnerEventEditor() {
               {images.length < MAX_IMAGES && (
                 <button
                   onClick={() => imageInputRef.current?.click()}
-                  className="aspect-[4/3] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.97]"
+                  className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.97]"
                 >
                   <ImagePlus size={20} />
                   <span className="text-[11px] font-bold">Add photo</span>
@@ -402,16 +414,16 @@ export function PartnerEventEditor() {
                   className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
                 >
                   <ImagePlus size={24} />
-                  <span className="text-[13px] font-bold">Add photos</span>
-                  <span className="text-[11px] text-gray-300">Up to 4 · First becomes cover</span>
+                  <span className="text-[13px] font-bold">Add event images</span>
+                  <span className="text-[11px] text-gray-300">Up to 3 · square or portrait</span>
                 </button>
                 <button
-                  onClick={() => videoInputRef.current?.click()}
-                  className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors active:scale-[0.98]"
+                  disabled
+                  className="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-6 flex flex-col items-center justify-center gap-2 text-gray-300 cursor-not-allowed"
                 >
                   <Film size={24} />
-                  <span className="text-[13px] font-bold">Add video</span>
-                  <span className="text-[11px] text-gray-300">Short clip or promo</span>
+                  <span className="text-[13px] font-bold">Video coming soon</span>
+                  <span className="text-[11px] text-gray-300">Deferred for storage control</span>
                 </button>
               </>
             )}
@@ -427,18 +439,18 @@ export function PartnerEventEditor() {
                 )}
                 {!video && (
                   <button
-                    onClick={() => videoInputRef.current?.click()}
-                    className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3.5 py-2.5 rounded-xl hover:bg-gray-200 active:scale-95 transition-all"
+                    disabled
+                    className="flex items-center gap-1.5 bg-gray-100 text-gray-300 text-[12px] font-bold px-3.5 py-2.5 rounded-xl cursor-not-allowed"
                   >
-                    <Film size={14} /> Add video
+                    <Film size={14} /> Video soon
                   </button>
                 )}
                 {video && (
                   <button
-                    onClick={() => videoInputRef.current?.click()}
-                    className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3.5 py-2.5 rounded-xl hover:bg-gray-200 active:scale-95 transition-all"
+                    disabled
+                    className="flex items-center gap-1.5 bg-gray-100 text-gray-300 text-[12px] font-bold px-3.5 py-2.5 rounded-xl cursor-not-allowed"
                   >
-                    <Film size={14} /> Replace video
+                    <Film size={14} /> Video soon
                   </button>
                 )}
               </div>

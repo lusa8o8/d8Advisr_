@@ -7,6 +7,8 @@ import { usePartner } from '@/hooks/usePartner';
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
 const TIME_INPUT = 'flex-1 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
+const FIELD_HELPER = 'text-[11px] text-gray-400 font-medium mt-1.5 leading-relaxed';
+const REVIEW_HELPER = 'text-[11px] text-amber-600 font-semibold mt-1.5 leading-relaxed';
 
 const VENUE_TYPES = [
   'Restaurant', 'Bar & Lounge', 'Rooftop', 'Event Hall', 'Park & Outdoor',
@@ -159,6 +161,13 @@ export function PartnerVenueEditor() {
           </div>
         )}
 
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+          <p className="text-[12px] font-black text-amber-700">How listing edits work</p>
+          <p className="text-[12px] text-amber-700/80 font-medium leading-relaxed mt-1">
+            Contact, website, hours, and description are low-risk updates. Name, category, address, area, and photos may require D8 review before public discovery changes.
+          </p>
+        </div>
+
         {/* Venue details */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Venue details</p>
@@ -171,6 +180,7 @@ export function PartnerVenueEditor() {
               placeholder="e.g. Bo Jangles Restaurant"
               className={INPUT}
             />
+            <p className={REVIEW_HELPER}>Changing the venue name may require D8 review.</p>
           </div>
 
           <div>
@@ -192,6 +202,7 @@ export function PartnerVenueEditor() {
                 </button>
               ))}
             </div>
+            <p className={REVIEW_HELPER}>Category changes can affect search quality, so D8 may recheck them.</p>
           </div>
 
           <div>
@@ -203,6 +214,7 @@ export function PartnerVenueEditor() {
               rows={3}
               className={cn(INPUT, 'resize-none')}
             />
+            <p className={FIELD_HELPER}>Low-risk update. Keep it factual and specific.</p>
           </div>
         </div>
 
@@ -211,6 +223,11 @@ export function PartnerVenueEditor() {
           <div className="flex items-center justify-between -mb-1">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Venue photos</p>
             <p className="text-[10px] text-gray-300 font-medium">{photos.length}/{MAX_PHOTOS}</p>
+          </div>
+          <div className="rounded-xl bg-gray-50 border border-gray-100 px-3.5 py-3">
+            <p className="text-[12px] text-gray-600 font-semibold">Use clear, real photos of the venue. Up to 6 photos, JPG/PNG/WebP, max 3 MB each, minimum 800px wide.</p>
+            <p className="text-[11px] text-amber-600 font-semibold mt-1">Photo changes are sensitive and may trigger D8 review. Upload persistence is next; this screen currently previews selected files.</p>
+            <p className="text-[11px] text-gray-400 font-medium mt-1">Video support is coming soon.</p>
           </div>
 
           {photos.length > 0 && (
@@ -267,6 +284,7 @@ export function PartnerVenueEditor() {
               placeholder="e.g. 14 Cairo Road"
               className={INPUT}
             />
+            <p className={REVIEW_HELPER}>Address changes may require D8 reverification before the public listing changes.</p>
           </div>
           <div>
             <label className={LABEL}>Area / neighbourhood</label>
@@ -276,6 +294,7 @@ export function PartnerVenueEditor() {
               placeholder="e.g. Longacres, Woodlands, Victoria Island"
               className={INPUT}
             />
+            <p className={REVIEW_HELPER}>Area changes can affect discovery and may require review.</p>
           </div>
           <div>
             <label className={LABEL}>City</label>
@@ -288,6 +307,7 @@ export function PartnerVenueEditor() {
         {/* Opening hours */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col gap-3">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider -mb-1">Opening hours</p>
+          <p className="text-[11px] text-gray-400 font-medium -mt-1">Low-risk update. D8 may still recheck hours if users report a mismatch.</p>
 
           {DAYS.map((day, idx) => (
             <div key={day}>
@@ -346,6 +366,7 @@ export function PartnerVenueEditor() {
               placeholder="+260 or +234"
               className={INPUT}
             />
+            <p className={FIELD_HELPER}>Low-risk update used for partner contact and venue enquiries.</p>
           </div>
           <div>
             <label className={LABEL}>Website</label>
@@ -355,6 +376,7 @@ export function PartnerVenueEditor() {
               placeholder="https://"
               className={INPUT}
             />
+            <p className={FIELD_HELPER}>Low-risk update. Use the official venue or booking link.</p>
           </div>
         </div>
 
