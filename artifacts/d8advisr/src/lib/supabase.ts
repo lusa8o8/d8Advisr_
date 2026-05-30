@@ -90,6 +90,7 @@ export type Database = {
           category: string | null;
           vibes: string[];
           cover_image: string | null;
+          images: string[];
           starts_at: string;
           ends_at: string | null;
           price_pp: number;

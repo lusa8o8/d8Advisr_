@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { usePartner } from '@/hooks/usePartner';
+import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
 type LocationChoice = 'owned_venue' | 'existing_venue' | 'external' | 'undisclosed';
@@ -12,6 +13,7 @@ interface MediaFile {
   url: string;
   type: 'image' | 'video';
   name: string;
+  file?: File;
 }
 
 const FREQ_OPTIONS: { value: Frequency; label: string; desc: string }[] = [
@@ -78,17 +80,39 @@ export function PartnerEventEditor() {
   const images = media.filter(m => m.type === 'image');
   const video  = media.find(m => m.type === 'video');
 
-  const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (!existing) return;
+    const imageUrls = [
+      existing.coverImage,
+      ...(existing.images ?? []),
+    ].filter((url, index, arr): url is string => Boolean(url) && arr.indexOf(url) === index);
+    setMedia(imageUrls.map((url, index) => ({
+      id: `persisted-${index}-${url}`,
+      url,
+      type: 'image',
+      name: index === 0 ? 'Cover image' : `Event image ${index + 1}`,
+    })));
+  }, [existing]);
+
+  const handleImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const remaining = MAX_IMAGES - images.length;
-    files.slice(0, remaining).forEach(file => {
+    setSaveError(null);
+    for (const file of files.slice(0, remaining)) {
+      try {
+        await validatePartnerImage(file);
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : 'Could not add this image.');
+        continue;
+      }
       setMedia(prev => [...prev, {
         id: Math.random().toString(36).slice(2),
         url: URL.createObjectURL(file),
         type: 'image',
         name: file.name,
+        file,
       }]);
-    });
+    }
     e.target.value = '';
   };
 
@@ -107,7 +131,7 @@ export function PartnerEventEditor() {
   const removeMedia = (id: string) => {
     setMedia(prev => {
       const item = prev.find(m => m.id === id);
-      if (item) URL.revokeObjectURL(item.url);
+      if (item && !isPartnerImageUrl(item.url)) URL.revokeObjectURL(item.url);
       return prev.filter(m => m.id !== id);
     });
   };
@@ -131,6 +155,10 @@ export function PartnerEventEditor() {
     setSaving(true);
     setSaveError(null);
     try {
+      const imageUrls = await Promise.all(
+        images.map(image => image.file ? uploadPartnerImage(image.file, 'events') : image.url)
+      );
+
       await saveEvent({
         title: name.trim(),
         category,
@@ -149,6 +177,8 @@ export function PartnerEventEditor() {
         venueId: venueId || undefined,
         externalLocationName,
         externalLocationAddress,
+        coverImage: imageUrls[0] ?? null,
+        images: imageUrls,
       }, editId);
       setSaved(true);
       setTimeout(() => setLocation('/partner/dashboard'), 1200);

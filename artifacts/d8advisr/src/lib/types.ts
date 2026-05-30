@@ -19,6 +19,8 @@ export interface PartnerEvent {
   isFree?: boolean;
   status: EventStatus;
   category: string;
+  coverImage?: string | null;
+  images?: string[];
   locationKind?: EventLocationKind;
   venueId?: string | null;
   venuePageStatus?: VenuePageStatus;
@@ -42,6 +44,13 @@ export interface PartnerVenueListing {
   verificationStatus: VenueVerificationStatus;
   reverificationReason: string | null;
   isActive: boolean;
+  category: string;
+  description: string | null;
+  address: string | null;
+  area: string | null;
+  openHours: Record<string, string> | null;
+  coverImage: string | null;
+  images: string[];
 }
 
 export interface VenuePlacementRequest {

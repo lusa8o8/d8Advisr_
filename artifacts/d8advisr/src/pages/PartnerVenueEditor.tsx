@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { usePartner } from '@/hooks/usePartner';
+import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
@@ -27,6 +28,7 @@ interface MediaFile {
   id: string;
   url: string;
   name: string;
+  file?: File;
 }
 
 const DEFAULT_HOURS: DayHours[] = DAYS.map((_, i) => ({
@@ -39,7 +41,7 @@ const MAX_PHOTOS = 6;
 
 export function PartnerVenueEditor() {
   const [, setLocation] = useLocation();
-  const { profile, saveVenue } = usePartner();
+  const { profile, venueListing, saveVenue } = usePartner();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -57,10 +59,31 @@ export function PartnerVenueEditor() {
 
   useEffect(() => {
     if (profile) {
-      setVenueName(profile.name);
+      setVenueName(venueListing?.name ?? profile.name);
+      setVenueType(venueListing?.category ?? '');
+      setAddress(venueListing?.address ?? '');
+      setArea(venueListing?.area ?? '');
+      setDesc(venueListing?.description ?? '');
       setPhone(profile.contact);
+      if (venueListing?.openHours) {
+        setHours(DAYS.map(day => {
+          const value = venueListing.openHours?.[day];
+          if (!value || value === 'Closed') return { open: false, from: '09:00', to: '22:00' };
+          const [from, to] = value.split(/[–-]/);
+          return { open: true, from: from || '09:00', to: to || '22:00' };
+        }));
+      }
+      const imageUrls = [
+        venueListing?.coverImage,
+        ...(venueListing?.images ?? []),
+      ].filter((url, index, arr): url is string => Boolean(url) && arr.indexOf(url) === index);
+      setPhotos(imageUrls.map((url, index) => ({
+        id: `persisted-${index}-${url}`,
+        url,
+        name: index === 0 ? 'Cover photo' : `Venue photo ${index + 1}`,
+      })));
     }
-  }, [profile]);
+  }, [profile, venueListing]);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,23 +91,31 @@ export function PartnerVenueEditor() {
     setHours(prev => prev.map((d, i) => i === idx ? { ...d, ...patch } : d));
   };
 
-  const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const remaining = MAX_PHOTOS - photos.length;
-    files.slice(0, remaining).forEach(file => {
+    setSaveError(null);
+    for (const file of files.slice(0, remaining)) {
+      try {
+        await validatePartnerImage(file);
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : 'Could not add this image.');
+        continue;
+      }
       setPhotos(prev => [...prev, {
         id: Math.random().toString(36).slice(2),
         url: URL.createObjectURL(file),
         name: file.name,
+        file,
       }]);
-    });
+    }
     e.target.value = '';
   };
 
   const removePhoto = (id: string) => {
     setPhotos(prev => {
       const item = prev.find(p => p.id === id);
-      if (item) URL.revokeObjectURL(item.url);
+      if (item && !isPartnerImageUrl(item.url)) URL.revokeObjectURL(item.url);
       return prev.filter(p => p.id !== id);
     });
   };
@@ -101,6 +132,10 @@ export function PartnerVenueEditor() {
         openHours[day] = hours[idx].open ? `${hours[idx].from}–${hours[idx].to}` : 'Closed';
       });
 
+      const imageUrls = await Promise.all(
+        photos.map(photo => photo.file ? uploadPartnerImage(photo.file, 'venues') : photo.url)
+      );
+
       await saveVenue({
         name: venueName.trim(),
         category: venueType,
@@ -110,6 +145,8 @@ export function PartnerVenueEditor() {
         phone: phone.trim() || undefined,
         website: website.trim() || undefined,
         openHours,
+        coverImage: imageUrls[0] ?? null,
+        images: imageUrls,
       });
       setSaved(true);
       setTimeout(() => setLocation('/partner/dashboard'), 1200);

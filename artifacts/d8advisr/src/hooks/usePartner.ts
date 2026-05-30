@@ -62,6 +62,8 @@ function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
     isFree,
     status: (row.event_status as PartnerEvent['status']) ?? 'live',
     category: String(row.category ?? ''),
+    coverImage: row.cover_image ? String(row.cover_image) : null,
+    images: Array.isArray(row.images) ? row.images.map(String) : (row.cover_image ? [String(row.cover_image)] : []),
     locationKind: row.event_location_kind as PartnerEvent['locationKind'],
     venueId: row.venue_id ? String(row.venue_id) : null,
     venuePageStatus: row.venue_page_status as PartnerEvent['venuePageStatus'],
@@ -274,7 +276,7 @@ export function usePartner() {
       if (app) {
         const { data: ownedVenue, error: ownedVenueErr } = await supabase
           .from('venues')
-          .select('id,name,listing_status,verification_status,reverification_reason,is_active')
+          .select('id,name,category,description,address,area,open_hours,cover_image,images,listing_status,verification_status,reverification_reason,is_active')
           .eq('partner_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -291,6 +293,13 @@ export function usePartner() {
             verificationStatus: ownedVenue.verification_status,
             reverificationReason: ownedVenue.reverification_reason,
             isActive: ownedVenue.is_active,
+            category: ownedVenue.category,
+            description: ownedVenue.description,
+            address: ownedVenue.address,
+            area: ownedVenue.area,
+            openHours: ownedVenue.open_hours as Record<string, string> | null,
+            coverImage: ownedVenue.cover_image,
+            images: ownedVenue.images ?? [],
           } : null);
         }
 
@@ -448,6 +457,8 @@ export function usePartner() {
     venueId?: string;
     externalLocationName?: string;
     externalLocationAddress?: string;
+    coverImage?: string | null;
+    images?: string[];
   }, editId?: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -509,6 +520,8 @@ export function usePartner() {
       price_pp: pricePp,
       is_free: eventData.isFree,
       emoji: eventData.emoji ?? '📅',
+      cover_image: eventData.coverImage ?? eventData.images?.[0] ?? null,
+      images: eventData.images ?? [],
       event_status: eventData.publishNow ? 'live' : 'draft',
       event_location_kind: locationKind,
       venue_id: selectedVenue?.id ?? null,
@@ -561,6 +574,8 @@ export function usePartner() {
     phone?: string;
     website?: string;
     openHours: Record<string, string>;
+    coverImage?: string | null;
+    images?: string[];
   }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -596,7 +611,8 @@ export function usePartner() {
       open_hours: venueData.openHours,
       partner_id: user.id,
       vibes: [],
-      images: [],
+      cover_image: venueData.coverImage ?? venueData.images?.[0] ?? null,
+      images: venueData.images ?? [],
       review_count: 0,
       updated_at: new Date().toISOString(),
     };
@@ -609,7 +625,8 @@ export function usePartner() {
       city,
       open_hours: venueData.openHours,
       vibes: [],
-      images: [],
+      cover_image: venueData.coverImage ?? venueData.images?.[0] ?? null,
+      images: venueData.images ?? [],
       review_count: 0,
       updated_at: new Date().toISOString(),
     };
