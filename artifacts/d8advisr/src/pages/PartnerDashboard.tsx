@@ -107,6 +107,10 @@ export function PartnerDashboard() {
     'Venue & Organiser';
   const canCreateEvents = canManageEvents(profile.partner_type);
   const canEditVenue = canManageVenues(profile.partner_type);
+  const venueInReview = Boolean(
+    venueListing
+    && (venueListing.status !== 'live' || venueListing.verificationStatus === 'reverify_required')
+  );
   const venueListingCopy = !venueListing
     ? {
         title: 'Complete your venue listing',
@@ -115,9 +119,9 @@ export function PartnerDashboard() {
       }
     : venueListing.status === 'live' && venueListing.verificationStatus === 'reverify_required'
       ? {
-          title: 'Listing live - reverification needed',
-          body: 'Your venue remains visible while D8 reviews the recent sensitive changes.',
-          action: 'Review listing',
+          title: 'Listing in review',
+          body: 'Your venue is still visible while D8 reviews the latest updates.',
+          action: 'Edit listing',
         }
       : venueListing.status === 'live'
         ? {
@@ -126,10 +130,8 @@ export function PartnerDashboard() {
             action: 'Edit listing',
           }
         : {
-            title: venueListing.status === 'needs_update' ? 'Listing needs an update' : 'Listing under review',
-            body: venueListing.status === 'needs_update'
-              ? 'D8 needs a few changes before this venue can appear publicly.'
-              : 'Your partner account is active. Your venue listing will appear publicly after D8 approves it.',
+            title: 'Listing in review',
+            body: 'D8 is reviewing your venue listing before it appears publicly.',
             action: 'Edit listing',
           };
 
@@ -207,13 +209,13 @@ export function PartnerDashboard() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
             <div className={cn(
               'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
-              venueListing?.status === 'live' && venueListing.verificationStatus !== 'reverify_required'
+              !venueInReview && venueListing?.status === 'live'
                 ? 'bg-[#E8FFF0] text-[#00C851]'
-                : 'bg-amber-50 text-amber-600'
+                : 'bg-gray-50 text-gray-500'
             )}>
-              {venueListing?.status === 'live' && venueListing.verificationStatus !== 'reverify_required'
+              {!venueInReview && venueListing?.status === 'live'
                 ? <CheckCircle size={17} />
-                : <AlertCircle size={17} />}
+                : <Clock size={17} />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-3">
@@ -223,7 +225,7 @@ export function PartnerDashboard() {
                 </div>
                 {venueListing && (
                   <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100 shrink-0">
-                    {venueListing.status.replace('_', ' ')}
+                    {venueInReview ? 'in review' : venueListing.status.replace('_', ' ')}
                   </span>
                 )}
               </div>

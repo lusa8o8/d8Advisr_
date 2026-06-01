@@ -219,6 +219,7 @@ interface VenuePlacementAdminRow {
   id: string;
   title: string;
   category: string | null;
+  cover_image: string | null;
   starts_at: string | null;
   event_status: string | null;
   venue_id: string;
@@ -232,6 +233,7 @@ interface VenuePlacementAdminRequest {
   eventId: string;
   eventName: string;
   category: string;
+  coverImage: string | null;
   startsAt: string;
   eventStatus: string;
   venueId: string;
@@ -249,6 +251,8 @@ interface VenueListingReviewRow {
   city: string;
   area: string | null;
   address: string | null;
+  cover_image: string | null;
+  images: string[] | null;
   partner_id: string | null;
   listing_status: string;
   verification_status: string;
@@ -264,6 +268,8 @@ interface VenueListingReview {
   city: string;
   area: string | null;
   address: string | null;
+  coverImage: string | null;
+  images: string[];
   partnerId: string | null;
   listingStatus: string;
   verificationStatus: string;
@@ -342,6 +348,7 @@ function venuePlacementAdminRequestFromRow(row: VenuePlacementAdminRow): VenuePl
     eventId: row.id,
     eventName: row.title,
     category: row.category ?? 'Event',
+    coverImage: row.cover_image,
     startsAt: row.starts_at ?? '',
     eventStatus: row.event_status ?? 'draft',
     venueId: row.venue_id,
@@ -361,12 +368,33 @@ function venueListingReviewFromRow(row: VenueListingReviewRow): VenueListingRevi
     city: row.city,
     area: row.area,
     address: row.address,
+    coverImage: row.cover_image,
+    images: row.images ?? [],
     partnerId: row.partner_id,
     listingStatus: row.listing_status,
     verificationStatus: row.verification_status,
     reverificationReason: row.reverification_reason,
     submittedAt: new Date(row.updated_at ?? row.created_at).toISOString().slice(0, 10),
   };
+}
+
+function reviewReasonLabel(reason: string | null) {
+  switch (reason) {
+    case 'name_changed':
+      return 'Name changed';
+    case 'address_changed':
+      return 'Address changed';
+    case 'category_changed':
+      return 'Category changed';
+    case 'price_changed':
+      return 'Price changed';
+    case 'sensitive_field_changed':
+      return 'Photos or sensitive fields changed';
+    case 'admin_review':
+      return 'Admin review';
+    default:
+      return null;
+  }
 }
 
 function logAdminIssue(message: string, detail?: unknown) {
@@ -434,7 +462,7 @@ export function AdminPanel() {
 
     const { data: placementRows, error: placementErr } = await supabase
       .from('events')
-      .select('id,title,category,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name,city,area)')
+      .select('id,title,category,cover_image,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name,city,area)')
       .eq('venue_page_status', 'requested')
       .order('created_at', { ascending: false });
 
@@ -447,7 +475,7 @@ export function AdminPanel() {
 
     const { data: listingRows, error: listingErr } = await supabase
       .from('venues')
-      .select('id,name,category,city,area,address,partner_id,listing_status,verification_status,reverification_reason,created_at,updated_at')
+      .select('id,name,category,city,area,address,cover_image,images,partner_id,listing_status,verification_status,reverification_reason,created_at,updated_at')
       .in('listing_status', ['draft', 'submitted', 'under_review', 'needs_update'])
       .order('updated_at', { ascending: false });
 
@@ -1343,6 +1371,12 @@ export function AdminPanel() {
               </span>
             </div>
 
+            {request.coverImage && (
+              <div className="mb-3 rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                <img src={request.coverImage} alt={request.eventName} className="w-full h-36 object-cover" />
+              </div>
+            )}
+
             <div className="flex gap-3 mb-3 text-[12px] text-gray-500">
               <span className="font-medium">{request.eventStatus}</span>
               <span>-</span>
@@ -1368,7 +1402,12 @@ export function AdminPanel() {
           </div>
         );
 
-        const ListingCard = ({ review }: { review: VenueListingReview }) => (
+        const ListingCard = ({ review }: { review: VenueListingReview }) => {
+          const media = [review.coverImage, ...review.images]
+            .filter((url, index, arr): url is string => Boolean(url) && arr.indexOf(url) === index);
+          const reason = reviewReasonLabel(review.reverificationReason);
+
+          return (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -1381,9 +1420,7 @@ export function AdminPanel() {
                     {review.category} · {review.area || review.city}
                   </p>
                   <p className="text-[11px] text-gray-500 mt-1 italic">
-                    {review.reverificationReason
-                      ? `Reverification: ${review.reverificationReason.replaceAll('_', ' ')}`
-                      : review.address || 'New venue listing'}
+                    {reason ?? review.address ?? 'New venue listing'}
                   </p>
                 </div>
               </div>
@@ -1391,6 +1428,21 @@ export function AdminPanel() {
                 {review.listingStatus.replace('_', ' ')}
               </span>
             </div>
+
+            {media.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {media.slice(0, 6).map((url, index) => (
+                  <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                    <img src={url} alt={`${review.name} photo ${index + 1}`} className="w-full h-full object-cover" />
+                    {index === 0 && (
+                      <span className="absolute left-1.5 bottom-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-white">
+                        Cover
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex gap-3 mb-3 text-[12px] text-gray-500">
               <span className="font-medium">{review.verificationStatus.replace('_', ' ')}</span>
@@ -1415,7 +1467,8 @@ export function AdminPanel() {
               </button>
             </div>
           </div>
-        );
+          );
+        };
 
         return (
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-8">

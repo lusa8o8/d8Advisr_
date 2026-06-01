@@ -453,7 +453,6 @@ export function PartnerEventEditor() {
                 >
                   <Film size={24} />
                   <span className="text-[13px] font-bold">Video coming soon</span>
-                  <span className="text-[11px] text-gray-300">Deferred for storage control</span>
                 </button>
               </>
             )}
