@@ -432,6 +432,8 @@ export function AdminPanel() {
   const [tierReason, setTierReason] = useState('');
   const [pendingTier, setPendingTier] = useState<Tier | null>(null);
   const [activeSection, setActiveSection] = useState<'listing' | 'media' | 'review'>('listing');
+  const [adminActionError, setAdminActionError] = useState<string | null>(null);
+  const [adminActionLoading, setAdminActionLoading] = useState<string | null>(null);
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
 
@@ -607,26 +609,47 @@ export function AdminPanel() {
     setEditField(null); setEditValue('');
   };
 
-  const confirmTierChange = () => {
+  const confirmTierChange = async () => {
     if (!selectedVenue || !pendingTier || !tierReason.trim()) return;
-    const entry: ChangeEntry = {
-      date: new Date().toISOString().split('T')[0],
-      field: 'Tier', oldValue: selectedVenue.tier, newValue: pendingTier,
-      by: 'D8 Team', reason: tierReason,
-    };
-    setVenues(vs => vs.map(v => v.id === selectedVenue.id ? { ...v, tier: pendingTier!, changeLog: [entry, ...v.changeLog] } : v));
-    setPendingTier(null); setTierReason(''); setShowTierMenu(false);
+    setAdminActionError(null);
+    setAdminActionLoading('tier');
+
+    const { error } = await supabase.rpc('admin_update_venue_tier', {
+      p_venue_id: selectedVenue.id,
+      new_tier: pendingTier,
+      reason: tierReason.trim(),
+    });
+
+    if (error) {
+      setAdminActionError(error.message);
+      logAdminIssue('Could not update venue tier', { venueId: selectedVenue.id, tier: pendingTier, error: error.message });
+    } else {
+      setPendingTier(null);
+      setTierReason('');
+      setShowTierMenu(false);
+      await loadAdminVenues();
+    }
+
+    setAdminActionLoading(null);
   };
 
-  const markVerified = (id: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const due   = new Date(); due.setMonth(due.getMonth() + 6);
-    const dueStr = due.toISOString().split('T')[0];
-    const entry: ChangeEntry = {
-      date: today, field: 'Verification', oldValue: 'Overdue', newValue: 'Current',
-      by: 'D8 Team', reason: 'Re-inspection completed',
-    };
-    setVenues(vs => vs.map(v => v.id === id ? { ...v, health: 'green', nextInspectionDue: dueStr, changeLog: [entry, ...v.changeLog] } : v));
+  const markVerified = async (id: string) => {
+    setAdminActionError(null);
+    setAdminActionLoading(`verify:${id}`);
+
+    const { error } = await supabase.rpc('admin_mark_venue_verified', {
+      p_venue_id: id,
+      reason: 'admin_verified',
+    });
+
+    if (error) {
+      setAdminActionError(error.message);
+      logAdminIssue('Could not mark venue verified', { venueId: id, error: error.message });
+    } else {
+      await loadAdminVenues();
+    }
+
+    setAdminActionLoading(null);
   };
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
@@ -810,9 +833,10 @@ export function AdminPanel() {
                 <Shield size={15} className="text-[#FF5A5F]" />
                 <span className="font-bold text-gray-900 text-[13px]">Tier Assignment</span>
               </div>
-              <button disabled
-                className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-300 cursor-not-allowed transition-colors">
-                Phase C <ChevronDown size={14} className={cn("transition-transform", showTierMenu && "rotate-180")} />
+              <button
+                onClick={() => setShowTierMenu(v => !v)}
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+                Change <ChevronDown size={14} className={cn("transition-transform", showTierMenu && "rotate-180")} />
               </button>
             </div>
 
@@ -834,10 +858,10 @@ export function AdminPanel() {
                       placeholder="Reason for tier change (required)…"
                       rows={2}
                       className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-[#FF5A5F] resize-none mb-2.5" />
-                    <button onClick={confirmTierChange} disabled={!tierReason.trim()}
+                    <button onClick={() => void confirmTierChange()} disabled={!tierReason.trim() || adminActionLoading === 'tier'}
                       className={cn("w-full py-2.5 rounded-xl font-bold text-[13px] transition-all",
-                        tierReason.trim() ? "bg-[#FF5A5F] text-white active:scale-[0.98]" : "bg-gray-100 text-gray-400 cursor-not-allowed")}>
-                      Confirm Tier Change
+                        tierReason.trim() && adminActionLoading !== 'tier' ? "bg-[#FF5A5F] text-white active:scale-[0.98]" : "bg-gray-100 text-gray-400 cursor-not-allowed")}>
+                      {adminActionLoading === 'tier' ? 'Saving...' : 'Confirm Tier Change'}
                     </button>
                   </>
                 )}
@@ -846,6 +870,11 @@ export function AdminPanel() {
               <div className={cn("flex items-center gap-2.5 p-3 rounded-xl border", TIER_STYLE[selectedVenue.tier])}>
                 <div className={cn("w-3 h-3 rounded-full shrink-0", TIER_DOT[selectedVenue.tier])} />
                 <span className="font-bold text-[14px]">{selectedVenue.tier}</span>
+              </div>
+            )}
+            {adminActionError && (
+              <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">
+                {adminActionError}
               </div>
             )}
           </div>
@@ -968,6 +997,20 @@ export function AdminPanel() {
                     <p>{reviewReasonLabel(selectedVenue.reverificationReason) ?? selectedVenue.reverificationReason.replaceAll('_', ' ')}</p>
                   </div>
                 )}
+
+                <button
+                  onClick={() => void markVerified(selectedVenue.id)}
+                  disabled={adminActionLoading === `verify:${selectedVenue.id}`}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-[13px] border transition-transform",
+                    adminActionLoading === `verify:${selectedVenue.id}`
+                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "bg-[#E8FFF0] text-[#00C851] border-[#00C851]/20 active:scale-[0.98]"
+                  )}
+                >
+                  <RotateCcw size={14} />
+                  {adminActionLoading === `verify:${selectedVenue.id}` ? 'Saving...' : 'Mark venue verified'}
+                </button>
 
                 <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
                   <p className="font-bold text-gray-900 mb-1">Change history</p>
@@ -1160,9 +1203,17 @@ export function AdminPanel() {
                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
                     View Venue
                   </button>
-                  <button disabled
-                    className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-400 font-bold text-[12px] cursor-not-allowed">
-                    Phase C
+                  <button
+                    onClick={() => void markVerified(v.id)}
+                    disabled={adminActionLoading === `verify:${v.id}`}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl font-bold text-[12px] transition-transform",
+                      adminActionLoading === `verify:${v.id}`
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-[#FF5A5F] text-white active:scale-95"
+                    )}
+                  >
+                    {adminActionLoading === `verify:${v.id}` ? 'Saving...' : 'Mark verified'}
                   </button>
                 </div>
               </div>
@@ -1194,9 +1245,17 @@ export function AdminPanel() {
                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
                     View Venue
                   </button>
-                  <button disabled
-                    className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-400 font-bold text-[12px] cursor-not-allowed">
-                    Phase C
+                  <button
+                    onClick={() => void markVerified(v.id)}
+                    disabled={adminActionLoading === `verify:${v.id}`}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl font-bold text-[12px] transition-transform",
+                      adminActionLoading === `verify:${v.id}`
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-[#FF9500] text-white active:scale-95"
+                    )}
+                  >
+                    {adminActionLoading === `verify:${v.id}` ? 'Saving...' : 'Mark verified'}
                   </button>
                 </div>
               </div>
