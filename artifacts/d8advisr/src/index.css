@@ -132,12 +132,15 @@
 .dark .bg-amber-100               { background-color: #231a05 !important; }
 .dark .hover\:bg-amber-100\/50:hover { background-color: #231a05 !important; }
 .dark .border-b-amber-100         { border-color: #2d2005 !important; }
+.dark .bg-blue-50                 { background-color: #071527 !important; }
+.dark .bg-blue-100                { background-color: #0a1e35 !important; }
 .dark .bg-sky-50                  { background-color: #051820 !important; }
 .dark .bg-sky-100                 { background-color: #061e28 !important; }
 .dark .hover\:bg-sky-100\/50:hover { background-color: #061e28 !important; }
 .dark .border-b-sky-100           { border-color: #072535 !important; }
 .dark .bg-purple-50               { background-color: #130d24 !important; }
 .dark .bg-purple-100              { background-color: #1a1230 !important; }
+.dark .bg-\[\#E8FFF0\]            { background-color: #071a0e !important; }
 .dark .bg-green-50                { background-color: #071a0e !important; }
 .dark .bg-green-100               { background-color: #0c2213 !important; }
 .dark .bg-red-50                  { background-color: #1f0a0b !important; }
@@ -147,6 +150,8 @@
 .dark .text-black             { color: #EDEDED !important; }
 .dark .text-gray-900          { color: #EDEDED !important; }
 .dark .text-amber-600         { color: #f59e0b !important; }
+.dark .text-blue-700          { color: #93c5fd !important; }
+.dark .text-blue-600          { color: #60a5fa !important; }
 .dark .text-sky-600           { color: #38bdf8 !important; }
 .dark .text-sky-500           { color: #38bdf8 !important; }
 .dark .text-purple-600        { color: #a78bfa !important; }
@@ -163,6 +168,8 @@
 .dark .border-gray-100        { border-color: #2A2A2A !important; }
 .dark .border-gray-200        { border-color: #333333 !important; }
 .dark .border-gray-300        { border-color: #444444 !important; }
+.dark .border-blue-100        { border-color: #12345a !important; }
+.dark .border-blue-200        { border-color: #1d4f85 !important; }
 
 /* Inputs */
 .dark input,
