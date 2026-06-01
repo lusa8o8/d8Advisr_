@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { authPathWithNext, consumeOAuthError, getSafeNextPath } from '@/lib/authRedirect';
+import { authPathWithNext, consumeOAuthError, getPostAuthRedirectPath, getSafeNextPath } from '@/lib/authRedirect';
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function isExistingUserError(message: string) {
+  return /already registered|already exists|user already/i.test(message);
+}
 
 export function SignUp() {
   const [, setLocation] = useLocation();
@@ -14,6 +22,7 @@ export function SignUp() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showExistingAccountPrompt, setShowExistingAccountPrompt] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
 
   useEffect(() => {
@@ -24,15 +33,25 @@ export function SignUp() {
   }, []);
 
   const handleSignUp = async () => {
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail || !password) { setError('Please fill in all fields.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
     setError(null);
-    const { error } = await signUp(email, password, nextPath);
+    setShowExistingAccountPrompt(false);
+    const { error, session } = await signUp(normalizedEmail, password, nextPath);
     setLoading(false);
     if (error) {
-      setError(error.message);
+      if (isExistingUserError(error.message)) {
+        setError('An account already exists for this email. Sign in, or continue with Google if that is how the account was created.');
+        setShowExistingAccountPrompt(true);
+      } else {
+        setError(error.message);
+      }
+    } else if (session) {
+      setLocation(getPostAuthRedirectPath());
     } else {
+      setEmail(normalizedEmail);
       setConfirmSent(true);
     }
   };
@@ -40,6 +59,7 @@ export function SignUp() {
   const handleGoogle = async () => {
     setGoogleLoading(true);
     setError(null);
+    setShowExistingAccountPrompt(false);
     const { error } = await signInWithGoogle(nextPath);
     if (error) { setError(error.message); setGoogleLoading(false); }
   };
@@ -78,7 +98,26 @@ export function SignUp() {
 
         {error && (
           <div className="mb-5 p-3.5 rounded-xl bg-[#FFF0F1] border border-primary/20 text-primary text-sm font-medium">
-            {error}
+            <p>{error}</p>
+            {showExistingAccountPrompt && (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setLocation(authPathWithNext('/signin', nextPath))}
+                  className="text-sm font-semibold underline underline-offset-4"
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  disabled={googleLoading}
+                  className="text-sm font-semibold underline underline-offset-4 disabled:opacity-60"
+                >
+                  Continue with Google
+                </button>
+              </div>
+            )}
           </div>
         )}
 

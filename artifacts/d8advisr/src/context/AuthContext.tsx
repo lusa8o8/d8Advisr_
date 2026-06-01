@@ -6,7 +6,7 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signUp: (email: string, password: string, nextPath?: string | null) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, nextPath?: string | null) => Promise<{ error: Error | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: (nextPath?: string | null) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -19,6 +19,10 @@ function getAuthRedirectUrl(nextPath?: string | null) {
   const callbackUrl = new URL(`${window.location.origin}${basePath}/auth/callback`);
   if (nextPath) callbackUrl.searchParams.set('next', nextPath);
   return callbackUrl.toString();
+}
+
+function normalizeAuthEmail(email: string) {
+  return email.trim().toLowerCase();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -67,16 +71,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, nextPath?: string | null) => {
-    const { error } = await supabase.auth.signUp({
-      email,
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizeAuthEmail(email),
       password,
       options: { emailRedirectTo: getAuthRedirectUrl(nextPath) },
     });
-    return { error };
+    return { error, session: data.session };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalizeAuthEmail(email),
+      password,
+    });
     return { error };
   };
 

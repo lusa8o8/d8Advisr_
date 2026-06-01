@@ -4,6 +4,10 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { authPathWithNext, consumeOAuthError, getPostAuthRedirectPath, getSafeNextPath } from '@/lib/authRedirect';
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 export function SignIn() {
   const [, setLocation] = useLocation();
   const { signIn, signInWithGoogle } = useAuth();
@@ -24,15 +28,16 @@ export function SignIn() {
   }, []);
 
   const handleSignIn = async () => {
-    if (!email || !password) { setError('Please enter your email and password.'); return; }
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail || !password) { setError('Please enter your email and password.'); return; }
     setLoading(true);
     setError(null);
     setShowCreateAccountPrompt(false);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(normalizedEmail, password);
     setLoading(false);
     if (error) {
       if (error.message === 'Invalid login credentials') {
-        setError('We could not sign you in with those details. Check your email and password, or create an account.');
+        setError('We could not sign you in with those details. Check your password, or continue with Google if that is how you created the account.');
         setShowCreateAccountPrompt(true);
       } else {
         setError(error.message);
@@ -67,13 +72,23 @@ export function SignIn() {
           <div className="mb-5 p-3.5 rounded-xl bg-[#FFF0F1] border border-primary/20 text-primary text-sm font-medium">
             <p>{error}</p>
             {showCreateAccountPrompt && (
-              <button
-                type="button"
-                onClick={() => setLocation(authPathWithNext('/signup', nextPath))}
-                className="mt-3 text-sm font-semibold underline underline-offset-4"
-              >
-                Create an account
-              </button>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  disabled={googleLoading}
+                  className="text-sm font-semibold underline underline-offset-4 disabled:opacity-60"
+                >
+                  Continue with Google
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocation(authPathWithNext('/signup', nextPath))}
+                  className="text-sm font-semibold underline underline-offset-4"
+                >
+                  Create an account
+                </button>
+              </div>
             )}
           </div>
         )}
