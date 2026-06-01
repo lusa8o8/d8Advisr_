@@ -274,6 +274,23 @@ interface InspectionDraft {
   inspectorNotes: string;
 }
 
+interface VenueChangeLogRow {
+  id: string;
+  venue_id: string;
+  changed_by: string | null;
+  actor_email: string | null;
+  actor_display_name: string | null;
+  actor_username: string | null;
+  field_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  risk_level: 'low' | 'high';
+  applied_immediately: boolean;
+  created_reverification: boolean;
+  reverification_reason: string | null;
+  created_at: string;
+}
+
 function partnerTypeLabel(type: PartnerApplicationType) {
   if (type === 'venue') return 'Venue';
   if (type === 'organizer') return 'Organiser';
@@ -405,6 +422,26 @@ function formatDate(value: string | null | undefined) {
   return new Date(time).toISOString().slice(0, 10);
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return 'Unknown time';
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return 'Unknown time';
+  return new Date(time).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function actorLabel(row: VenueChangeLogRow) {
+  if (row.actor_email) return row.actor_email;
+  if (row.actor_display_name) return row.actor_display_name;
+  if (row.actor_username) return row.actor_username;
+  if (row.changed_by) return `Admin ${row.changed_by.slice(0, 8)}`;
+  return 'D8 admin';
+}
+
 function formatOpenHours(hours: Record<string, string> | null) {
   if (!hours || Object.keys(hours).length === 0) return 'Not provided';
   return Object.entries(hours)
@@ -525,6 +562,9 @@ export function AdminPanel() {
   const [venueInspections, setVenueInspections] = useState<VenueInspectionRow[]>([]);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [inspectionsError, setInspectionsError] = useState<string | null>(null);
+  const [venueChangeLogs, setVenueChangeLogs] = useState<Record<string, VenueChangeLogRow[]>>({});
+  const [changeLogLoading, setChangeLogLoading] = useState(false);
+  const [changeLogError, setChangeLogError] = useState<string | null>(null);
 
   // Filter state
   const [filterTier, setFilterTier]     = useState<string>('All');
@@ -552,6 +592,7 @@ export function AdminPanel() {
   const selectedInspection = selectedVenue
     ? venueInspections.find(inspection => inspection.venue_id === selectedVenue.id) ?? null
     : null;
+  const selectedChangeLog = selectedVenue ? venueChangeLogs[selectedVenue.id] ?? [] : [];
 
   const handleSignOut = async () => {
     await signOut();
@@ -675,6 +716,28 @@ export function AdminPanel() {
     setInspectionsLoading(false);
   };
 
+  const loadVenueChangeLog = async (venueId: string) => {
+    setChangeLogLoading(true);
+    setChangeLogError(null);
+
+    const { data, error } = await supabase.rpc('admin_get_venue_change_log', {
+      p_venue_id: venueId,
+    });
+
+    if (error) {
+      setVenueChangeLogs(current => ({ ...current, [venueId]: [] }));
+      setChangeLogError(error.message);
+      logAdminIssue('Could not load venue change log', { venueId, error: error.message });
+    } else {
+      setVenueChangeLogs(current => ({
+        ...current,
+        [venueId]: (data ?? []) as VenueChangeLogRow[],
+      }));
+    }
+
+    setChangeLogLoading(false);
+  };
+
   useEffect(() => {
     void loadAdminVenues();
     void loadSubmissions();
@@ -746,6 +809,7 @@ export function AdminPanel() {
     } else {
       await loadAdminVenues();
       await loadReverificationTasks();
+      if (selectedId) await loadVenueChangeLog(selectedId);
     }
   };
 
@@ -771,6 +835,7 @@ export function AdminPanel() {
       occasionFit: '',
       inspectorNotes: '',
     });
+    void loadVenueChangeLog(id);
   };
 
   const saveField = (section: 'listing' | 'experience', key: string) => {
@@ -808,6 +873,7 @@ export function AdminPanel() {
       setTierReason('');
       setShowTierMenu(false);
       await loadAdminVenues();
+      await loadVenueChangeLog(selectedVenue.id);
     }
 
     setAdminActionLoading(null);
@@ -828,6 +894,7 @@ export function AdminPanel() {
     } else {
       await loadAdminVenues();
       await loadReverificationTasks();
+      await loadVenueChangeLog(id);
     }
 
     setAdminActionLoading(null);
@@ -854,6 +921,7 @@ export function AdminPanel() {
     } else {
       await loadReverificationTasks();
       await loadAdminVenues();
+      if (selectedId) await loadVenueChangeLog(selectedId);
     }
 
     setAdminActionLoading(null);
@@ -1437,8 +1505,59 @@ export function AdminPanel() {
                 </button>
 
                 <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
-                  <p className="font-bold text-gray-900 mb-1">Change history</p>
-                  <p>Admin change history will be connected to the venue change log in Phase C.</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-bold text-gray-900">Change history</p>
+                    {changeLogLoading && (
+                      <span className="text-[10px] font-bold text-gray-400">Loading...</span>
+                    )}
+                  </div>
+                  {changeLogError && (
+                    <div className="mb-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">
+                      {changeLogError}
+                    </div>
+                  )}
+                  {!changeLogLoading && selectedChangeLog.length === 0 && !changeLogError && (
+                    <p>No venue change history has been recorded yet.</p>
+                  )}
+                  {selectedChangeLog.map(entry => {
+                    const reason = reviewReasonLabel(entry.reverification_reason) ?? entry.reverification_reason?.replaceAll('_', ' ');
+                    return (
+                      <div key={entry.id} className="border-t border-gray-100 py-3 first:border-t-0 first:pt-0">
+                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-900 text-[13px] capitalize">{entry.field_name.replaceAll('_', ' ')}</p>
+                            <p className="text-[11px] text-gray-400 truncate">by {actorLabel(entry)}</p>
+                          </div>
+                          <span className="text-[10px] font-bold text-gray-400 shrink-0">{formatDateTime(entry.created_at)}</span>
+                        </div>
+                        {(entry.old_value || entry.new_value) && (
+                          <div className="flex flex-wrap gap-1.5 text-[11px] mb-2">
+                            {entry.old_value && (
+                              <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-500 line-through">{entry.old_value}</span>
+                            )}
+                            {entry.old_value && entry.new_value && <span className="text-gray-300">to</span>}
+                            {entry.new_value && (
+                              <span className="rounded-full bg-[#E8FFF0] px-2 py-0.5 font-medium text-[#00C851]">{entry.new_value}</span>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                            entry.risk_level === 'high' ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-gray-500"
+                          )}>
+                            {entry.risk_level} risk
+                          </span>
+                          {entry.created_reverification && (
+                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">reverification</span>
+                          )}
+                          {reason && (
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">{reason}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
