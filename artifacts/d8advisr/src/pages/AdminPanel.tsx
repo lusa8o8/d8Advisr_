@@ -24,6 +24,21 @@ interface Venue {
   name: string;
   category: string;
   city: string;
+  area: string | null;
+  address: string | null;
+  description: string | null;
+  price: string;
+  hours: string;
+  photos: string[];
+  coverImage: string | null;
+  listingStatus: string;
+  verificationStatus: string;
+  reverificationReason: string | null;
+  lastVerifiedAt: string;
+  nextVerificationDueAt: string;
+  rating: number | null;
+  reviewCount: number;
+  isActive: boolean;
   tier: Tier;
   health: Health;
   nextInspectionDue: string;
@@ -328,16 +343,33 @@ function adminVenueFromRow(row: AdminVenueRow): Venue {
   const verifiedAt = formatDate(row.last_verified_at ?? row.updated_at ?? row.created_at);
   const source = row.listing_status === 'live' ? 'Approved listing' : 'Partner submission';
   const confidence = fieldConfidence(row);
-  const imageCount = new Set([row.cover_image, ...(row.images ?? [])].filter(Boolean)).size;
+  const photos = Array.from(new Set([row.cover_image, ...(row.images ?? [])].filter((url): url is string => Boolean(url))));
+  const imageCount = photos.length;
   const price = row.avg_cost_pp
     ? `${row.price_tier ?? ''} ${row.avg_cost_pp}/pp`.trim()
     : row.price_tier ?? 'Not provided';
+  const hours = formatOpenHours(row.open_hours);
 
   return {
     id: row.id,
     name: row.name,
     category: row.category,
     city: row.city,
+    area: row.area,
+    address: row.address,
+    description: row.description,
+    price,
+    hours,
+    photos,
+    coverImage: row.cover_image,
+    listingStatus: row.listing_status,
+    verificationStatus: row.verification_status,
+    reverificationReason: row.reverification_reason,
+    lastVerifiedAt: formatDate(row.last_verified_at),
+    nextVerificationDueAt: formatDate(row.next_verification_due_at),
+    rating: row.rating,
+    reviewCount: row.review_count ?? 0,
+    isActive: Boolean(row.is_active),
     tier: coerceTier(row),
     health: healthFromVenue(row),
     nextInspectionDue: formatDate(row.next_verification_due_at),
@@ -345,7 +377,7 @@ function adminVenueFromRow(row: AdminVenueRow): Venue {
       'Address': { value: row.address ?? 'Not provided', source, verifiedAt, confidence },
       'Area': { value: row.area ?? 'Not provided', source, verifiedAt, confidence },
       'Description': { value: row.description ?? 'Not provided', source, verifiedAt, confidence },
-      'Hours': { value: formatOpenHours(row.open_hours), source, verifiedAt, confidence },
+      'Hours': { value: hours, source, verifiedAt, confidence },
       'Price Range': { value: price, source, verifiedAt, confidence },
       'Photos': { value: imageCount ? `${imageCount} uploaded` : 'No photos uploaded', source, verifiedAt, confidence },
       'Listing Status': { value: row.listing_status.replaceAll('_', ' '), source: 'D8 status', verifiedAt, confidence: 'live' },
@@ -399,7 +431,7 @@ export function AdminPanel() {
   const [showTierMenu, setShowTierMenu] = useState(false);
   const [tierReason, setTierReason] = useState('');
   const [pendingTier, setPendingTier] = useState<Tier | null>(null);
-  const [activeSection, setActiveSection] = useState<'listing' | 'experience' | 'log'>('listing');
+  const [activeSection, setActiveSection] = useState<'listing' | 'media' | 'review'>('listing');
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
 
@@ -820,25 +852,138 @@ export function AdminPanel() {
 
           {/* Section tabs */}
           <div className="flex mx-4 mt-4 bg-white rounded-2xl border border-gray-200 p-1 shadow-sm">
-            {(['listing', 'experience', 'log'] as const).map(s => (
+            {(['listing', 'media', 'review'] as const).map(s => (
               <button key={s} onClick={() => setActiveSection(s)}
                 className={cn("flex-1 py-2 rounded-xl text-[12px] font-bold transition-all capitalize",
                   activeSection === s ? "bg-[#141414] text-white" : "text-gray-500 hover:text-gray-800")}>
-                {s === 'listing' ? 'Listing' : s === 'experience' ? 'Experience' : 'Log'}
+                {s}
               </button>
             ))}
           </div>
 
           <div className="px-4 pt-3 pb-6">
+            {activeSection === 'listing' && (
+              <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Listing status</p>
+                    <p className="text-[18px] font-black text-gray-900 capitalize">{selectedVenue.listingStatus.replaceAll('_', ' ')}</p>
+                    <p className="text-[11px] text-gray-400 mt-1">{selectedVenue.isActive ? 'Visible publicly' : 'Not public yet'}</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Verification</p>
+                    <p className="text-[18px] font-black text-gray-900 capitalize">{selectedVenue.verificationStatus.replaceAll('_', ' ')}</p>
+                    <p className="text-[11px] text-gray-400 mt-1">Next: {selectedVenue.nextVerificationDueAt}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Description</p>
+                  <p className="text-[13px] text-gray-700 leading-relaxed">{selectedVenue.description || 'No description provided yet.'}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ['Area', selectedVenue.area || 'Not provided'],
+                    ['Address', selectedVenue.address || 'Not provided'],
+                    ['Price', selectedVenue.price],
+                    ['Hours', selectedVenue.hours],
+                    ['Rating', selectedVenue.rating ? `${selectedVenue.rating.toFixed(1)} (${selectedVenue.reviewCount} reviews)` : 'No reviews yet'],
+                    ['Tier', selectedVenue.tier],
+                  ].map(([label, value]) => (
+                    <div key={label} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</p>
+                      <p className="text-[13px] font-bold text-gray-900 leading-snug">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'media' && (
+              <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+                {selectedVenue.coverImage ? (
+                  <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
+                    <img src={selectedVenue.coverImage} alt={`${selectedVenue.name} cover`} className="w-full h-44 object-cover" />
+                    <div className="px-4 py-3 bg-white">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cover image</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-[13px] text-amber-700">
+                    <p className="font-bold mb-1">Missing cover image</p>
+                    <p>This listing can be reviewed, but public quality is weaker without a clear venue photo.</p>
+                  </div>
+                )}
+
+                {selectedVenue.photos.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedVenue.photos.map((url, index) => (
+                      <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                        <img src={url} alt={`${selectedVenue.name} photo ${index + 1}`} className="w-full h-full object-cover" />
+                        {url === selectedVenue.coverImage && (
+                          <span className="absolute left-1.5 bottom-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-white">Cover</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center text-[13px] text-gray-400">
+                    No venue photos uploaded yet.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeSection === 'review' && (
+              <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield size={15} className="text-[#FF5A5F]" />
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Review status</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Listing status</p>
+                      <p className="text-[13px] font-bold text-gray-900 capitalize">{selectedVenue.listingStatus.replaceAll('_', ' ')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Verification</p>
+                      <p className="text-[13px] font-bold text-gray-900 capitalize">{selectedVenue.verificationStatus.replaceAll('_', ' ')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Last verified</p>
+                      <p className="text-[13px] font-bold text-gray-900">{selectedVenue.lastVerifiedAt}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Next review</p>
+                      <p className="text-[13px] font-bold text-gray-900">{selectedVenue.nextVerificationDueAt}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedVenue.reverificationReason && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-[13px] text-amber-700">
+                    <p className="font-bold mb-1">Review reason</p>
+                    <p>{reviewReasonLabel(selectedVenue.reverificationReason) ?? selectedVenue.reverificationReason.replaceAll('_', ' ')}</p>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
+                  <p className="font-bold text-gray-900 mb-1">Change history</p>
+                  <p>Admin change history will be connected to the venue change log in Phase C.</p>
+                </div>
+              </div>
+            )}
 
             {/* LISTING DATA */}
-            {activeSection === 'listing' && (
+            {false && selectedVenue && (
               <div className="flex flex-col gap-2.5 animate-in fade-in duration-200">
                 <div className="flex items-center gap-1.5 mb-1 px-1">
                   <Edit3 size={13} className="text-gray-400" />
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Listing Data — Editable</p>
                 </div>
-                {Object.entries(selectedVenue.listing).map(([key, meta]) => (
+                {Object.entries(selectedVenue!.listing).map(([key, meta]) => (
                   <div key={key} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-4 py-3.5">
                       <div className="flex items-center justify-between mb-1.5">
@@ -880,7 +1025,7 @@ export function AdminPanel() {
             )}
 
             {/* EXPERIENCE DATA */}
-            {activeSection === 'experience' && (
+            {false && selectedVenue && (
               <div className="flex flex-col gap-2.5 animate-in fade-in duration-200">
                 <div className="flex items-center gap-1.5 mb-1 px-1">
                   <Lock size={13} className="text-purple-400" />
@@ -892,7 +1037,7 @@ export function AdminPanel() {
                     These fields are set during physical inspection and are locked from venue manager access. Edit only after a verified visit.
                   </p>
                 </div>
-                {Object.entries(selectedVenue.experience).map(([key, meta]) => (
+                {Object.entries(selectedVenue!.experience).map(([key, meta]) => (
                   <div key={key} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-4 py-3.5">
                       <div className="flex items-center justify-between mb-1.5">
@@ -930,7 +1075,7 @@ export function AdminPanel() {
                   <span className="text-[12px] text-gray-500 font-medium">⭐ Avg Score</span>
                   <span className="text-[13px] font-black text-gray-900">
                     {(() => {
-                      const scores = Object.entries(selectedVenue.experience)
+                      const scores = Object.entries(selectedVenue!.experience)
                         .filter(([k]) => k.includes('Score'))
                         .map(([, v]) => parseFloat(v.value));
                       return scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—';
@@ -942,21 +1087,21 @@ export function AdminPanel() {
             )}
 
             {/* CHANGE LOG */}
-            {activeSection === 'log' && (
+            {false && selectedVenue && (
               <div className="flex flex-col gap-0 animate-in fade-in duration-200">
                 <div className="flex items-center gap-1.5 mb-3 px-1">
                   <Star size={13} className="text-gray-400" />
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Change History</p>
                 </div>
-                {selectedVenue.changeLog.length === 0 && (
+                {selectedVenue!.changeLog.length === 0 && (
                   <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
                     No admin change history is wired here yet. Phase C will connect this to the venue change log.
                   </div>
                 )}
-                {selectedVenue.changeLog.map((entry, i) => (
+                {selectedVenue!.changeLog.map((entry, i) => (
                   <div key={i} className="flex gap-3 pb-4 relative">
                     {/* Timeline line */}
-                    {i < selectedVenue.changeLog.length - 1 && (
+                    {i < selectedVenue!.changeLog.length - 1 && (
                       <div className="absolute left-[14px] top-8 bottom-0 w-[2px] bg-gray-100" />
                     )}
                     {/* Dot */}
