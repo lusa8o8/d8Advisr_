@@ -385,6 +385,8 @@ function reviewReasonLabel(reason: string | null) {
       return 'Photos or sensitive fields changed';
     case 'admin_review':
       return 'Admin review';
+    case 'needs_better_photos':
+      return 'Needs better photos';
     default:
       return null;
   }
@@ -723,14 +725,18 @@ export function AdminPanel() {
     }
   };
 
-  const updateVenueListingStatus = async (venueId: string, status: 'live' | 'needs_update' | 'hidden') => {
+  const updateVenueListingStatus = async (
+    venueId: string,
+    status: 'live' | 'needs_update' | 'hidden',
+    reason: string | null = status === 'live' ? null : 'admin_review'
+  ) => {
     const previous = venueListingReviews;
     setVenueListingReviews(current => current.filter(review => review.id !== venueId));
 
     const { error } = await supabase.rpc('admin_update_venue_listing_status', {
       venue_id: venueId,
       new_status: status,
-      reason: status === 'live' ? null : 'admin_review',
+      reason,
     });
 
     if (error) {
@@ -1194,6 +1200,25 @@ export function AdminPanel() {
 
             {activeSection === 'media' && (
               <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={cn(
+                    "rounded-2xl border p-4 shadow-sm",
+                    selectedVenue.coverImage ? "bg-[#E8FFF0] border-[#00C851]/20 text-[#00C851]" : "bg-amber-50 border-amber-100 text-amber-700"
+                  )}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-2 opacity-70">Cover</p>
+                    <p className="text-2xl font-black leading-none">{selectedVenue.coverImage ? 'Ready' : 'Missing'}</p>
+                    <p className="text-[11px] font-medium opacity-70 mt-2">{selectedVenue.coverImage ? 'Public card can render.' : 'Ask partner for a clear hero photo.'}</p>
+                  </div>
+                  <div className={cn(
+                    "rounded-2xl border p-4 shadow-sm",
+                    selectedVenue.photos.length >= 3 ? "bg-[#E8FFF0] border-[#00C851]/20 text-[#00C851]" : "bg-amber-50 border-amber-100 text-amber-700"
+                  )}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-2 opacity-70">Gallery</p>
+                    <p className="text-2xl font-black leading-none">{selectedVenue.photos.length}</p>
+                    <p className="text-[11px] font-medium opacity-70 mt-2">{selectedVenue.photos.length >= 3 ? 'Enough media for review.' : 'Prefer at least 3 real venue photos.'}</p>
+                  </div>
+                </div>
+
                 {selectedVenue.coverImage ? (
                   <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
                     <img src={selectedVenue.coverImage} alt={`${selectedVenue.name} cover`} className="w-full h-44 object-cover" />
@@ -2355,9 +2380,14 @@ export function AdminPanel() {
               </span>
             </div>
 
-            {request.coverImage && (
+            {request.coverImage ? (
               <div className="mb-3 rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
                 <img src={request.coverImage} alt={request.eventName} className="w-full h-36 object-cover" />
+              </div>
+            ) : (
+              <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
+                <p className="font-bold">Missing event cover</p>
+                <p className="mt-0.5">Placement can be reviewed, but this event has no public image.</p>
               </div>
             )}
 
@@ -2390,6 +2420,8 @@ export function AdminPanel() {
           const media = [review.coverImage, ...review.images]
             .filter((url, index, arr): url is string => Boolean(url) && arr.indexOf(url) === index);
           const reason = reviewReasonLabel(review.reverificationReason);
+          const missingCover = !review.coverImage;
+          const thinGallery = media.length < 3;
 
           return (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
@@ -2409,11 +2441,28 @@ export function AdminPanel() {
                 </div>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ml-2 bg-amber-50 text-amber-700 border-amber-200">
-                {review.listingStatus.replace('_', ' ')}
+                {review.listingStatus.replaceAll('_', ' ')}
               </span>
             </div>
 
-            {media.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className={cn(
+                "rounded-xl border px-3 py-2",
+                missingCover ? "bg-amber-50 border-amber-100 text-amber-700" : "bg-[#E8FFF0] border-[#00C851]/20 text-[#00C851]"
+              )}>
+                <p className="text-[9px] font-bold uppercase tracking-wider opacity-70">Cover</p>
+                <p className="text-[12px] font-bold">{missingCover ? 'Missing' : 'Ready'}</p>
+              </div>
+              <div className={cn(
+                "rounded-xl border px-3 py-2",
+                thinGallery ? "bg-amber-50 border-amber-100 text-amber-700" : "bg-[#E8FFF0] border-[#00C851]/20 text-[#00C851]"
+              )}>
+                <p className="text-[9px] font-bold uppercase tracking-wider opacity-70">Photos</p>
+                <p className="text-[12px] font-bold">{media.length} uploaded</p>
+              </div>
+            </div>
+
+            {media.length > 0 ? (
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {media.slice(0, 6).map((url, index) => (
                   <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
@@ -2426,6 +2475,11 @@ export function AdminPanel() {
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
+                <p className="font-bold">No venue photos yet</p>
+                <p className="mt-0.5">Request real venue photos before this listing goes public.</p>
+              </div>
             )}
 
             <div className="flex gap-3 mb-3 text-[12px] text-gray-500">
@@ -2436,7 +2490,17 @@ export function AdminPanel() {
               <span>{review.partnerId ? `${review.partnerId.slice(0, 8)}...` : 'No partner'}</span>
             </div>
 
-            <div className="flex gap-2">
+            {(missingCover || thinGallery) && (
+              <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
+                <p className="font-bold">Media quality check</p>
+                <p className="mt-0.5">
+                  {missingCover ? 'Cover image is missing. ' : ''}
+                  {thinGallery ? 'Gallery is light; prefer at least 3 venue photos.' : ''}
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-2">
               <button
                 onClick={() => void updateVenueListingStatus(review.id, 'live')}
                 className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
@@ -2448,6 +2512,12 @@ export function AdminPanel() {
                 className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors"
               >
                 <XCircle size={14} /> Needs update
+              </button>
+              <button
+                onClick={() => void updateVenueListingStatus(review.id, 'needs_update', 'needs_better_photos')}
+                className="flex-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              >
+                <Eye size={14} /> Needs better photos
               </button>
             </div>
           </div>
