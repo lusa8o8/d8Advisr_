@@ -32,121 +32,34 @@ interface Venue {
   changeLog: ChangeEntry[];
 }
 
-// ─── Seed data ────────────────────────────────────────────────────────────────
+interface AdminVenueRow {
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  area: string | null;
+  address: string | null;
+  tier: string | null;
+  price_tier: string | null;
+  description: string | null;
+  cover_image: string | null;
+  images: string[] | null;
+  rating: number | null;
+  review_count: number | null;
+  avg_cost_pp: number | null;
+  open_hours: Record<string, string> | null;
+  listing_status: string;
+  verification_status: string;
+  reverification_reason: string | null;
+  last_verified_at: string | null;
+  next_verification_due_at: string | null;
+  is_active: boolean | null;
+  is_hidden_gem: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
 
-const SEED: Venue[] = [
-  {
-    id: 'v1',
-    name: 'Lumina Restaurant & Bar',
-    category: 'Romantic Dining',
-    city: 'Lagos',
-    tier: 'D8 Approved',
-    health: 'green',
-    nextInspectionDue: '2025-05-01',
-    listing: {
-      'Address':      { value: '123 Main St, Downtown', source: 'Manual — D8 Team', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Hours':        { value: 'Mon–Sat 6 PM – 11 PM',  source: 'Manual — D8 Team', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Price Range':  { value: '$65/pp',                source: 'Manual — D8 Team', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Phone':        { value: '+234 801 234 5678',     source: 'Manual — D8 Team', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Website':      { value: 'luminarestaurant.com',  source: 'Manual — D8 Team', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Booking Link': { value: 'luminarestaurant.com/book', source: 'Manual — D8 Team', verifiedAt: '2024-11-01', confidence: 'high' },
-    },
-    experience: {
-      'Atmosphere Score':    { value: '4.9 / 5', source: 'Inspection', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Lighting Score':      { value: '4.9 / 5', source: 'Inspection', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Noise Level':         { value: 'Low–Moderate', source: 'Inspection', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Occasion Fit':        { value: 'First Date, Anniversary, Special Occasion', source: 'Inspection', verifiedAt: '2024-11-01', confidence: 'high' },
-      'Inspector Notes':     { value: 'Candlelit, rooftop view, staff discreet. Optimal on weeknights.', source: 'Inspection', verifiedAt: '2024-11-01', confidence: 'high' },
-    },
-    changeLog: [
-      { date: '2024-11-01', field: 'Price Range', oldValue: '$55/pp', newValue: '$65/pp', by: 'D8 Team', reason: 'Updated after in-person inspection' },
-      { date: '2024-11-01', field: 'Tier', oldValue: 'Verified', newValue: 'D8 Approved', by: 'D8 Team', reason: 'Passed full inspection — all scores ≥ 4.5' },
-    ],
-  },
-  {
-    id: 'v2',
-    name: 'The Velvet Lounge',
-    category: 'Cocktail Bar',
-    city: 'Lagos',
-    tier: 'Verified',
-    health: 'amber',
-    nextInspectionDue: '2025-02-15',
-    listing: {
-      'Address':      { value: '7 Harbour Rd, Victoria Island', source: 'Manual — D8 Team', verifiedAt: '2024-08-15', confidence: 'high' },
-      'Hours':        { value: 'Wed–Sun 7 PM – 1 AM',           source: 'Manual — D8 Team', verifiedAt: '2024-08-15', confidence: 'medium' },
-      'Price Range':  { value: '$30/pp',                        source: 'Manual — D8 Team', verifiedAt: '2024-08-15', confidence: 'medium' },
-      'Phone':        { value: '+234 802 345 6789',             source: 'Manual — D8 Team', verifiedAt: '2024-08-15', confidence: 'high' },
-      'Website':      { value: 'velvetlLagos.com',              source: 'Manual — D8 Team', verifiedAt: '2024-08-15', confidence: 'high' },
-      'Booking Link': { value: '—',                             source: 'Manual — D8 Team', verifiedAt: '2024-08-15', confidence: 'low' },
-    },
-    experience: {
-      'Atmosphere Score':    { value: '4.3 / 5', source: 'Inspection', verifiedAt: '2024-08-15', confidence: 'medium' },
-      'Lighting Score':      { value: '4.5 / 5', source: 'Inspection', verifiedAt: '2024-08-15', confidence: 'medium' },
-      'Noise Level':         { value: 'Moderate', source: 'Inspection', verifiedAt: '2024-08-15', confidence: 'medium' },
-      'Occasion Fit':        { value: 'Date Night, Group Pre-Dinner', source: 'Inspection', verifiedAt: '2024-08-15', confidence: 'medium' },
-      'Inspector Notes':     { value: 'Great cocktails. Music gets loud after 10 PM — better earlier.', source: 'Inspection', verifiedAt: '2024-08-15', confidence: 'medium' },
-    },
-    changeLog: [
-      { date: '2024-08-15', field: 'Venue Added', oldValue: '—', newValue: 'Verified', by: 'D8 Team', reason: 'Initial listing after site visit' },
-    ],
-  },
-  {
-    id: 'v3',
-    name: 'Skyline Rooftop',
-    category: 'Rooftop Bar',
-    city: 'Lagos',
-    tier: 'Hidden Gem',
-    health: 'green',
-    nextInspectionDue: '2025-10-20',
-    listing: {
-      'Address':      { value: '14th Floor, Eko Tower, VI', source: 'Manual — D8 Team', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Hours':        { value: 'Fri–Sun 6 PM – 12 AM',       source: 'Manual — D8 Team', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Price Range':  { value: '$45/pp',                     source: 'Manual — D8 Team', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Phone':        { value: 'By referral only',           source: 'Manual — D8 Team', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Website':      { value: 'Not public',                 source: 'Manual — D8 Team', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Booking Link': { value: 'Private — D8 referral',      source: 'Manual — D8 Team', verifiedAt: '2024-10-20', confidence: 'high' },
-    },
-    experience: {
-      'Atmosphere Score':    { value: '5.0 / 5', source: 'Inspection', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Lighting Score':      { value: '4.9 / 5', source: 'Inspection', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Noise Level':         { value: 'Low',     source: 'Inspection', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Occasion Fit':        { value: 'Anniversary, Proposal, Special Milestone', source: 'Inspection', verifiedAt: '2024-10-20', confidence: 'high' },
-      'Inspector Notes':     { value: '360° Lagos skyline. No street presence. Operator briefed on D8 referral process.', source: 'Inspection', verifiedAt: '2024-10-20', confidence: 'high' },
-    },
-    changeLog: [
-      { date: '2024-10-20', field: 'Tier', oldValue: 'D8 Approved', newValue: 'Hidden Gem', by: 'D8 Team', reason: 'Passed Hidden Gem criteria — operator consented to soft exclusivity' },
-    ],
-  },
-  {
-    id: 'v4',
-    name: 'Cinemax Boutique',
-    category: 'Cinema',
-    city: 'Lagos',
-    tier: 'Verified',
-    health: 'red',
-    nextInspectionDue: '2024-09-10',
-    listing: {
-      'Address':      { value: 'Plot 5 Admiralty Way, Lekki', source: 'Manual — D8 Team', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Hours':        { value: 'Daily 2 PM – 10 PM',           source: 'Manual — D8 Team', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Price Range':  { value: '$20/pp',                       source: 'Manual — D8 Team', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Phone':        { value: '+234 803 456 7890',            source: 'Manual — D8 Team', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Website':      { value: 'cinemaxlekki.com',             source: 'Manual — D8 Team', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Booking Link': { value: 'cinemaxlekki.com/tickets',     source: 'Manual — D8 Team', verifiedAt: '2024-03-10', confidence: 'low' },
-    },
-    experience: {
-      'Atmosphere Score':    { value: '4.0 / 5', source: 'Inspection', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Lighting Score':      { value: '—',       source: 'Inspection', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Noise Level':         { value: 'Controlled', source: 'Inspection', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Occasion Fit':        { value: 'Date Night, Casual', source: 'Inspection', verifiedAt: '2024-03-10', confidence: 'low' },
-      'Inspector Notes':     { value: 'Overdue for re-inspection. Ownership may have changed.', source: 'Inspection', verifiedAt: '2024-03-10', confidence: 'low' },
-    },
-    changeLog: [
-      { date: '2024-03-10', field: 'Venue Added', oldValue: '—', newValue: 'Verified', by: 'D8 Team', reason: 'Initial listing' },
-    ],
-  },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 const TIER_STYLE: Record<Tier, string> = {
   'Verified':   'bg-blue-50 text-blue-700 border-blue-200',
@@ -277,39 +190,6 @@ interface VenueListingReview {
   submittedAt: string;
 }
 
-const MOCK_SUBMISSIONS: Submission[] = [
-  {
-    id: 's1', kind: 'venue', name: 'Bo Jangles Restaurant', city: 'Lusaka',
-    category: 'Bar & Lounge', contact: 'Tendai Mwale', phone: '+260 97 123 4567',
-    submittedAt: '2025-04-21', status: 'pending', extra: 'Jazz night every Thursday',
-  },
-  {
-    id: 's2', kind: 'event', name: 'Lusaka Food & Wine Market', city: 'Lusaka',
-    category: 'Food & Drink Market', contact: 'Chileshe Banda', phone: '+260 96 987 6543',
-    submittedAt: '2025-04-22', status: 'pending', extra: 'Annual · June 14–16 · Showgrounds',
-  },
-  {
-    id: 's3', kind: 'event', name: 'Sunday Cardio at Manda Hill', city: 'Lusaka',
-    category: 'Fitness & Wellness', contact: 'Kunda Phiri', phone: '+260 95 555 0001',
-    submittedAt: '2025-04-22', status: 'pending', extra: 'Recurring · Every Sunday 7AM · Manda Hill Mall',
-  },
-  {
-    id: 's4', kind: 'venue', name: 'The Terrace at Kabulonga', city: 'Lusaka',
-    category: 'Dining & Restaurant', contact: 'Mwamba Lungu', phone: '+260 97 222 3334',
-    submittedAt: '2025-04-20', status: 'approved', note: 'Live listing — goes up Friday',
-  },
-  {
-    id: 's5', kind: 'event', name: 'Lagos Fashion & Tech Mixer', city: 'Lagos',
-    category: 'Social & Mixer', contact: 'Adesola Okafor', phone: '+234 803 444 5555',
-    submittedAt: '2025-04-19', status: 'rejected', note: 'No date or venue provided',
-  },
-  {
-    id: 's6', kind: 'event', name: 'Cornerstone Youth Alive Conference', city: 'Lusaka',
-    category: 'Faith-based Event', contact: 'Pastor David Zulu', phone: '+260 96 111 2222',
-    submittedAt: '2025-04-23', status: 'pending', extra: 'Annual · Aug 1–3 · Mulungushi Conference Centre',
-  },
-];
-
 function partnerTypeLabel(type: PartnerApplicationType) {
   if (type === 'venue') return 'Venue';
   if (type === 'organizer') return 'Organiser';
@@ -397,6 +277,91 @@ function reviewReasonLabel(reason: string | null) {
   }
 }
 
+function coerceTier(row: AdminVenueRow): Tier {
+  if (row.is_hidden_gem) return 'Hidden Gem';
+  if (row.tier === 'D8 Approved' || row.tier === 'Hidden Gem' || row.tier === 'Verified') return row.tier;
+  return 'Verified';
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return 'Not scheduled';
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return 'Not scheduled';
+  return new Date(time).toISOString().slice(0, 10);
+}
+
+function formatOpenHours(hours: Record<string, string> | null) {
+  if (!hours || Object.keys(hours).length === 0) return 'Not provided';
+  return Object.entries(hours)
+    .filter(([, value]) => Boolean(value))
+    .map(([day, value]) => `${day}: ${value}`)
+    .join(', ') || 'Not provided';
+}
+
+function fieldConfidence(row: AdminVenueRow): FieldMeta['confidence'] {
+  if (row.verification_status === 'verified') return 'high';
+  if (row.verification_status === 'reverify_required' || row.listing_status === 'needs_update') return 'medium';
+  return 'low';
+}
+
+function healthFromVenue(row: AdminVenueRow): Health {
+  const due = row.next_verification_due_at ? new Date(row.next_verification_due_at).getTime() : null;
+  const now = Date.now();
+  if (
+    row.listing_status === 'needs_update'
+    || row.verification_status === 'expired'
+    || (due !== null && !Number.isNaN(due) && due < now)
+  ) {
+    return 'red';
+  }
+  if (
+    row.listing_status !== 'live'
+    || row.verification_status === 'reverify_required'
+    || (due !== null && !Number.isNaN(due) && due - now < 1000 * 60 * 60 * 24 * 30)
+  ) {
+    return 'amber';
+  }
+  return 'green';
+}
+
+function adminVenueFromRow(row: AdminVenueRow): Venue {
+  const verifiedAt = formatDate(row.last_verified_at ?? row.updated_at ?? row.created_at);
+  const source = row.listing_status === 'live' ? 'Approved listing' : 'Partner submission';
+  const confidence = fieldConfidence(row);
+  const imageCount = new Set([row.cover_image, ...(row.images ?? [])].filter(Boolean)).size;
+  const price = row.avg_cost_pp
+    ? `${row.price_tier ?? ''} ${row.avg_cost_pp}/pp`.trim()
+    : row.price_tier ?? 'Not provided';
+
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    city: row.city,
+    tier: coerceTier(row),
+    health: healthFromVenue(row),
+    nextInspectionDue: formatDate(row.next_verification_due_at),
+    listing: {
+      'Address': { value: row.address ?? 'Not provided', source, verifiedAt, confidence },
+      'Area': { value: row.area ?? 'Not provided', source, verifiedAt, confidence },
+      'Description': { value: row.description ?? 'Not provided', source, verifiedAt, confidence },
+      'Hours': { value: formatOpenHours(row.open_hours), source, verifiedAt, confidence },
+      'Price Range': { value: price, source, verifiedAt, confidence },
+      'Photos': { value: imageCount ? `${imageCount} uploaded` : 'No photos uploaded', source, verifiedAt, confidence },
+      'Listing Status': { value: row.listing_status.replaceAll('_', ' '), source: 'D8 status', verifiedAt, confidence: 'live' },
+      'Verification': { value: row.verification_status.replaceAll('_', ' '), source: 'D8 status', verifiedAt, confidence: 'live' },
+    },
+    experience: {
+      'Atmosphere Score': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
+      'Lighting Score': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
+      'Noise Level': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
+      'Occasion Fit': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
+      'Inspector Notes': { value: 'No inspection notes recorded yet.', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
+    },
+    changeLog: [],
+  };
+}
+
 function logAdminIssue(message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;
   if (detail === undefined) {
@@ -412,7 +377,9 @@ export function AdminPanel() {
   const [, setLocation] = useLocation();
   const { signOut } = useAuth();
   const [view, setView]       = useState<AdminView>('list');
-  const [venues, setVenues]   = useState<Venue[]>(SEED);
+  const [venues, setVenues]   = useState<Venue[]>([]);
+  const [venuesLoading, setVenuesLoading] = useState(false);
+  const [venuesError, setVenuesError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health' | 'submissions'>('venues');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -439,6 +406,31 @@ export function AdminPanel() {
   const handleSignOut = async () => {
     await signOut();
     setLocation('/');
+  };
+
+  const loadAdminVenues = async () => {
+    setVenuesLoading(true);
+    setVenuesError(null);
+
+    const { data, error } = await supabase
+      .from('venues')
+      .select('id,name,category,city,area,address,tier,price_tier,description,cover_image,images,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,created_at,updated_at')
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      setVenues([]);
+      setVenuesError(error.message);
+      logAdminIssue('Could not load admin venues', error.message);
+    } else {
+      const rows = (data ?? []) as AdminVenueRow[];
+      setVenues(rows.map(adminVenueFromRow));
+      if (selectedId && !rows.some(row => row.id === selectedId)) {
+        setSelectedId(null);
+        setView('list');
+      }
+    }
+
+    setVenuesLoading(false);
   };
 
   const loadSubmissions = async () => {
@@ -490,6 +482,7 @@ export function AdminPanel() {
   };
 
   useEffect(() => {
+    void loadAdminVenues();
     void loadSubmissions();
   }, []);
 
@@ -707,8 +700,21 @@ export function AdminPanel() {
           </div>
 
           <div className="px-4 pb-6 flex flex-col gap-3">
-            {filtered.length === 0 && (
-              <div className="text-center text-muted-foreground text-[14px] py-12">No venues match your filters.</div>
+            {venuesLoading && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center text-[13px] font-semibold text-gray-500">
+                Loading venues...
+              </div>
+            )}
+            {venuesError && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-[13px] text-red-600">
+                <p className="font-bold mb-1">Could not load venues</p>
+                <p>{venuesError}</p>
+              </div>
+            )}
+            {!venuesLoading && !venuesError && filtered.length === 0 && (
+              <div className="text-center text-muted-foreground text-[14px] py-12">
+                {venues.length === 0 ? 'No venues have been submitted yet.' : 'No venues match your filters.'}
+              </div>
             )}
             {filtered.map(v => (
               <button key={v.id} onClick={() => openDetail(v.id)}
@@ -739,11 +745,6 @@ export function AdminPanel() {
                 </div>
               </button>
             ))}
-
-            {/* Add venue stub */}
-            <button className="w-full bg-white rounded-2xl border-2 border-dashed border-gray-200 p-5 flex items-center justify-center gap-2 text-gray-400 font-bold text-[14px] active:scale-[0.98] transition-transform hover:border-[#FF5A5F] hover:text-[#FF5A5F]">
-              <Plus size={17} /> Add New Venue
-            </button>
           </div>
         </div>
       )}
@@ -777,9 +778,9 @@ export function AdminPanel() {
                 <Shield size={15} className="text-[#FF5A5F]" />
                 <span className="font-bold text-gray-900 text-[13px]">Tier Assignment</span>
               </div>
-              <button onClick={() => setShowTierMenu(v => !v)}
-                className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 hover:text-gray-800 transition-colors">
-                Change <ChevronDown size={14} className={cn("transition-transform", showTierMenu && "rotate-180")} />
+              <button disabled
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-300 cursor-not-allowed transition-colors">
+                Phase C <ChevronDown size={14} className={cn("transition-transform", showTierMenu && "rotate-180")} />
               </button>
             </div>
 
@@ -846,9 +847,9 @@ export function AdminPanel() {
                           <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full capitalize", CONFIDENCE_STYLE[meta.confidence])}>
                             {meta.confidence}
                           </span>
-                          <button onClick={() => { setEditField(editField === key ? null : key); setEditValue(meta.value); }}
-                            className="text-[11px] font-bold text-[#FF5A5F] active:scale-95 transition-transform">
-                            {editField === key ? 'Cancel' : 'Edit'}
+                          <button disabled
+                            className="text-[11px] font-bold text-gray-300 cursor-not-allowed">
+                            Phase C
                           </button>
                         </div>
                       </div>
@@ -871,9 +872,9 @@ export function AdminPanel() {
                   </div>
                 ))}
 
-                <button onClick={() => markVerified(selectedVenue.id)}
-                  className="w-full mt-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#E8FFF0] text-[#00C851] font-bold text-[13px] border border-[#00C851]/20 active:scale-[0.98] transition-transform">
-                  <RotateCcw size={14} /> Mark All Listing Data as Re-Verified
+                <button disabled
+                  className="w-full mt-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-gray-100 text-gray-400 font-bold text-[13px] border border-gray-200 cursor-not-allowed">
+                  <RotateCcw size={14} /> Re-verification actions move to Phase C
                 </button>
               </div>
             )}
@@ -900,9 +901,9 @@ export function AdminPanel() {
                           <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full capitalize", CONFIDENCE_STYLE[meta.confidence])}>
                             {meta.confidence}
                           </span>
-                          <button onClick={() => { setEditField(editField === key ? null : key); setEditValue(meta.value); }}
-                            className="text-[11px] font-bold text-purple-500 active:scale-95 transition-transform">
-                            {editField === key ? 'Cancel' : 'Edit'}
+                          <button disabled
+                            className="text-[11px] font-bold text-gray-300 cursor-not-allowed">
+                            Phase F
                           </button>
                         </div>
                       </div>
@@ -947,6 +948,11 @@ export function AdminPanel() {
                   <Star size={13} className="text-gray-400" />
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Change History</p>
                 </div>
+                {selectedVenue.changeLog.length === 0 && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
+                    No admin change history is wired here yet. Phase C will connect this to the venue change log.
+                  </div>
+                )}
                 {selectedVenue.changeLog.map((entry, i) => (
                   <div key={i} className="flex gap-3 pb-4 relative">
                     {/* Timeline line */}
@@ -1009,9 +1015,9 @@ export function AdminPanel() {
                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
                     View Venue
                   </button>
-                  <button onClick={() => markVerified(v.id)}
-                    className="flex-1 py-2.5 rounded-xl bg-[#FF5A5F] text-white font-bold text-[12px] active:scale-95 transition-transform">
-                    Mark Re-Verified
+                  <button disabled
+                    className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-400 font-bold text-[12px] cursor-not-allowed">
+                    Phase C
                   </button>
                 </div>
               </div>
@@ -1043,9 +1049,9 @@ export function AdminPanel() {
                     className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
                     View Venue
                   </button>
-                  <button onClick={() => markVerified(v.id)}
-                    className="flex-1 py-2.5 rounded-xl bg-[#FF9500] text-white font-bold text-[12px] active:scale-95 transition-transform">
-                    Mark Re-Verified
+                  <button disabled
+                    className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-400 font-bold text-[12px] cursor-not-allowed">
+                    Phase C
                   </button>
                 </div>
               </div>
