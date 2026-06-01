@@ -115,6 +115,7 @@ type SubmissionStatus = 'pending' | 'approved' | 'needs_update' | 'rejected';
 type SubmissionKind = 'venue' | 'event';
 type PartnerApplicationStatus = 'pending' | 'live' | 'needs_update' | 'rejected';
 type PartnerApplicationType = 'venue' | 'organizer' | 'both';
+type ReverificationTaskStatus = 'open' | 'in_progress' | 'resolved' | 'dismissed';
 
 interface Submission {
   id: string;
@@ -205,6 +206,49 @@ interface VenueListingReview {
   submittedAt: string;
 }
 
+interface ReverificationVenueRow {
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  area: string | null;
+  tier: string | null;
+  listing_status: string;
+  verification_status: string;
+  cover_image: string | null;
+}
+
+interface ReverificationTaskRow {
+  id: string;
+  venue_id: string;
+  reason: string;
+  status: ReverificationTaskStatus;
+  triggered_by: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  notes: string | null;
+  venues?: ReverificationVenueRow | ReverificationVenueRow[] | null;
+}
+
+interface ReverificationTask {
+  id: string;
+  venueId: string;
+  venueName: string;
+  category: string;
+  city: string;
+  area: string | null;
+  tier: Tier;
+  listingStatus: string;
+  verificationStatus: string;
+  coverImage: string | null;
+  reason: string;
+  status: ReverificationTaskStatus;
+  triggeredBy: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  notes: string | null;
+}
+
 function partnerTypeLabel(type: PartnerApplicationType) {
   if (type === 'venue') return 'Venue';
   if (type === 'organizer') return 'Organiser';
@@ -270,6 +314,35 @@ function venueListingReviewFromRow(row: VenueListingReviewRow): VenueListingRevi
     verificationStatus: row.verification_status,
     reverificationReason: row.reverification_reason,
     submittedAt: new Date(row.updated_at ?? row.created_at).toISOString().slice(0, 10),
+  };
+}
+
+function venueFromReverificationTask(row: ReverificationTaskRow) {
+  return Array.isArray(row.venues) ? row.venues[0] : row.venues;
+}
+
+function reverificationTaskFromRow(row: ReverificationTaskRow): ReverificationTask {
+  const venue = venueFromReverificationTask(row);
+  return {
+    id: row.id,
+    venueId: row.venue_id,
+    venueName: venue?.name ?? 'Venue',
+    category: venue?.category ?? 'Venue',
+    city: venue?.city ?? '',
+    area: venue?.area ?? null,
+    tier: coerceTier({
+      tier: venue?.tier ?? null,
+      is_hidden_gem: venue?.tier === 'Hidden Gem',
+    } as AdminVenueRow),
+    listingStatus: venue?.listing_status ?? 'unknown',
+    verificationStatus: venue?.verification_status ?? 'unknown',
+    coverImage: venue?.cover_image ?? null,
+    reason: row.reason,
+    status: row.status,
+    triggeredBy: row.triggered_by,
+    createdAt: row.created_at,
+    resolvedAt: row.resolved_at,
+    notes: row.notes,
   };
 }
 
@@ -419,6 +492,9 @@ export function AdminPanel() {
   const [submissionsError, setSubmissionsError] = useState<string | null>(null);
   const [venuePlacementRequests, setVenuePlacementRequests] = useState<VenuePlacementAdminRequest[]>([]);
   const [venueListingReviews, setVenueListingReviews] = useState<VenueListingReview[]>([]);
+  const [reverificationTasks, setReverificationTasks] = useState<ReverificationTask[]>([]);
+  const [reverificationTasksLoading, setReverificationTasksLoading] = useState(false);
+  const [reverificationTasksError, setReverificationTasksError] = useState<string | null>(null);
 
   // Filter state
   const [filterTier, setFilterTier]     = useState<string>('All');
@@ -515,9 +591,30 @@ export function AdminPanel() {
     setSubmissionsLoading(false);
   };
 
+  const loadReverificationTasks = async () => {
+    setReverificationTasksLoading(true);
+    setReverificationTasksError(null);
+
+    const { data, error } = await supabase
+      .from('venue_reverification_tasks')
+      .select('id,venue_id,reason,status,triggered_by,created_at,resolved_at,notes,venues(id,name,category,city,area,tier,listing_status,verification_status,cover_image)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      setReverificationTasks([]);
+      setReverificationTasksError(error.message);
+      logAdminIssue('Could not load venue reverification tasks', error.message);
+    } else {
+      setReverificationTasks(((data ?? []) as ReverificationTaskRow[]).map(reverificationTaskFromRow));
+    }
+
+    setReverificationTasksLoading(false);
+  };
+
   useEffect(() => {
     void loadAdminVenues();
     void loadSubmissions();
+    void loadReverificationTasks();
   }, []);
 
   const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus) => {
@@ -577,6 +674,9 @@ export function AdminPanel() {
       setVenueListingReviews(previous);
       setSubmissionsError(error.message);
       logAdminIssue('Could not update venue listing status', { venueId, status, error: error.message });
+    } else {
+      await loadAdminVenues();
+      await loadReverificationTasks();
     }
   };
 
@@ -647,6 +747,33 @@ export function AdminPanel() {
       logAdminIssue('Could not mark venue verified', { venueId: id, error: error.message });
     } else {
       await loadAdminVenues();
+      await loadReverificationTasks();
+    }
+
+    setAdminActionLoading(null);
+  };
+
+  const updateReverificationTask = async (
+    taskId: string,
+    status: ReverificationTaskStatus | 'needs_update',
+    note?: string
+  ) => {
+    setAdminActionError(null);
+    setReverificationTasksError(null);
+    setAdminActionLoading(`task:${taskId}:${status}`);
+
+    const { error } = await supabase.rpc('admin_update_reverification_task_status', {
+      p_task_id: taskId,
+      new_status: status,
+      note: note ?? null,
+    });
+
+    if (error) {
+      setReverificationTasksError(error.message);
+      logAdminIssue('Could not update reverification task', { taskId, status, error: error.message });
+    } else {
+      await loadReverificationTasks();
+      await loadAdminVenues();
     }
 
     setAdminActionLoading(null);
@@ -701,9 +828,14 @@ export function AdminPanel() {
             <ClipboardList size={13} /> Venues ({venues.length})
           </button>
           <button onClick={() => { setNavTab('tracker'); setView('tracker'); }}
-            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
               navTab === 'tracker' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Clock size={13} /> Inspections
+            {reverificationTasks.filter(task => task.status === 'open' || task.status === 'in_progress').length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-black flex items-center justify-center">
+                {reverificationTasks.filter(task => task.status === 'open' || task.status === 'in_progress').length}
+              </span>
+            )}
           </button>
           <button onClick={() => { setNavTab('health'); setView('health'); }}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
@@ -1175,7 +1307,205 @@ export function AdminPanel() {
       )}
 
       {/* ── INSPECTION TRACKER ──────────────────────────────────────────────── */}
-      {view === 'tracker' && (
+      {view === 'tracker' && (() => {
+        const openTasks = reverificationTasks.filter(task => task.status === 'open');
+        const inProgressTasks = reverificationTasks.filter(task => task.status === 'in_progress');
+        const resolvedTasks = reverificationTasks.filter(task => task.status === 'resolved');
+        const dismissedTasks = reverificationTasks.filter(task => task.status === 'dismissed');
+        const activeTasks = [...openTasks, ...inProgressTasks];
+
+        const renderTaskCard = (task: ReverificationTask, resolved = false) => (
+          <div key={task.id} className={cn(
+            "bg-white rounded-2xl border p-4 mb-2.5 shadow-sm",
+            task.status === 'open' ? "border-amber-200" :
+            task.status === 'in_progress' ? "border-blue-200" :
+            task.status === 'resolved' ? "border-[#00C851]/20" :
+            "border-gray-200"
+          )}>
+            <div className="flex items-start gap-3 mb-3">
+              {task.coverImage ? (
+                <img src={task.coverImage} alt={`${task.venueName} cover`} className="w-12 h-12 rounded-xl object-cover bg-gray-100 border border-gray-100 shrink-0" />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-100 flex items-center justify-center shrink-0">
+                  <Shield size={18} className="text-gray-400" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900 text-[14px] leading-tight truncate">{task.venueName}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{task.category} · {[task.area, task.city].filter(Boolean).join(', ') || 'Location not provided'}</p>
+                  </div>
+                  <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0", TIER_STYLE[task.tier])}>
+                    {task.tier}
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className={cn(
+                    "text-[10px] font-bold px-2 py-0.5 rounded-full capitalize",
+                    task.status === 'open' ? "bg-amber-50 text-amber-600" :
+                    task.status === 'in_progress' ? "bg-blue-50 text-blue-600" :
+                    task.status === 'resolved' ? "bg-[#E8FFF0] text-[#00C851]" :
+                    "bg-gray-100 text-gray-500"
+                  )}>
+                    {task.status.replaceAll('_', ' ')}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                    {reviewReasonLabel(task.reason) ?? task.reason.replaceAll('_', ' ')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2">
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Listing</p>
+                <p className="text-[12px] font-bold text-gray-800 capitalize">{task.listingStatus.replaceAll('_', ' ')}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2">
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Created</p>
+                <p className="text-[12px] font-bold text-gray-800">{formatDate(task.createdAt)}</p>
+              </div>
+            </div>
+
+            {task.notes && (
+              <p className="mb-3 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 text-[11px] font-medium text-gray-500">
+                {task.notes}
+              </p>
+            )}
+
+            {resolved ? (
+              <button onClick={() => openDetail(task.venueId)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
+                View Venue
+              </button>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => openDetail(task.venueId)}
+                  className="py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
+                  View Venue
+                </button>
+                {task.status === 'open' ? (
+                  <button
+                    onClick={() => void updateReverificationTask(task.id, 'in_progress', 'review_started')}
+                    disabled={adminActionLoading === `task:${task.id}:in_progress`}
+                    className={cn(
+                      "py-2.5 rounded-xl font-bold text-[12px] transition-transform",
+                      adminActionLoading === `task:${task.id}:in_progress`
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 text-white active:scale-95"
+                    )}
+                  >
+                    {adminActionLoading === `task:${task.id}:in_progress` ? 'Saving...' : 'Start review'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => void markVerified(task.venueId)}
+                    disabled={adminActionLoading === `verify:${task.venueId}`}
+                    className={cn(
+                      "py-2.5 rounded-xl font-bold text-[12px] transition-transform",
+                      adminActionLoading === `verify:${task.venueId}`
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-[#00C851] text-white active:scale-95"
+                    )}
+                  >
+                    {adminActionLoading === `verify:${task.venueId}` ? 'Saving...' : 'Mark resolved'}
+                  </button>
+                )}
+                <button
+                  onClick={() => void updateReverificationTask(task.id, 'needs_update', 'Admin requested partner updates')}
+                  disabled={adminActionLoading === `task:${task.id}:needs_update`}
+                  className={cn(
+                    "py-2.5 rounded-xl font-bold text-[12px] transition-transform",
+                    adminActionLoading === `task:${task.id}:needs_update`
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-[#FF5A5F] text-white active:scale-95"
+                  )}
+                >
+                  {adminActionLoading === `task:${task.id}:needs_update` ? 'Saving...' : 'Needs update'}
+                </button>
+                <button
+                  onClick={() => void updateReverificationTask(task.id, 'dismissed', 'Dismissed by admin')}
+                  disabled={adminActionLoading === `task:${task.id}:dismissed`}
+                  className={cn(
+                    "py-2.5 rounded-xl border font-bold text-[12px] transition-transform",
+                    adminActionLoading === `task:${task.id}:dismissed`
+                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "border-gray-200 text-gray-500 active:scale-95"
+                  )}
+                >
+                  {adminActionLoading === `task:${task.id}:dismissed` ? 'Saving...' : 'Dismiss'}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+        return (
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-6">
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {[
+                ['Open', openTasks.length, 'text-amber-600 bg-amber-50 border-amber-100'],
+                ['Reviewing', inProgressTasks.length, 'text-blue-600 bg-blue-50 border-blue-100'],
+                ['Resolved', resolvedTasks.length, 'text-[#00C851] bg-[#E8FFF0] border-[#00C851]/10'],
+                ['Dismissed', dismissedTasks.length, 'text-gray-500 bg-white border-gray-200'],
+              ].map(([label, value, style]) => (
+                <div key={label} className={cn("rounded-2xl border p-3 text-center", style as string)}>
+                  <p className="text-2xl font-black leading-none">{value}</p>
+                  <p className="text-[10px] font-bold mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {reverificationTasksLoading && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center text-[13px] font-semibold text-gray-500">
+                Loading reverification tasks...
+              </div>
+            )}
+            {reverificationTasksError && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4 text-[13px] text-red-600">
+                <p className="font-bold mb-1">Could not sync inspections</p>
+                <p>{reverificationTasksError}</p>
+              </div>
+            )}
+            {!reverificationTasksLoading && !reverificationTasksError && activeTasks.length === 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5 text-center text-[13px] text-gray-400">
+                No active reverification tasks.
+              </div>
+            )}
+
+            {openTasks.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle size={15} className="text-[#FF9500]" />
+                  <p className="font-bold text-gray-900 text-[13px]">Needs Review</p>
+                </div>
+                {openTasks.map(task => renderTaskCard(task))}
+              </div>
+            )}
+            {inProgressTasks.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Hourglass size={15} className="text-blue-500" />
+                  <p className="font-bold text-gray-900 text-[13px]">In Progress</p>
+                </div>
+                {inProgressTasks.map(task => renderTaskCard(task))}
+              </div>
+            )}
+            {(resolvedTasks.length > 0 || dismissedTasks.length > 0) && (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle size={15} className="text-[#00C851]" />
+                  <p className="font-bold text-gray-900 text-[13px]">Recently Closed</p>
+                </div>
+                {[...resolvedTasks, ...dismissedTasks].slice(0, 8).map(task => renderTaskCard(task, true))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {false && view === 'tracker' && (
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-6">
 
           {/* Overdue */}
