@@ -9,6 +9,8 @@ interface AuthContextValue {
   signUp: (email: string, password: string, nextPath?: string | null) => Promise<{ error: Error | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: (nextPath?: string | null) => Promise<{ error: Error | null }>;
+  sendPasswordReset: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -114,6 +116,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const sendPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizeAuthEmail(email), {
+      redirectTo: getAuthRedirectUrl('/password/update'),
+    });
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -126,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signIn,
       signInWithGoogle,
+      sendPasswordReset,
+      updatePassword,
       signOut,
     }}>
       {children}

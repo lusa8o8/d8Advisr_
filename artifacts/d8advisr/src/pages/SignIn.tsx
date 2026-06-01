@@ -37,7 +37,7 @@ export function SignIn() {
     setLoading(false);
     if (error) {
       if (error.message === 'Invalid login credentials') {
-        setError('We could not sign you in with those details. Check your password, or continue with Google if that is how you created the account.');
+        setError('We could not sign you in with those details. Check your password, continue with Google, or reset your password.');
         setShowCreateAccountPrompt(true);
       } else {
         setError(error.message);
@@ -88,6 +88,13 @@ export function SignIn() {
                 >
                   Create an account
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setLocation('/password/reset')}
+                  className="text-sm font-semibold underline underline-offset-4"
+                >
+                  Reset password
+                </button>
               </div>
             )}
           </div>
@@ -107,7 +114,16 @@ export function SignIn() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-muted-foreground">Password</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium text-muted-foreground">Password</label>
+              <button
+                type="button"
+                onClick={() => setLocation('/password/reset')}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}

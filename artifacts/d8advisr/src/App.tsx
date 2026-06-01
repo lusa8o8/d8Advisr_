@@ -18,6 +18,8 @@ import { supabase } from "@/lib/supabase";
 import { Welcome } from "@/pages/Welcome";
 import { SignUp } from "@/pages/SignUp";
 import { SignIn } from "@/pages/SignIn";
+import { PasswordResetRequest } from "@/pages/PasswordResetRequest";
+import { PasswordUpdate } from "@/pages/PasswordUpdate";
 import { InitialPreferences } from "@/pages/InitialPreferences";
 import { HomeDiscovery } from "@/pages/HomeDiscovery";
 import { MapView } from "@/pages/MapView";
@@ -251,6 +253,7 @@ function Router() {
       <Route path="/" component={Welcome} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
+      <Route path="/password/reset" component={PasswordResetRequest} />
       <Route path="/auth/callback" component={AuthCallback} />
 
       {/* ── Authenticated routes ──────────────────────────────── */}
@@ -305,6 +308,7 @@ function Router() {
       <Route path="/review"><ConsumerGuard><PostDateReview /></ConsumerGuard></Route>
 
       <Route path="/settings"><ConsumerGuard><Settings /></ConsumerGuard></Route>
+      <Route path="/password/update"><AuthGuard><PasswordUpdate /></AuthGuard></Route>
 
       {/* Fallback — unauthenticated users see Welcome, authenticated see Home */}
       <Route><ConsumerGuard><HomeDiscovery /></ConsumerGuard></Route>

@@ -632,7 +632,8 @@ export function Settings() {
         <Row
           icon={<Lock size={16} />}
           label="Change Password"
-          onClick={() => {}}
+          value="Update your email sign-in password"
+          onClick={() => setLocation('/password/update')}
         />
         <Row
           icon={<LogOut size={16} className="text-primary" />}
