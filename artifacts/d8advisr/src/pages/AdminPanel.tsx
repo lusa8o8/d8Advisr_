@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle,
-  ClipboardList, Search, Shield, Star, Eye, Edit3, Save,
-  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, TrendingUp, Hourglass, LogOut
+  ClipboardList, Search, Shield, Eye,
+  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, Hourglass, LogOut
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { supabase } from '@/lib/supabase';
@@ -11,13 +11,8 @@ import { useAuth } from '@/context/AuthContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type FieldMeta = { value: string; source: string; verifiedAt: string; confidence: 'high' | 'medium' | 'low' | 'live' };
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 type Health = 'green' | 'amber' | 'red';
-
-interface ChangeEntry {
-  date: string; field: string; oldValue: string; newValue: string; by: string; reason: string;
-}
 
 interface Venue {
   id: string;
@@ -42,9 +37,6 @@ interface Venue {
   tier: Tier;
   health: Health;
   nextInspectionDue: string;
-  listing: Record<string, FieldMeta>;
-  experience: Record<string, FieldMeta>;
-  changeLog: ChangeEntry[];
 }
 
 interface AdminVenueRow {
@@ -98,13 +90,6 @@ const HEALTH_LABEL: Record<Health, string> = {
   green: 'Data current',
   amber: 'Re-verify soon',
   red:   'Overdue — action required',
-};
-
-const CONFIDENCE_STYLE: Record<string, string> = {
-  high:   'bg-[#E8FFF0] text-[#00C851]',
-  medium: 'bg-amber-50 text-amber-600',
-  low:    'bg-red-50 text-[#FF5A5F]',
-  live:   'bg-blue-50 text-blue-600',
 };
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
@@ -450,12 +435,6 @@ function formatOpenHours(hours: Record<string, string> | null) {
     .join(', ') || 'Not provided';
 }
 
-function fieldConfidence(row: AdminVenueRow): FieldMeta['confidence'] {
-  if (row.verification_status === 'verified') return 'high';
-  if (row.verification_status === 'reverify_required' || row.listing_status === 'needs_update') return 'medium';
-  return 'low';
-}
-
 function healthFromVenue(row: AdminVenueRow): Health {
   const due = row.next_verification_due_at ? new Date(row.next_verification_due_at).getTime() : null;
   const now = Date.now();
@@ -477,11 +456,7 @@ function healthFromVenue(row: AdminVenueRow): Health {
 }
 
 function adminVenueFromRow(row: AdminVenueRow): Venue {
-  const verifiedAt = formatDate(row.last_verified_at ?? row.updated_at ?? row.created_at);
-  const source = row.listing_status === 'live' ? 'Approved listing' : 'Partner submission';
-  const confidence = fieldConfidence(row);
   const photos = Array.from(new Set([row.cover_image, ...(row.images ?? [])].filter((url): url is string => Boolean(url))));
-  const imageCount = photos.length;
   const price = row.avg_cost_pp
     ? `${row.price_tier ?? ''} ${row.avg_cost_pp}/pp`.trim()
     : row.price_tier ?? 'Not provided';
@@ -510,24 +485,6 @@ function adminVenueFromRow(row: AdminVenueRow): Venue {
     tier: coerceTier(row),
     health: healthFromVenue(row),
     nextInspectionDue: formatDate(row.next_verification_due_at),
-    listing: {
-      'Address': { value: row.address ?? 'Not provided', source, verifiedAt, confidence },
-      'Area': { value: row.area ?? 'Not provided', source, verifiedAt, confidence },
-      'Description': { value: row.description ?? 'Not provided', source, verifiedAt, confidence },
-      'Hours': { value: hours, source, verifiedAt, confidence },
-      'Price Range': { value: price, source, verifiedAt, confidence },
-      'Photos': { value: imageCount ? `${imageCount} uploaded` : 'No photos uploaded', source, verifiedAt, confidence },
-      'Listing Status': { value: row.listing_status.replaceAll('_', ' '), source: 'D8 status', verifiedAt, confidence: 'live' },
-      'Verification': { value: row.verification_status.replaceAll('_', ' '), source: 'D8 status', verifiedAt, confidence: 'live' },
-    },
-    experience: {
-      'Atmosphere Score': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
-      'Lighting Score': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
-      'Noise Level': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
-      'Occasion Fit': { value: 'Not recorded yet', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
-      'Inspector Notes': { value: 'No inspection notes recorded yet.', source: 'Inspection model pending', verifiedAt: 'Not recorded', confidence: 'low' },
-    },
-    changeLog: [],
   };
 }
 
@@ -572,8 +529,6 @@ export function AdminPanel() {
   const [search, setSearch]             = useState('');
 
   // Detail view state
-  const [editField, setEditField]   = useState<string | null>(null);
-  const [editValue, setEditValue]   = useState('');
   const [showTierMenu, setShowTierMenu] = useState(false);
   const [tierReason, setTierReason] = useState('');
   const [pendingTier, setPendingTier] = useState<Tier | null>(null);
@@ -838,21 +793,6 @@ export function AdminPanel() {
     void loadVenueChangeLog(id);
   };
 
-  const saveField = (section: 'listing' | 'experience', key: string) => {
-    if (!selectedVenue || !editValue.trim()) return;
-    const old = selectedVenue[section][key]?.value ?? '';
-    const entry: ChangeEntry = {
-      date: new Date().toISOString().split('T')[0],
-      field: key, oldValue: old, newValue: editValue,
-      by: 'D8 Team', reason: 'Manual update via Admin Panel',
-    };
-    setVenues(vs => vs.map(v => v.id === selectedVenue.id ? {
-      ...v,
-      [section]: { ...v[section], [key]: { ...v[section][key], value: editValue, verifiedAt: new Date().toISOString().split('T')[0] } },
-      changeLog: [entry, ...v.changeLog],
-    } : v));
-    setEditField(null); setEditValue('');
-  };
 
   const confirmTierChange = async () => {
     if (!selectedVenue || !pendingTier || !tierReason.trim()) return;
@@ -1562,157 +1502,6 @@ export function AdminPanel() {
               </div>
             )}
 
-            {/* LISTING DATA */}
-            {false && selectedVenue && (
-              <div className="flex flex-col gap-2.5 animate-in fade-in duration-200">
-                <div className="flex items-center gap-1.5 mb-1 px-1">
-                  <Edit3 size={13} className="text-gray-400" />
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Listing Data — Editable</p>
-                </div>
-                {Object.entries(selectedVenue!.listing).map(([key, meta]) => (
-                  <div key={key} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-4 py-3.5">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{key}</span>
-                        <div className="flex items-center gap-2">
-                          <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full capitalize", CONFIDENCE_STYLE[meta.confidence])}>
-                            {meta.confidence}
-                          </span>
-                          <button disabled
-                            className="text-[11px] font-bold text-gray-300 cursor-not-allowed">
-                            Phase C
-                          </button>
-                        </div>
-                      </div>
-
-                      {editField === key ? (
-                        <div className="flex gap-2 mt-1">
-                          <input value={editValue} onChange={e => setEditValue(e.target.value)} autoFocus
-                            className="flex-1 px-3 py-2 rounded-xl border border-[#FF5A5F] text-[13px] focus:outline-none focus:ring-1 focus:ring-[#FF5A5F]" />
-                          <button onClick={() => saveField('listing', key)}
-                            className="px-3 py-2 bg-[#FF5A5F] text-white rounded-xl active:scale-95 transition-transform">
-                            <Save size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="text-[14px] font-semibold text-gray-900">{meta.value}</p>
-                      )}
-
-                      <p className="text-[10px] text-gray-400 mt-1.5">{meta.source} · Verified {meta.verifiedAt}</p>
-                    </div>
-                  </div>
-                ))}
-
-                <button disabled
-                  className="w-full mt-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-gray-100 text-gray-400 font-bold text-[13px] border border-gray-200 cursor-not-allowed">
-                  <RotateCcw size={14} /> Re-verification actions move to Phase C
-                </button>
-              </div>
-            )}
-
-            {/* EXPERIENCE DATA */}
-            {false && selectedVenue && (
-              <div className="flex flex-col gap-2.5 animate-in fade-in duration-200">
-                <div className="flex items-center gap-1.5 mb-1 px-1">
-                  <Lock size={13} className="text-purple-400" />
-                  <p className="text-[11px] font-bold text-purple-400 uppercase tracking-wider">Experience Data — Inspection Only</p>
-                </div>
-                <div className="bg-purple-50 border border-purple-100 rounded-2xl px-4 py-3 mb-1 flex items-start gap-3">
-                  <Eye size={15} className="text-purple-500 mt-0.5 shrink-0" />
-                  <p className="text-[12px] text-purple-700 leading-relaxed">
-                    These fields are set during physical inspection and are locked from venue manager access. Edit only after a verified visit.
-                  </p>
-                </div>
-                {Object.entries(selectedVenue!.experience).map(([key, meta]) => (
-                  <div key={key} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-4 py-3.5">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{key}</span>
-                        <div className="flex items-center gap-2">
-                          <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full capitalize", CONFIDENCE_STYLE[meta.confidence])}>
-                            {meta.confidence}
-                          </span>
-                          <button disabled
-                            className="text-[11px] font-bold text-gray-300 cursor-not-allowed">
-                            Phase F
-                          </button>
-                        </div>
-                      </div>
-
-                      {editField === key ? (
-                        <div className="flex gap-2 mt-1">
-                          <input value={editValue} onChange={e => setEditValue(e.target.value)} autoFocus
-                            className="flex-1 px-3 py-2 rounded-xl border border-purple-400 text-[13px] focus:outline-none focus:ring-1 focus:ring-purple-400" />
-                          <button onClick={() => saveField('experience', key)}
-                            className="px-3 py-2 bg-purple-500 text-white rounded-xl active:scale-95 transition-transform">
-                            <Save size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="text-[14px] font-semibold text-gray-900">{meta.value}</p>
-                      )}
-
-                      <p className="text-[10px] text-gray-400 mt-1.5">{meta.source} · {meta.verifiedAt}</p>
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex items-center justify-between px-1 mt-2">
-                  <span className="text-[12px] text-gray-500 font-medium">⭐ Avg Score</span>
-                  <span className="text-[13px] font-black text-gray-900">
-                    {(() => {
-                      const scores = Object.entries(selectedVenue!.experience)
-                        .filter(([k]) => k.includes('Score'))
-                        .map(([, v]) => parseFloat(v.value));
-                      return scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—';
-                    })()}
-                    <span className="text-gray-400 font-medium"> / 5</span>
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* CHANGE LOG */}
-            {false && selectedVenue && (
-              <div className="flex flex-col gap-0 animate-in fade-in duration-200">
-                <div className="flex items-center gap-1.5 mb-3 px-1">
-                  <Star size={13} className="text-gray-400" />
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Change History</p>
-                </div>
-                {selectedVenue!.changeLog.length === 0 && (
-                  <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
-                    No admin change history is wired here yet. Phase C will connect this to the venue change log.
-                  </div>
-                )}
-                {selectedVenue!.changeLog.map((entry, i) => (
-                  <div key={i} className="flex gap-3 pb-4 relative">
-                    {/* Timeline line */}
-                    {i < selectedVenue!.changeLog.length - 1 && (
-                      <div className="absolute left-[14px] top-8 bottom-0 w-[2px] bg-gray-100" />
-                    )}
-                    {/* Dot */}
-                    <div className="w-7 h-7 rounded-full bg-[#141414] flex items-center justify-center shrink-0 relative z-10 mt-0.5">
-                      <Edit3 size={11} className="text-white" />
-                    </div>
-                    <div className="flex-1 bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-gray-900 text-[13px]">{entry.field}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">{entry.date}</span>
-                      </div>
-                      {entry.oldValue !== '—' && (
-                        <div className="flex gap-2 text-[11px] mb-1.5 flex-wrap">
-                          <span className="bg-red-50 text-red-500 px-2 py-0.5 rounded-full font-medium line-through">{entry.oldValue}</span>
-                          <span className="text-gray-400">→</span>
-                          <span className="bg-[#E8FFF0] text-[#00C851] px-2 py-0.5 rounded-full font-medium">{entry.newValue}</span>
-                        </div>
-                      )}
-                      <p className="text-[11px] text-gray-500 leading-relaxed">{entry.reason}</p>
-                      <p className="text-[10px] text-gray-400 mt-1 font-medium">by {entry.by}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1916,114 +1705,6 @@ export function AdminPanel() {
         );
       })()}
 
-      {false && view === 'tracker' && (
-        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-6">
-
-          {/* Overdue */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <XCircle size={15} className="text-[#FF5A5F]" />
-              <p className="font-bold text-gray-900 text-[13px]">Overdue — Action Required</p>
-            </div>
-            {venues.filter(v => v.health === 'red').length === 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center text-[13px] text-gray-400">All clear</div>
-            )}
-            {venues.filter(v => v.health === 'red').map(v => (
-              <div key={v.id} className="bg-white rounded-2xl border-2 border-[#FF5A5F]/30 p-4 mb-2.5 shadow-sm">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-bold text-gray-900 text-[14px]">{v.name}</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{v.category} · Due {v.nextInspectionDue}</p>
-                  </div>
-                  <div className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0", TIER_STYLE[v.tier])}>
-                    {v.tier}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => openDetail(v.id)}
-                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
-                    View Venue
-                  </button>
-                  <button
-                    onClick={() => void markVerified(v.id)}
-                    disabled={adminActionLoading === `verify:${v.id}`}
-                    className={cn(
-                      "flex-1 py-2.5 rounded-xl font-bold text-[12px] transition-transform",
-                      adminActionLoading === `verify:${v.id}`
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-[#FF5A5F] text-white active:scale-95"
-                    )}
-                  >
-                    {adminActionLoading === `verify:${v.id}` ? 'Saving...' : 'Mark verified'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Re-verify soon */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertCircle size={15} className="text-[#FF9500]" />
-              <p className="font-bold text-gray-900 text-[13px]">Re-Verify Soon</p>
-            </div>
-            {venues.filter(v => v.health === 'amber').length === 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center text-[13px] text-gray-400">Nothing upcoming</div>
-            )}
-            {venues.filter(v => v.health === 'amber').map(v => (
-              <div key={v.id} className="bg-white rounded-2xl border border-amber-200 p-4 mb-2.5 shadow-sm">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-bold text-gray-900 text-[14px]">{v.name}</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{v.category} · Due {v.nextInspectionDue}</p>
-                  </div>
-                  <div className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0", TIER_STYLE[v.tier])}>
-                    {v.tier}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => openDetail(v.id)}
-                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
-                    View Venue
-                  </button>
-                  <button
-                    onClick={() => void markVerified(v.id)}
-                    disabled={adminActionLoading === `verify:${v.id}`}
-                    className={cn(
-                      "flex-1 py-2.5 rounded-xl font-bold text-[12px] transition-transform",
-                      adminActionLoading === `verify:${v.id}`
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-[#FF9500] text-white active:scale-95"
-                    )}
-                  >
-                    {adminActionLoading === `verify:${v.id}` ? 'Saving...' : 'Mark verified'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* All clear */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle size={15} className="text-[#00C851]" />
-              <p className="font-bold text-gray-900 text-[13px]">Current — All Good</p>
-            </div>
-            {venues.filter(v => v.health === 'green').map(v => (
-              <div key={v.id} className="bg-white rounded-2xl border border-gray-200 p-4 mb-2.5 flex items-center gap-3 shadow-sm">
-                <CheckCircle size={18} className="text-[#00C851] shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-[14px] truncate">{v.name}</p>
-                  <p className="text-[11px] text-gray-500">Next due {v.nextInspectionDue}</p>
-                </div>
-                <button onClick={() => openDetail(v.id)} className="text-[#FF5A5F] active:scale-95 transition-transform">
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── HEALTH VIEW ─────────────────────────────────────────────────────── */}
       {view === 'health' && (() => {
@@ -2203,202 +1884,6 @@ export function AdminPanel() {
         );
       })()}
 
-      {false && view === 'health' && (() => {
-        // ── Computed metrics ──────────────────────────────────────────────────
-        const allFields = venues.flatMap(v => [
-          ...Object.values(v.listing),
-          ...Object.values(v.experience),
-        ]);
-        const highFields     = allFields.filter(f => f.confidence === 'high').length;
-        const coverageRate   = allFields.length ? Math.round((highFields / allFields.length) * 100) : 0;
-
-        const tierCounts: Record<Tier, number> = { 'Verified': 0, 'D8 Approved': 0, 'Hidden Gem': 0 };
-        venues.forEach(v => { tierCounts[v.tier]++; });
-
-        const healthCounts = {
-          green: venues.filter(v => v.health === 'green').length,
-          amber: venues.filter(v => v.health === 'amber').length,
-          red:   venues.filter(v => v.health === 'red').length,
-        };
-
-        const today = new Date();
-        const avgDaysSince = venues.length ? Math.round(
-          venues.reduce((sum, v) => {
-            const oldestDate = Object.values({ ...v.listing, ...v.experience })
-              .map(f => new Date(f.verifiedAt).getTime())
-              .reduce((a, b) => Math.min(a, b), Date.now());
-            return sum + (today.getTime() - oldestDate) / (1000 * 60 * 60 * 24);
-          }, 0) / venues.length
-        ) : 0;
-
-        const inspectionCompliance = venues.length
-          ? Math.round((healthCounts.green / venues.length) * 100)
-          : 0;
-
-        return (
-          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-6">
-
-            {/* Section header */}
-            <div className="flex items-center gap-2 mb-4 px-1">
-              <Activity size={14} className="text-gray-400" />
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Live — Computed from Venue Data</p>
-            </div>
-
-            {/* Top stat row */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              {/* Field coverage */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Field Coverage</p>
-                <p className={cn("text-3xl font-black leading-none mb-1",
-                  coverageRate >= 90 ? "text-[#00C851]" : coverageRate >= 70 ? "text-[#FF9500]" : "text-[#FF5A5F]")}>
-                  {coverageRate}%
-                </p>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
-                  <div className={cn("h-full rounded-full transition-all",
-                    coverageRate >= 90 ? "bg-[#00C851]" : coverageRate >= 70 ? "bg-[#FF9500]" : "bg-[#FF5A5F]")}
-                    style={{ width: `${coverageRate}%` }} />
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1.5">{highFields} / {allFields.length} fields high-confidence</p>
-              </div>
-
-              {/* Inspection compliance */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Inspection Compliance</p>
-                <p className={cn("text-3xl font-black leading-none mb-1",
-                  inspectionCompliance >= 80 ? "text-[#00C851]" : inspectionCompliance >= 50 ? "text-[#FF9500]" : "text-[#FF5A5F]")}>
-                  {inspectionCompliance}%
-                </p>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-2">
-                  <div className={cn("h-full rounded-full transition-all",
-                    inspectionCompliance >= 80 ? "bg-[#00C851]" : inspectionCompliance >= 50 ? "bg-[#FF9500]" : "bg-[#FF5A5F]")}
-                    style={{ width: `${inspectionCompliance}%` }} />
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1.5">{healthCounts.green} of {venues.length} venues current</p>
-              </div>
-            </div>
-
-            {/* Avg days + change velocity */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Avg Data Age</p>
-                <p className={cn("text-3xl font-black leading-none",
-                  avgDaysSince <= 90 ? "text-[#00C851]" : avgDaysSince <= 180 ? "text-[#FF9500]" : "text-[#FF5A5F]")}>
-                  {avgDaysSince}
-                </p>
-                <p className="text-[10px] text-gray-400 mt-1">days since oldest verified field (avg)</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Total Changes</p>
-                <p className="text-3xl font-black leading-none text-gray-900">
-                  {venues.reduce((sum, v) => sum + v.changeLog.length, 0)}
-                </p>
-                <p className="text-[10px] text-gray-400 mt-1">logged edits across all venues</p>
-              </div>
-            </div>
-
-            {/* Inspection health breakdown */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm mb-3">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Inspection Health Breakdown</p>
-              <div className="flex h-3 rounded-full overflow-hidden gap-0.5 mb-3">
-                {healthCounts.green > 0 && (
-                  <div className="bg-[#00C851] rounded-l-full" style={{ flex: healthCounts.green }} />
-                )}
-                {healthCounts.amber > 0 && (
-                  <div className="bg-[#FF9500]" style={{ flex: healthCounts.amber }} />
-                )}
-                {healthCounts.red > 0 && (
-                  <div className="bg-[#FF5A5F] rounded-r-full" style={{ flex: healthCounts.red }} />
-                )}
-              </div>
-              <div className="flex justify-between text-[11px] font-semibold">
-                <span className="flex items-center gap-1.5 text-[#00C851]">
-                  <span className="w-2 h-2 rounded-full bg-[#00C851]" /> {healthCounts.green} Current
-                </span>
-                <span className="flex items-center gap-1.5 text-[#FF9500]">
-                  <span className="w-2 h-2 rounded-full bg-[#FF9500]" /> {healthCounts.amber} Re-verify
-                </span>
-                <span className="flex items-center gap-1.5 text-[#FF5A5F]">
-                  <span className="w-2 h-2 rounded-full bg-[#FF5A5F]" /> {healthCounts.red} Overdue
-                </span>
-              </div>
-            </div>
-
-            {/* Tier distribution */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm mb-5">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Tier Distribution</p>
-              <div className="flex flex-col gap-3">
-                {TIERS.map(t => {
-                  const count = tierCounts[t];
-                  const pct   = venues.length ? Math.round((count / venues.length) * 100) : 0;
-                  return (
-                    <div key={t}>
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-2 h-2 rounded-full", TIER_DOT[t])} />
-                          <span className="text-[12px] font-semibold text-gray-800">{t}</span>
-                        </div>
-                        <span className="text-[12px] font-bold text-gray-500">{count} venue{count !== 1 ? 's' : ''} · {pct}%</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className={cn("h-full rounded-full", TIER_DOT[t])}
-                          style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Pending metrics section */}
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <Hourglass size={13} className="text-gray-400" />
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pending — Requires User Data</p>
-            </div>
-
-            <div className="bg-[#141414] rounded-2xl p-4 mb-3 flex items-start gap-3">
-              <TrendingUp size={15} className="text-white/40 mt-0.5 shrink-0" />
-              <p className="text-[12px] text-white/50 leading-relaxed">
-                The metrics below activate once users are completing plans and returning with post-date feedback. The data structure to collect them is already in place.
-              </p>
-            </div>
-
-            {[
-              {
-                label: 'Price Accuracy Rate',
-                desc:  'Reported post-date: did the actual cost match the estimate?',
-                why:   'Triggers re-verification of specific price fields.',
-              },
-              {
-                label: 'Post-Date Satisfaction',
-                desc:  'Average user satisfaction score across completed date plans.',
-                why:   'Signals whether D8 Approved venues are delivering on the promise.',
-              },
-              {
-                label: 'Review Submission Rate',
-                desc:  'Of users who completed a plan, % who returned to leave a review.',
-                why:   'Measures trust loop closure — the experience data layer depends on this.',
-              },
-              {
-                label: 'Time to First Inspection',
-                desc:  'Days between venue listing and first verified inspection visit.',
-                why:   'Tracks how quickly new listings reach verified data quality.',
-              },
-            ].map(m => (
-              <div key={m.label} className="bg-white rounded-2xl border border-gray-200 p-4 mb-2.5 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-bold text-gray-900 text-[13px]">{m.label}</p>
-                  <span className="bg-gray-100 text-gray-400 text-[10px] font-bold px-2.5 py-1 rounded-full">Pending data</span>
-                </div>
-                <p className="text-[12px] text-gray-500 leading-relaxed mb-2">{m.desc}</p>
-                <div className="flex items-start gap-1.5 pt-2 border-t border-gray-100">
-                  <Star size={11} className="text-[#FF9500] mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-gray-400 leading-snug">{m.why}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
 
       {/* ── SUBMISSIONS VIEW ─────────────────────────────────────────────────── */}
       {view === 'submissions' && (() => {
