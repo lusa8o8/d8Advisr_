@@ -1616,6 +1616,183 @@ export function AdminPanel() {
 
       {/* ── HEALTH VIEW ─────────────────────────────────────────────────────── */}
       {view === 'health' && (() => {
+        const now = Date.now();
+        const liveListings = venues.filter(v => v.listingStatus === 'live' && v.isActive);
+        const underReview = venues.filter(v => v.listingStatus === 'submitted' || v.listingStatus === 'under_review');
+        const needsUpdate = venues.filter(v => v.listingStatus === 'needs_update');
+        const reverifyRequired = venues.filter(v => v.verificationStatus === 'reverify_required');
+        const overdueVerification = venues.filter(v => {
+          const due = v.nextVerificationDueAt === 'Not scheduled' ? NaN : new Date(v.nextVerificationDueAt).getTime();
+          return v.listingStatus === 'live' && !Number.isNaN(due) && due < now;
+        });
+        const missingPhotos = venues.filter(v => !v.coverImage || v.photos.length === 0);
+        const missingRequiredFields = venues.filter(v =>
+          !v.name.trim()
+          || !v.category.trim()
+          || !v.city.trim()
+          || !v.area?.trim()
+          || !v.address?.trim()
+          || !v.description?.trim()
+          || !v.coverImage
+        );
+        const activeReviewTasks = reverificationTasks.filter(task => task.status === 'open' || task.status === 'in_progress');
+        const resolvedThisWeek = reverificationTasks.filter(task => {
+          if (task.status !== 'resolved' && task.status !== 'dismissed') return false;
+          const resolvedAt = task.resolvedAt ? new Date(task.resolvedAt).getTime() : NaN;
+          return !Number.isNaN(resolvedAt) && now - resolvedAt <= 1000 * 60 * 60 * 24 * 7;
+        });
+
+        const criticalCards = [
+          {
+            label: 'Overdue verification',
+            value: overdueVerification.length,
+            detail: 'Live listings past their next review date',
+            tone: overdueVerification.length ? 'red' : 'green',
+            items: overdueVerification,
+          },
+          {
+            label: 'Needs update',
+            value: needsUpdate.length,
+            detail: 'Listings waiting on partner fixes',
+            tone: needsUpdate.length ? 'red' : 'green',
+            items: needsUpdate,
+          },
+          {
+            label: 'Missing required fields',
+            value: missingRequiredFields.length,
+            detail: 'Listings missing core public-page data',
+            tone: missingRequiredFields.length ? 'red' : 'green',
+            items: missingRequiredFields,
+          },
+        ];
+
+        const workloadCards = [
+          {
+            label: 'Under review',
+            value: underReview.length,
+            detail: 'Submitted listings awaiting admin review',
+            tone: underReview.length ? 'amber' : 'green',
+            items: underReview,
+          },
+          {
+            label: 'Active reverify tasks',
+            value: activeReviewTasks.length,
+            detail: 'Open or in-progress inspection queue items',
+            tone: activeReviewTasks.length ? 'amber' : 'green',
+            items: activeReviewTasks,
+          },
+          {
+            label: 'Reverify required',
+            value: reverifyRequired.length,
+            detail: 'Venues flagged by sensitive changes',
+            tone: reverifyRequired.length ? 'amber' : 'green',
+            items: reverifyRequired,
+          },
+        ];
+
+        const qualityCards = [
+          {
+            label: 'Missing photos',
+            value: missingPhotos.length,
+            detail: 'Listings without a cover or gallery image',
+            tone: missingPhotos.length ? 'amber' : 'green',
+            items: missingPhotos,
+          },
+          {
+            label: 'Live listings',
+            value: liveListings.length,
+            detail: 'Active public supply',
+            tone: 'neutral',
+            items: liveListings,
+          },
+          {
+            label: 'Resolved this week',
+            value: resolvedThisWeek.length,
+            detail: 'Closed reverify tasks in the last 7 days',
+            tone: 'neutral',
+            items: resolvedThisWeek,
+          },
+        ];
+
+        const cardStyle = (tone: string) =>
+          tone === 'red' ? 'border-[#FF5A5F]/30 bg-red-50 text-[#FF5A5F]' :
+          tone === 'amber' ? 'border-amber-100 bg-amber-50 text-amber-600' :
+          tone === 'green' ? 'border-[#00C851]/20 bg-[#E8FFF0] text-[#00C851]' :
+          'border-gray-200 bg-white text-gray-900';
+
+        const renderMetric = (metric: { label: string; value: number; detail: string; tone: string; items: unknown[] }) => (
+          <div key={metric.label} className={cn("rounded-2xl border p-4 shadow-sm", cardStyle(metric.tone))}>
+            <p className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-2">{metric.label}</p>
+            <p className="text-3xl font-black leading-none">{metric.value}</p>
+            <p className="text-[11px] font-medium opacity-70 mt-2 leading-snug">{metric.detail}</p>
+          </div>
+        );
+
+        return (
+          <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-6">
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <Activity size={14} className="text-gray-400" />
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Operational health - real admin workload</p>
+            </div>
+
+            {(venuesLoading || reverificationTasksLoading) && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-4 text-center text-[13px] font-semibold text-gray-500">
+                Loading health metrics...
+              </div>
+            )}
+            {(venuesError || reverificationTasksError) && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4 text-[13px] text-red-600">
+                <p className="font-bold mb-1">Some health data could not sync</p>
+                <p>{venuesError ?? reverificationTasksError}</p>
+              </div>
+            )}
+
+            <div className="mb-5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Critical</p>
+              <div className="grid grid-cols-1 gap-3">
+                {criticalCards.map(renderMetric)}
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Review workload</p>
+              <div className="grid grid-cols-1 gap-3">
+                {workloadCards.map(renderMetric)}
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Supply quality</p>
+              <div className="grid grid-cols-1 gap-3">
+                {qualityCards.map(renderMetric)}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Action queue</p>
+              {[
+                ...overdueVerification.map(v => ({ id: v.id, title: v.name, label: 'Overdue verification', venueId: v.id })),
+                ...needsUpdate.map(v => ({ id: v.id, title: v.name, label: 'Needs partner update', venueId: v.id })),
+                ...missingRequiredFields.map(v => ({ id: v.id, title: v.name, label: 'Missing required fields', venueId: v.id })),
+              ].slice(0, 8).map(item => (
+                <button key={`${item.label}:${item.id}`} onClick={() => openDetail(item.venueId)}
+                  className="w-full flex items-center justify-between gap-3 py-3 border-b border-gray-100 last:border-b-0 text-left active:scale-[0.99] transition-transform">
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900 text-[13px] truncate">{item.title}</p>
+                    <p className="text-[11px] text-gray-500">{item.label}</p>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-400 shrink-0" />
+                </button>
+              ))}
+              {overdueVerification.length + needsUpdate.length + missingRequiredFields.length === 0 && (
+                <p className="py-3 text-center text-[13px] font-medium text-gray-400">No critical action items.</p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {false && view === 'health' && (() => {
         // ── Computed metrics ──────────────────────────────────────────────────
         const allFields = venues.flatMap(v => [
           ...Object.values(v.listing),
