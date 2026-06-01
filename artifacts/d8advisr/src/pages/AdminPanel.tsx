@@ -108,6 +108,7 @@ const CONFIDENCE_STYLE: Record<string, string> = {
 };
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
+const NOISE_LEVELS: NoiseLevel[] = ['quiet', 'moderate', 'lively', 'loud'];
 
 type AdminView = 'list' | 'detail' | 'tracker' | 'health' | 'submissions';
 
@@ -247,6 +248,30 @@ interface ReverificationTask {
   createdAt: string;
   resolvedAt: string | null;
   notes: string | null;
+}
+
+type NoiseLevel = 'quiet' | 'moderate' | 'lively' | 'loud';
+
+interface VenueInspectionRow {
+  id: string;
+  venue_id: string;
+  inspector_id: string | null;
+  atmosphere_score: number | null;
+  lighting_score: number | null;
+  noise_level: NoiseLevel | null;
+  occasion_fit: string[];
+  inspector_notes: string | null;
+  inspected_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface InspectionDraft {
+  atmosphereScore: string;
+  lightingScore: string;
+  noiseLevel: NoiseLevel;
+  occasionFit: string;
+  inspectorNotes: string;
 }
 
 function partnerTypeLabel(type: PartnerApplicationType) {
@@ -480,7 +505,7 @@ function logAdminIssue(message: string, detail?: unknown) {
 
 export function AdminPanel() {
   const [, setLocation] = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [view, setView]       = useState<AdminView>('list');
   const [venues, setVenues]   = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(false);
@@ -495,6 +520,9 @@ export function AdminPanel() {
   const [reverificationTasks, setReverificationTasks] = useState<ReverificationTask[]>([]);
   const [reverificationTasksLoading, setReverificationTasksLoading] = useState(false);
   const [reverificationTasksError, setReverificationTasksError] = useState<string | null>(null);
+  const [venueInspections, setVenueInspections] = useState<VenueInspectionRow[]>([]);
+  const [inspectionsLoading, setInspectionsLoading] = useState(false);
+  const [inspectionsError, setInspectionsError] = useState<string | null>(null);
 
   // Filter state
   const [filterTier, setFilterTier]     = useState<string>('All');
@@ -507,11 +535,21 @@ export function AdminPanel() {
   const [showTierMenu, setShowTierMenu] = useState(false);
   const [tierReason, setTierReason] = useState('');
   const [pendingTier, setPendingTier] = useState<Tier | null>(null);
-  const [activeSection, setActiveSection] = useState<'listing' | 'media' | 'review'>('listing');
+  const [activeSection, setActiveSection] = useState<'listing' | 'media' | 'experience' | 'review'>('listing');
   const [adminActionError, setAdminActionError] = useState<string | null>(null);
   const [adminActionLoading, setAdminActionLoading] = useState<string | null>(null);
+  const [inspectionDraft, setInspectionDraft] = useState<InspectionDraft>({
+    atmosphereScore: '',
+    lightingScore: '',
+    noiseLevel: 'moderate',
+    occasionFit: '',
+    inspectorNotes: '',
+  });
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
+  const selectedInspection = selectedVenue
+    ? venueInspections.find(inspection => inspection.venue_id === selectedVenue.id) ?? null
+    : null;
 
   const handleSignOut = async () => {
     await signOut();
@@ -611,10 +649,35 @@ export function AdminPanel() {
     setReverificationTasksLoading(false);
   };
 
+  const loadVenueInspections = async () => {
+    setInspectionsLoading(true);
+    setInspectionsError(null);
+
+    const { data, error } = await supabase
+      .from('venue_inspections')
+      .select('id,venue_id,inspector_id,atmosphere_score,lighting_score,noise_level,occasion_fit,inspector_notes,inspected_at,created_at,updated_at')
+      .order('inspected_at', { ascending: false });
+
+    if (error) {
+      setVenueInspections([]);
+      setInspectionsError(error.message);
+      logAdminIssue('Could not load venue inspections', error.message);
+    } else {
+      const latestByVenue = new Map<string, VenueInspectionRow>();
+      ((data ?? []) as VenueInspectionRow[]).forEach(row => {
+        if (!latestByVenue.has(row.venue_id)) latestByVenue.set(row.venue_id, row);
+      });
+      setVenueInspections(Array.from(latestByVenue.values()));
+    }
+
+    setInspectionsLoading(false);
+  };
+
   useEffect(() => {
     void loadAdminVenues();
     void loadSubmissions();
     void loadReverificationTasks();
+    void loadVenueInspections();
   }, []);
 
   const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus) => {
@@ -691,7 +754,18 @@ export function AdminPanel() {
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
-  const openDetail = (id: string) => { setSelectedId(id); setView('detail'); setActiveSection('listing'); };
+  const openDetail = (id: string) => {
+    setSelectedId(id);
+    setView('detail');
+    setActiveSection('listing');
+    setInspectionDraft({
+      atmosphereScore: '',
+      lightingScore: '',
+      noiseLevel: 'moderate',
+      occasionFit: '',
+      inspectorNotes: '',
+    });
+  };
 
   const saveField = (section: 'listing' | 'experience', key: string) => {
     if (!selectedVenue || !editValue.trim()) return;
@@ -774,6 +848,63 @@ export function AdminPanel() {
     } else {
       await loadReverificationTasks();
       await loadAdminVenues();
+    }
+
+    setAdminActionLoading(null);
+  };
+
+  const saveInspection = async () => {
+    if (!selectedVenue) return;
+
+    const atmosphere = Number(inspectionDraft.atmosphereScore);
+    const lighting = Number(inspectionDraft.lightingScore);
+    const notes = inspectionDraft.inspectorNotes.trim();
+
+    if (
+      Number.isNaN(atmosphere)
+      || Number.isNaN(lighting)
+      || atmosphere < 0
+      || atmosphere > 5
+      || lighting < 0
+      || lighting > 5
+      || !notes
+    ) {
+      setInspectionsError('Atmosphere, lighting, and inspector notes are required. Scores must be 0 to 5.');
+      return;
+    }
+
+    setInspectionsError(null);
+    setAdminActionLoading(`inspection:${selectedVenue.id}`);
+
+    const occasionFit = inspectionDraft.occasionFit
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    const { error } = await supabase
+      .from('venue_inspections')
+      .insert({
+        venue_id: selectedVenue.id,
+        inspector_id: user?.id ?? null,
+        atmosphere_score: atmosphere,
+        lighting_score: lighting,
+        noise_level: inspectionDraft.noiseLevel,
+        occasion_fit: occasionFit,
+        inspector_notes: notes,
+      });
+
+    if (error) {
+      setInspectionsError(error.message);
+      logAdminIssue('Could not save venue inspection', { venueId: selectedVenue.id, error: error.message });
+    } else {
+      setInspectionDraft({
+        atmosphereScore: '',
+        lightingScore: '',
+        noiseLevel: 'moderate',
+        occasionFit: '',
+        inspectorNotes: '',
+      });
+      await loadVenueInspections();
     }
 
     setAdminActionLoading(null);
@@ -1013,7 +1144,7 @@ export function AdminPanel() {
 
           {/* Section tabs */}
           <div className="flex mx-4 mt-4 bg-white rounded-2xl border border-gray-200 p-1 shadow-sm">
-            {(['listing', 'media', 'review'] as const).map(s => (
+            {(['listing', 'media', 'experience', 'review'] as const).map(s => (
               <button key={s} onClick={() => setActiveSection(s)}
                 className={cn("flex-1 py-2 rounded-xl text-[12px] font-bold transition-all capitalize",
                   activeSection === s ? "bg-[#141414] text-white" : "text-gray-500 hover:text-gray-800")}>
@@ -1093,6 +1224,142 @@ export function AdminPanel() {
                     No venue photos uploaded yet.
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeSection === 'experience' && (
+              <div className="flex flex-col gap-3 animate-in fade-in duration-200">
+                <div className="bg-purple-50 border border-purple-100 rounded-2xl px-4 py-3 flex items-start gap-3">
+                  <Lock size={15} className="text-purple-500 mt-0.5 shrink-0" />
+                  <p className="text-[12px] text-purple-700 leading-relaxed">
+                    Experience data is admin-only and should be entered after a D8 inspection. Partners cannot view or edit these fields.
+                  </p>
+                </div>
+
+                {inspectionsLoading && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center text-[13px] text-gray-500">
+                    Loading inspection data...
+                  </div>
+                )}
+
+                {selectedInspection ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Latest inspection</p>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-600">
+                        {formatDate(selectedInspection.inspected_at)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Atmosphere</p>
+                        <p className="text-[20px] font-black text-gray-900">{selectedInspection.atmosphere_score ?? '—'}<span className="text-[12px] text-gray-400"> / 5</span></p>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lighting</p>
+                        <p className="text-[20px] font-black text-gray-900">{selectedInspection.lighting_score ?? '—'}<span className="text-[12px] text-gray-400"> / 5</span></p>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Noise</p>
+                        <p className="text-[13px] font-bold text-gray-900 capitalize">{selectedInspection.noise_level ?? 'Not recorded'}</p>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Occasion fit</p>
+                        <p className="text-[13px] font-bold text-gray-900">{selectedInspection.occasion_fit.length ? selectedInspection.occasion_fit.join(', ') : 'Not recorded'}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Inspector notes</p>
+                      <p className="text-[13px] text-gray-700 leading-relaxed">{selectedInspection.inspector_notes || 'No notes recorded.'}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
+                    <p className="font-bold text-gray-900 mb-1">No inspection recorded yet</p>
+                    <p>Add the first internal inspection after a D8 team visit.</p>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Add inspection</p>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Atmosphere</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        value={inspectionDraft.atmosphereScore}
+                        onChange={e => setInspectionDraft(current => ({ ...current, atmosphereScore: e.target.value }))}
+                        placeholder="0-5"
+                        className="px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] focus:outline-none focus:border-[#FF5A5F]"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lighting</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        value={inspectionDraft.lightingScore}
+                        onChange={e => setInspectionDraft(current => ({ ...current, lightingScore: e.target.value }))}
+                        placeholder="0-5"
+                        className="px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] focus:outline-none focus:border-[#FF5A5F]"
+                      />
+                    </label>
+                  </div>
+                  <label className="flex flex-col gap-1.5 mb-3">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Noise level</span>
+                    <select
+                      value={inspectionDraft.noiseLevel}
+                      onChange={e => setInspectionDraft(current => ({ ...current, noiseLevel: e.target.value as NoiseLevel }))}
+                      className="px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] focus:outline-none focus:border-[#FF5A5F] bg-white capitalize"
+                    >
+                      {NOISE_LEVELS.map(level => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1.5 mb-3">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Occasion fit</span>
+                    <input
+                      value={inspectionDraft.occasionFit}
+                      onChange={e => setInspectionDraft(current => ({ ...current, occasionFit: e.target.value }))}
+                      placeholder="Date night, birthday, group hangout"
+                      className="px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] focus:outline-none focus:border-[#FF5A5F]"
+                    />
+                    <span className="text-[10px] text-gray-400">Comma-separated labels.</span>
+                  </label>
+                  <label className="flex flex-col gap-1.5 mb-3">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Inspector notes</span>
+                    <textarea
+                      rows={3}
+                      value={inspectionDraft.inspectorNotes}
+                      onChange={e => setInspectionDraft(current => ({ ...current, inspectorNotes: e.target.value }))}
+                      placeholder="What should D8 know about the real experience?"
+                      className="px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] focus:outline-none focus:border-[#FF5A5F] resize-none"
+                    />
+                  </label>
+                  {inspectionsError && (
+                    <div className="mb-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">
+                      {inspectionsError}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => void saveInspection()}
+                    disabled={adminActionLoading === `inspection:${selectedVenue.id}`}
+                    className={cn(
+                      "w-full py-3 rounded-2xl font-bold text-[13px] transition-transform",
+                      adminActionLoading === `inspection:${selectedVenue.id}`
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-[#FF5A5F] text-white active:scale-[0.98]"
+                    )}
+                  >
+                    {adminActionLoading === `inspection:${selectedVenue.id}` ? 'Saving...' : 'Save inspection'}
+                  </button>
+                </div>
               </div>
             )}
 
