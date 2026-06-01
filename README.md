@@ -13,6 +13,7 @@ Copy `.env.example` to a local `.env` file or configure the same variables in Ve
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `VITE_AUTH_REDIRECT_ORIGIN` optionally pins Supabase auth callbacks to a public origin for production or mobile testing. Leave unset for normal localhost desktop development.
 - `VITE_ADMIN_EMAILS` as a comma-separated list for `/admin` access
 - `DEV_ALLOWED_HOSTS` if you need Vite dev/preview access from a LAN hostname
 
@@ -23,6 +24,12 @@ Do not commit real `.env` files. Supabase anon keys are public runtime keys, but
 The root `vercel.json` builds the frontend from `artifacts/d8advisr` and serves `artifacts/d8advisr/dist/public`.
 
 If the Express API artifact is deployed separately, set `ALLOWED_ORIGINS` to the exact production frontend origins. Without that variable, CORS only allows local development origins.
+
+For Google/Supabase OAuth, add the matching callback URLs in Supabase Auth settings, for example:
+
+- `https://your-production-domain.com/auth/callback`
+- `http://localhost:3000/auth/callback`
+- your tunnel or LAN testing origin if testing OAuth from a phone
 
 ## Supabase
 

@@ -16,7 +16,21 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getAuthRedirectUrl(nextPath?: string | null) {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const callbackUrl = new URL(`${window.location.origin}${basePath}/auth/callback`);
+  const configuredOrigin = import.meta.env.VITE_AUTH_REDIRECT_ORIGIN?.trim();
+  const fallbackOrigin = window.location.origin;
+  let redirectOrigin = fallbackOrigin;
+
+  if (configuredOrigin) {
+    try {
+      redirectOrigin = new URL(configuredOrigin).origin;
+    } catch {
+      if (import.meta.env.DEV) {
+        console.warn('[D8 auth] Invalid VITE_AUTH_REDIRECT_ORIGIN; falling back to current origin');
+      }
+    }
+  }
+
+  const callbackUrl = new URL(`${redirectOrigin}${basePath}/auth/callback`);
   if (nextPath) callbackUrl.searchParams.set('next', nextPath);
   return callbackUrl.toString();
 }
