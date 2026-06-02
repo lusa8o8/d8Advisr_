@@ -64,7 +64,7 @@ export function PasswordResetRequest() {
         </p>
 
         {sent ? (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50 p-4 text-sm text-emerald-700">
+          <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-4 text-sm text-emerald-300">
             If an account exists for this email, we will send a password reset link.
           </div>
         ) : (

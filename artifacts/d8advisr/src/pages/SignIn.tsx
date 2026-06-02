@@ -10,7 +10,7 @@ function normalizeEmail(email: string) {
 
 export function SignIn() {
   const [, setLocation] = useLocation();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { clearPasswordRecovery, signIn, signInWithGoogle } = useAuth();
   const nextPath = getSafeNextPath();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,11 +21,12 @@ export function SignIn() {
   const [showCreateAccountPrompt, setShowCreateAccountPrompt] = useState(false);
 
   useEffect(() => {
+    clearPasswordRecovery();
     const oauthError = consumeOAuthError();
     if (oauthError) {
       setError(`Google sign-in could not be completed. ${oauthError}`);
     }
-  }, []);
+  }, [clearPasswordRecovery]);
 
   const handleSignIn = async () => {
     const normalizedEmail = normalizeEmail(email);
