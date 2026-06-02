@@ -5,7 +5,7 @@ import {
   User, Phone, Calendar, AtSign, Mail,
   MapPin, Heart, Wallet, Bell,
   Lock, Palette, LogOut, Trash2,
-  Eye, Sun, Moon, Monitor, CreditCard,
+  Eye, Sun, Moon, Monitor, CreditCard, Store,
 } from 'lucide-react';
 import { TopBar, BottomNav, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
@@ -441,6 +441,16 @@ export function Settings() {
           label="Stash & Budget"
           value="Sinking fund & spending goals"
           onClick={() => setLocation('/profile/budget')}
+        />
+      </Section>
+
+      <Section title="For Businesses">
+        <Row
+          icon={<Store size={16} className="text-primary" />}
+          label="Become a D8 Partner"
+          value="List your venue or events on D8Advisr"
+          onClick={() => setLocation('/partner/apply')}
+          border={false}
         />
       </Section>
 
