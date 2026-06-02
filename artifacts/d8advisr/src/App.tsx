@@ -208,8 +208,97 @@ function AdminGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Blocks access to partner sub-routes unless the user has a partner_application record.
-// /partner (onboarding) is intentionally NOT wrapped — anyone can start the application.
+// Partner application entry is explicit at /partner/apply; /partner itself is scoped.
+async function getPartnerApplication(userId: string) {
+  const { data, error } = await supabase
+    .from('partner_applications')
+    .select('id,status,partner_type')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error && import.meta.env.DEV) {
+    console.warn('[D8 partner] Could not resolve partner application', { userId, error: error.message });
+  }
+
+  return error ? null : data;
+}
+
+function PartnerEntryGuard({
+  children,
+  allowNewApplication = false,
+}: {
+  children: ReactNode;
+  allowNewApplication?: boolean;
+}) {
+  const { user, loading: authLoading, isPasswordRecovery } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminStatus();
+  const [location, setLocation] = useLocation();
+  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkPartnerEntry() {
+      if (authLoading || adminLoading) return;
+
+      if (isPasswordRecovery) {
+        setLocation('/password/update');
+        return;
+      }
+
+      if (!user) {
+        setLocation(authPathWithNext('/signin', location));
+        return;
+      }
+
+      if (isAdmin) {
+        setLocation('/admin');
+        return;
+      }
+
+      const application = await getPartnerApplication(user.id);
+      if (!active) return;
+
+      if (application?.status === 'live') {
+        setLocation('/partner/dashboard');
+        return;
+      }
+
+      if (application) {
+        setAllowed(true);
+        setChecking(false);
+        return;
+      }
+
+      if (allowNewApplication) {
+        setAllowed(true);
+        setChecking(false);
+        return;
+      }
+
+      setLocation('/home');
+    }
+
+    setAllowed(false);
+    setChecking(true);
+    void checkPartnerEntry();
+
+    return () => { active = false; };
+  }, [adminLoading, allowNewApplication, authLoading, isAdmin, isPasswordRecovery, location, setLocation, user]);
+
+  if (authLoading || adminLoading || checking) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!allowed) return null;
+  return <>{children}</>;
+}
+
 function PartnerGuard({
   children,
   capability,
@@ -230,19 +319,17 @@ function PartnerGuard({
     }
     if (!user) { setLocation(authPathWithNext('/signin', location)); return; }
 
-    supabase
-      .from('partner_applications')
-      .select('id,status,partner_type')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
+    getPartnerApplication(user.id)
+      .then((data) => {
         if (data?.status === 'live' && hasPartnerCapability(data.partner_type as PartnerType, capability)) {
           setAllowed(true);
         } else if (data?.status === 'live') {
           setLocation('/partner/dashboard');
-        } else {
-          // No application — send to onboarding
+        } else if (data) {
           setLocation('/partner');
+        } else {
+          setLocation('/home');
+          return;
         }
         setChecking(false);
       });
@@ -377,8 +464,13 @@ function Router() {
       <Route path="/notifications"><ConsumerGuard><NotificationsCenter /></ConsumerGuard></Route>
       <Route path="/admin"><AdminGuard><AdminPanel /></AdminGuard></Route>
 
-      {/* Partner onboarding — authenticated but no application required */}
-      <Route path="/partner"><AuthGuard><PartnerPortal /></AuthGuard></Route>
+      {/* Partner application is explicit; /partner is a scoped partner landing route. */}
+      <Route path="/partner/apply">
+        <PartnerEntryGuard allowNewApplication><PartnerPortal /></PartnerEntryGuard>
+      </Route>
+      <Route path="/partner">
+        <PartnerEntryGuard><PartnerPortal /></PartnerEntryGuard>
+      </Route>
       {/* Partner sub-routes — also require an existing partner_application record */}
       <Route path="/partner/dashboard">
         <PartnerGuard><PartnerDashboard /></PartnerGuard>
