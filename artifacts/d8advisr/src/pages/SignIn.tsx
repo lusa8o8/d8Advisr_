@@ -114,16 +114,7 @@ export function SignIn() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <label className="text-sm font-medium text-muted-foreground">Password</label>
-              <button
-                type="button"
-                onClick={() => setLocation('/password/reset')}
-                className="text-xs font-semibold text-primary hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
+            <label className="text-sm font-medium text-muted-foreground">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -141,6 +132,13 @@ export function SignIn() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setLocation('/password/reset')}
+              className="self-end text-xs font-semibold text-primary hover:underline"
+            >
+              Forgot password?
+            </button>
           </div>
         </div>
 
