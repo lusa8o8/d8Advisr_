@@ -4,10 +4,16 @@ import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
+const PASSWORD_RECOVERY_REQUESTED_KEY = 'd8advisr_password_recovery_requested';
+
 export function PasswordUpdate() {
   const [, setLocation] = useLocation();
   const { session, loading: authLoading, updatePassword } = useAuth();
   const exchangedCodeRef = useRef<string | null>(null);
+  const [isRecoveryFlow, setIsRecoveryFlow] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(params.get('code') || sessionStorage.getItem(PASSWORD_RECOVERY_REQUESTED_KEY));
+  });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +29,7 @@ export function PasswordUpdate() {
 
     let active = true;
     exchangedCodeRef.current = code;
+    setIsRecoveryFlow(true);
     setLinkLoading(true);
     setError(null);
 
@@ -55,6 +62,10 @@ export function PasswordUpdate() {
     setLoading(true);
     setError(null);
     const { error } = await updatePassword(password);
+    if (!error && isRecoveryFlow) {
+      await supabase.auth.signOut();
+      sessionStorage.removeItem(PASSWORD_RECOVERY_REQUESTED_KEY);
+    }
     setLoading(false);
 
     if (error) {
@@ -74,15 +85,15 @@ export function PasswordUpdate() {
       <div className="w-full flex items-center justify-between mt-8 mb-8">
         <button
           type="button"
-          onClick={() => setLocation('/settings')}
+          onClick={() => setLocation(isRecoveryFlow ? '/signin' : '/settings')}
           className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-foreground"
-          aria-label="Back to settings"
+          aria-label={isRecoveryFlow ? 'Back to sign in' : 'Back to settings'}
         >
           <ArrowLeft size={19} />
         </button>
         <button
           type="button"
-          onClick={() => setLocation('/home')}
+          onClick={() => setLocation(isRecoveryFlow ? '/signin' : '/home')}
           className="flex items-baseline"
         >
           <span className="font-bold text-2xl text-primary tracking-tight">D8</span>
@@ -94,7 +105,7 @@ export function PasswordUpdate() {
       <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border">
         <h1 className="text-2xl font-bold text-foreground mb-2 text-center">Change password</h1>
         <p className="text-sm text-muted-foreground text-center mb-8">
-          Use this password to sign in with email next time.
+          {isRecoveryFlow ? 'Set a new password, then sign in again.' : 'Use this password to sign in with email next time.'}
         </p>
 
         {(authLoading || linkLoading) && (
@@ -104,7 +115,7 @@ export function PasswordUpdate() {
           </div>
         )}
 
-        {!authLoading && !linkLoading && !hasSession && (
+        {!authLoading && !linkLoading && !hasSession && !saved && (
           <div className="mb-5 rounded-2xl border border-primary/20 bg-[#FFF0F1] p-4 text-sm text-primary">
             <p className="font-semibold mb-1">This reset link is no longer active.</p>
             <p className="mb-4 text-primary/80">Request a new password reset link and use the latest email from D8Advisr.</p>
@@ -168,12 +179,22 @@ export function PasswordUpdate() {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={loading || authLoading || linkLoading || !hasSession}
+          disabled={loading || authLoading || linkLoading || !hasSession || saved}
           className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={18} className="animate-spin" />}
           {loading ? 'Updating password...' : 'Update password'}
         </button>
+
+        {saved && isRecoveryFlow && (
+          <button
+            type="button"
+            onClick={() => setLocation('/signin')}
+            className="mt-4 w-full border border-border bg-background text-foreground py-4 rounded-xl font-semibold text-[17px] active:scale-[0.98] transition-all hover:bg-card"
+          >
+            Sign in
+          </button>
+        )}
       </div>
     </div>
   );

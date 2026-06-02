@@ -134,7 +134,7 @@ function Sidebar() {
   );
 }
 
-const NO_SIDEBAR_PREFIXES = ['/partner', '/admin'];
+const NO_SIDEBAR_PREFIXES = ['/partner', '/admin', '/auth', '/signin', '/signup', '/password'];
 
 export function DesktopShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
