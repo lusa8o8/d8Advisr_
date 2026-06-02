@@ -16,9 +16,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const PASSWORD_RECOVERY_KEY = 'd8advisr_password_recovery';
+const PASSWORD_RECOVERY_REQUESTED_KEY = 'd8advisr_password_recovery_requested';
 
 function getAuthRedirectUrl(nextPath?: string | null) {
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const callbackUrl = new URL(`${getRedirectOrigin()}${getBasePath()}/auth/callback`);
+  if (nextPath) callbackUrl.searchParams.set('next', nextPath);
+  return callbackUrl.toString();
+}
+
+function getAppRedirectUrl(path: string) {
+  return `${getRedirectOrigin()}${getBasePath()}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function getBasePath() {
+  return import.meta.env.BASE_URL.replace(/\/$/, '');
+}
+
+function getRedirectOrigin() {
   const configuredOrigin = import.meta.env.VITE_AUTH_REDIRECT_ORIGIN?.trim();
   const fallbackOrigin = window.location.origin;
   let redirectOrigin = fallbackOrigin;
@@ -33,9 +47,7 @@ function getAuthRedirectUrl(nextPath?: string | null) {
     }
   }
 
-  const callbackUrl = new URL(`${redirectOrigin}${basePath}/auth/callback`);
-  if (nextPath) callbackUrl.searchParams.set('next', nextPath);
-  return callbackUrl.toString();
+  return redirectOrigin;
 }
 
 function normalizeAuthEmail(email: string) {
@@ -122,8 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const sendPasswordReset = async (email: string) => {
+    sessionStorage.setItem(PASSWORD_RECOVERY_REQUESTED_KEY, 'true');
     const { error } = await supabase.auth.resetPasswordForEmail(normalizeAuthEmail(email), {
-      redirectTo: getAuthRedirectUrl('/password/update'),
+      redirectTo: getAppRedirectUrl('/password/update'),
     });
     return { error };
   };

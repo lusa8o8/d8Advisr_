@@ -1,17 +1,45 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export function PasswordUpdate() {
   const [, setLocation] = useLocation();
   const { session, loading: authLoading, updatePassword } = useAuth();
+  const exchangedCodeRef = useRef<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [linkLoading, setLinkLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code || exchangedCodeRef.current === code || session?.user) return;
+
+    let active = true;
+    exchangedCodeRef.current = code;
+    setLinkLoading(true);
+    setError(null);
+
+    void supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+      if (!active) return;
+      setLinkLoading(false);
+
+      if (error) {
+        setError('This reset link is no longer active. Request a new password reset link and use the latest email from D8Advisr.');
+        return;
+      }
+
+      window.history.replaceState(null, '', `${import.meta.env.BASE_URL.replace(/\/$/, '')}/password/update`);
+    });
+
+    return () => { active = false; };
+  }, [session?.user]);
 
   const handleSubmit = async () => {
     if (password.length < 8) {
@@ -69,14 +97,14 @@ export function PasswordUpdate() {
           Use this password to sign in with email next time.
         </p>
 
-        {authLoading && (
+        {(authLoading || linkLoading) && (
           <div className="mb-5 rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
             <Loader2 size={17} className="animate-spin" />
             Checking reset link...
           </div>
         )}
 
-        {!authLoading && !hasSession && (
+        {!authLoading && !linkLoading && !hasSession && (
           <div className="mb-5 rounded-2xl border border-primary/20 bg-[#FFF0F1] p-4 text-sm text-primary">
             <p className="font-semibold mb-1">This reset link is no longer active.</p>
             <p className="mb-4 text-primary/80">Request a new password reset link and use the latest email from D8Advisr.</p>
@@ -140,7 +168,7 @@ export function PasswordUpdate() {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={loading || authLoading || !hasSession}
+          disabled={loading || authLoading || linkLoading || !hasSession}
           className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={18} className="animate-spin" />}

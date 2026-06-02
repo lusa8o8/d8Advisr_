@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useEffect } from 'react';
+import { type ReactNode, useState, useEffect, useRef } from 'react';
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -221,8 +221,11 @@ function PartnerGuard({
 function AuthCallback() {
   const { session, user, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const [exchangingCode, setExchangingCode] = useState(false);
+  const exchangedCodeRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     const params = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const oauthError = params.get('error_description')
@@ -236,12 +239,40 @@ function AuthCallback() {
       return;
     }
 
-    if (loading) return;
     const redirectPath = getPostAuthRedirectPath();
-    const isPasswordRecovery =
+    const code = params.get('code');
+    const isPasswordRecoveryTarget =
       redirectPath === '/password/update'
       || params.get('type') === 'recovery'
       || hashParams.get('type') === 'recovery'
+      || sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
+
+    if (code && exchangedCodeRef.current !== code) {
+      exchangedCodeRef.current = code;
+      setExchangingCode(true);
+      void supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (!active) return;
+        setExchangingCode(false);
+
+        if (error) {
+          if (isPasswordRecoveryTarget) {
+            setLocation('/password/update');
+            return;
+          }
+          storeOAuthError(error.message);
+          setLocation(authPathWithNext('/signin', redirectPath));
+          return;
+        }
+
+        if (isPasswordRecoveryTarget) sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+        setLocation(isPasswordRecoveryTarget ? '/password/update' : redirectPath);
+      });
+      return () => { active = false; };
+    }
+
+    if (loading) return;
+    const isPasswordRecovery =
+      isPasswordRecoveryTarget
       || sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
     if (isPasswordRecovery) sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
     if (isPasswordRecovery) {
@@ -249,11 +280,15 @@ function AuthCallback() {
       return;
     }
     setLocation(user ? redirectPath : authPathWithNext('/signin', redirectPath));
+    return () => { active = false; };
   }, [session, user, loading, setLocation]);
 
   return (
     <div className="flex-1 flex items-center justify-center bg-background">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        {exchangingCode && <p className="text-sm text-muted-foreground">Completing sign-in...</p>}
+      </div>
     </div>
   );
 }
