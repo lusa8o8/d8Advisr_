@@ -36,7 +36,11 @@ export function PasswordUpdate() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    if (!code || exchangedCodeRef.current === code || session?.user) return;
+    if (session?.user) {
+      setLinkLoading(false);
+      return;
+    }
+    if (!code || exchangedCodeRef.current === code) return;
 
     let active = true;
     exchangedCodeRef.current = code;
@@ -98,6 +102,7 @@ export function PasswordUpdate() {
   };
 
   const hasSession = Boolean(session?.user);
+  const checkingResetLink = (authLoading || linkLoading) && !hasSession && !saved;
 
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
@@ -127,7 +132,7 @@ export function PasswordUpdate() {
           {isRecoveryFlow ? 'Set a new password, then sign in again.' : 'Use this password to sign in with email next time.'}
         </p>
 
-        {(authLoading || linkLoading) && (
+        {checkingResetLink && (
           <div className="mb-5 rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
             <Loader2 size={17} className="animate-spin" />
             Checking reset link...
