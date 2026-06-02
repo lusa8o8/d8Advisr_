@@ -12,8 +12,12 @@ export function getSafeNextPath(search = window.location.search) {
   return next;
 }
 
+export function getSafeNextPathFromUrl(url = window.location) {
+  return getSafeNextPath(url.search) ?? getSafeNextPath(url.hash.replace(/^#/, '?'));
+}
+
 export function getPostAuthRedirectPath() {
-  return getSafeNextPath() ?? import.meta.env.VITE_POST_AUTH_REDIRECT ?? DEFAULT_POST_AUTH_PATH;
+  return getSafeNextPathFromUrl() ?? import.meta.env.VITE_POST_AUTH_REDIRECT ?? DEFAULT_POST_AUTH_PATH;
 }
 
 export function authPathWithNext(path: '/signin' | '/signup', nextPath: string | null) {

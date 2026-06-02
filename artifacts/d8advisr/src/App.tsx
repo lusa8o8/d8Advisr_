@@ -53,6 +53,7 @@ import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { authPathWithNext, getPostAuthRedirectPath, storeOAuthError } from "@/lib/authRedirect";
 
 const queryClient = new QueryClient();
+const PASSWORD_RECOVERY_KEY = 'd8advisr_password_recovery';
 
 // Redirect unauthenticated users to welcome screen
 function AuthGuard({ children }: { children: ReactNode }) {
@@ -218,7 +219,7 @@ function PartnerGuard({
 }
 
 function AuthCallback() {
-  const { user, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -236,8 +237,11 @@ function AuthCallback() {
     }
 
     if (loading) return;
-    setLocation(user ? getPostAuthRedirectPath() : authPathWithNext('/signin', getPostAuthRedirectPath()));
-  }, [user, loading, setLocation]);
+    const isPasswordRecovery = session?.user && sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
+    if (isPasswordRecovery) sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+    const redirectPath = isPasswordRecovery ? '/password/update' : getPostAuthRedirectPath();
+    setLocation(user ? redirectPath : authPathWithNext('/signin', redirectPath));
+  }, [session, user, loading, setLocation]);
 
   return (
     <div className="flex-1 flex items-center justify-center bg-background">

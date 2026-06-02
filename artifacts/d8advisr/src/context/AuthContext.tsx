@@ -15,6 +15,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const PASSWORD_RECOVERY_KEY = 'd8advisr_password_recovery';
 
 function getAuthRedirectUrl(nextPath?: string | null) {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -66,8 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     loadSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
+      if (event === 'PASSWORD_RECOVERY') {
+        sessionStorage.setItem(PASSWORD_RECOVERY_KEY, 'true');
+      }
+
       setSession(session);
 
       if (!session) {
