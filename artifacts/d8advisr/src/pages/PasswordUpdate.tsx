@@ -8,11 +8,22 @@ const PASSWORD_RECOVERY_REQUESTED_KEY = 'd8advisr_password_recovery_requested';
 
 export function PasswordUpdate() {
   const [, setLocation] = useLocation();
-  const { session, loading: authLoading, updatePassword } = useAuth();
+  const {
+    session,
+    loading: authLoading,
+    isPasswordRecovery,
+    markPasswordRecovery,
+    clearPasswordRecovery,
+    updatePassword,
+  } = useAuth();
   const exchangedCodeRef = useRef<string | null>(null);
   const [isRecoveryFlow, setIsRecoveryFlow] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return Boolean(params.get('code') || sessionStorage.getItem(PASSWORD_RECOVERY_REQUESTED_KEY));
+    return Boolean(
+      params.get('code')
+      || sessionStorage.getItem(PASSWORD_RECOVERY_REQUESTED_KEY)
+      || isPasswordRecovery,
+    );
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,6 +41,7 @@ export function PasswordUpdate() {
     let active = true;
     exchangedCodeRef.current = code;
     setIsRecoveryFlow(true);
+    markPasswordRecovery();
     setLinkLoading(true);
     setError(null);
 
@@ -38,6 +50,7 @@ export function PasswordUpdate() {
       setLinkLoading(false);
 
       if (error) {
+        clearPasswordRecovery();
         setError('This reset link is no longer active. Request a new password reset link and use the latest email from D8Advisr.');
         return;
       }
@@ -47,6 +60,12 @@ export function PasswordUpdate() {
 
     return () => { active = false; };
   }, [session?.user]);
+
+  useEffect(() => {
+    if (isRecoveryFlow && session?.user && !isPasswordRecovery && !saved) {
+      markPasswordRecovery();
+    }
+  }, [isPasswordRecovery, isRecoveryFlow, markPasswordRecovery, saved, session?.user]);
 
   const handleSubmit = async () => {
     if (password.length < 8) {
@@ -63,8 +82,8 @@ export function PasswordUpdate() {
     setError(null);
     const { error } = await updatePassword(password);
     if (!error && isRecoveryFlow) {
+      clearPasswordRecovery();
       await supabase.auth.signOut();
-      sessionStorage.removeItem(PASSWORD_RECOVERY_REQUESTED_KEY);
     }
     setLoading(false);
 

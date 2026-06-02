@@ -6,6 +6,9 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  isPasswordRecovery: boolean;
+  markPasswordRecovery: () => void;
+  clearPasswordRecovery: () => void;
   signUp: (email: string, password: string, nextPath?: string | null) => Promise<{ error: Error | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: (nextPath?: string | null) => Promise<{ error: Error | null }>;
@@ -58,6 +61,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    return Boolean(
+      sessionStorage.getItem(PASSWORD_RECOVERY_KEY)
+      || sessionStorage.getItem(PASSWORD_RECOVERY_REQUESTED_KEY),
+    );
+  });
+
+  const markPasswordRecovery = () => {
+    sessionStorage.setItem(PASSWORD_RECOVERY_KEY, 'true');
+    setIsPasswordRecovery(true);
+  };
+
+  const clearPasswordRecovery = () => {
+    sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+    sessionStorage.removeItem(PASSWORD_RECOVERY_REQUESTED_KEY);
+    setIsPasswordRecovery(false);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -82,7 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       if (event === 'PASSWORD_RECOVERY') {
-        sessionStorage.setItem(PASSWORD_RECOVERY_KEY, 'true');
+        markPasswordRecovery();
+      }
+
+      if (event === 'SIGNED_OUT') {
+        clearPasswordRecovery();
       }
 
       setSession(session);
@@ -147,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    clearPasswordRecovery();
     await supabase.auth.signOut();
   };
 
@@ -155,6 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       loading,
+      isPasswordRecovery,
+      markPasswordRecovery,
+      clearPasswordRecovery,
       signUp,
       signIn,
       signInWithGoogle,

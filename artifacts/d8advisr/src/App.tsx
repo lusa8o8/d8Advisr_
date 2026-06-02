@@ -57,12 +57,16 @@ const PASSWORD_RECOVERY_KEY = 'd8advisr_password_recovery';
 
 // Redirect unauthenticated users to welcome screen
 function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isPasswordRecovery } = useAuth();
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
+    if (!loading && isPasswordRecovery && location !== '/password/update') {
+      setLocation('/password/update');
+      return;
+    }
     if (!loading && !user) setLocation(authPathWithNext('/signin', location));
-  }, [user, loading, location, setLocation]);
+  }, [user, loading, isPasswordRecovery, location, setLocation]);
 
   if (loading) {
     return (
@@ -87,7 +91,7 @@ async function getScopedHome(userId: string) {
 }
 
 function ConsumerGuard({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isPasswordRecovery } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminStatus();
   const [location, setLocation] = useLocation();
   const [checkingScope, setCheckingScope] = useState(true);
@@ -98,6 +102,11 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
 
     async function checkScope() {
       if (loading || adminLoading) return;
+
+      if (isPasswordRecovery) {
+        setLocation('/password/update');
+        return;
+      }
 
       if (!user) {
         setLocation(authPathWithNext('/signin', location));
@@ -126,7 +135,7 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
     void checkScope();
 
     return () => { active = false; };
-  }, [adminLoading, isAdmin, loading, location, setLocation, user]);
+  }, [adminLoading, isAdmin, isPasswordRecovery, loading, location, setLocation, user]);
 
   if (loading || adminLoading || checkingScope) {
     return (
@@ -141,7 +150,7 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
 }
 
 function AdminGuard({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isPasswordRecovery } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminStatus();
   const [location, setLocation] = useLocation();
   const checking = loading || adminLoading;
@@ -149,6 +158,10 @@ function AdminGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (checking) return;
+    if (isPasswordRecovery) {
+      setLocation('/password/update');
+      return;
+    }
     if (!user) {
       setLocation(authPathWithNext('/signin', location));
       return;
@@ -156,7 +169,7 @@ function AdminGuard({ children }: { children: ReactNode }) {
     if (!allowed) {
       void getScopedHome(user.id).then(destination => setLocation(destination));
     }
-  }, [allowed, user, checking, location, setLocation]);
+  }, [allowed, user, isPasswordRecovery, checking, location, setLocation]);
 
   if (checking) {
     return (
@@ -179,13 +192,17 @@ function PartnerGuard({
   children: ReactNode;
   capability?: PartnerCapability;
 }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isPasswordRecovery } = useAuth();
   const [location, setLocation] = useLocation();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
+    if (isPasswordRecovery) {
+      setLocation('/password/update');
+      return;
+    }
     if (!user) { setLocation(authPathWithNext('/signin', location)); return; }
 
     supabase
@@ -204,7 +221,7 @@ function PartnerGuard({
         }
         setChecking(false);
       });
-  }, [user, authLoading, location, setLocation, capability]);
+  }, [user, authLoading, isPasswordRecovery, location, setLocation, capability]);
 
   if (authLoading || checking) {
     return (
@@ -219,7 +236,7 @@ function PartnerGuard({
 }
 
 function AuthCallback() {
-  const { session, user, loading } = useAuth();
+  const { session, user, loading, markPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [, setLocation] = useLocation();
   const [exchangingCode, setExchangingCode] = useState(false);
   const exchangedCodeRef = useRef<string | null>(null);
@@ -265,6 +282,11 @@ function AuthCallback() {
         }
 
         if (isPasswordRecoveryTarget) sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+        if (isPasswordRecoveryTarget) {
+          markPasswordRecovery();
+        } else {
+          clearPasswordRecovery();
+        }
         setLocation(isPasswordRecoveryTarget ? '/password/update' : redirectPath);
       });
       return () => { active = false; };
@@ -276,12 +298,13 @@ function AuthCallback() {
       || sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
     if (isPasswordRecovery) sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
     if (isPasswordRecovery) {
+      markPasswordRecovery();
       setLocation('/password/update');
       return;
     }
     setLocation(user ? redirectPath : authPathWithNext('/signin', redirectPath));
     return () => { active = false; };
-  }, [session, user, loading, setLocation]);
+  }, [session, user, loading, markPasswordRecovery, clearPasswordRecovery, setLocation]);
 
   return (
     <div className="flex-1 flex items-center justify-center bg-background">
