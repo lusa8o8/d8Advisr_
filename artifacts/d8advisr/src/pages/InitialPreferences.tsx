@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ChevronLeft, Check, MapPin } from 'lucide-react';
+import { ChevronLeft, Check, Loader2, MapPin } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const PLAN_TYPES = [
   {
@@ -53,8 +55,11 @@ const CITIES = [
 ];
 
 export function InitialPreferences() {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Step 1 — plan type
   const [planTypes, setPlanTypes] = useState<string[]>([]);
@@ -83,12 +88,45 @@ export function InitialPreferences() {
   const canAdvance = () => {
     if (step === 1) return planTypes.length > 0;
     if (step === 2) return vibes.length > 0;
+    if (step === TOTAL_STEPS) return vibes.length > 0 && !saving;
     return true;
+  };
+
+  const finishOnboarding = async () => {
+    if (!user) {
+      setLocation('/signin');
+      return;
+    }
+
+    const selectedCity = CITIES.find(c => c.id === city)?.name ?? 'Lagos';
+    setSaving(true);
+    setSaveError(null);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        city: selectedCity,
+        budget_pref: budget,
+        vibe_prefs: vibes,
+      })
+      .eq('id', user.id);
+
+    setSaving(false);
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[D8 onboarding] Could not save preferences', { userId: user.id, error: error.message });
+      }
+      setSaveError('Could not save your preferences. Try again.');
+      return;
+    }
+
+    setLocation('/home');
   };
 
   const advance = () => {
     if (step < TOTAL_STEPS) setStep(s => s + 1);
-    else setLocation('/home');
+    else void finishOnboarding();
   };
 
   return (
@@ -337,11 +375,24 @@ export function InitialPreferences() {
             </div>
 
             {/* CTA */}
+            {saveError && (
+              <div className="w-full mb-4 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm font-semibold text-primary">
+                {saveError}
+              </div>
+            )}
             <button
-              onClick={() => setLocation('/home')}
-              className="w-full bg-primary text-white py-5 rounded-2xl font-bold text-[18px] shadow-[0_12px_28px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-transform"
+              onClick={() => void finishOnboarding()}
+              disabled={saving}
+              className="w-full bg-primary text-white py-5 rounded-2xl font-bold text-[18px] shadow-[0_12px_28px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-transform disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Start Exploring →
+              {saving ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin" />
+                  Saving...
+                </span>
+              ) : (
+                "Start Exploring →"
+              )}
             </button>
 
             <p className="text-[12px] text-muted-foreground mt-5 text-center">

@@ -90,6 +90,23 @@ async function getScopedHome(userId: string) {
   return typeof scope?.home_path === 'string' ? scope.home_path : '/home';
 }
 
+async function hasCompletedConsumerOnboarding(userId: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('vibe_prefs')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[D8 onboarding] Could not read consumer preferences', { userId, error: error.message });
+    }
+    return true;
+  }
+
+  return Array.isArray(data?.vibe_prefs) && data.vibe_prefs.length > 0;
+}
+
 function ConsumerGuard({ children }: { children: ReactNode }) {
   const { user, loading, isPasswordRecovery } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminStatus();
@@ -123,6 +140,14 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
 
       if (destination !== '/home') {
         setLocation(destination);
+        return;
+      }
+
+      const completedOnboarding = await hasCompletedConsumerOnboarding(user.id);
+      if (!active) return;
+
+      if (!completedOnboarding && location !== '/preferences') {
+        setLocation('/preferences');
         return;
       }
 
