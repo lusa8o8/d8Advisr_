@@ -237,9 +237,17 @@ function AuthCallback() {
     }
 
     if (loading) return;
-    const isPasswordRecovery = session?.user && sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
+    const redirectPath = getPostAuthRedirectPath();
+    const isPasswordRecovery =
+      redirectPath === '/password/update'
+      || params.get('type') === 'recovery'
+      || hashParams.get('type') === 'recovery'
+      || sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
     if (isPasswordRecovery) sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
-    const redirectPath = isPasswordRecovery ? '/password/update' : getPostAuthRedirectPath();
+    if (isPasswordRecovery) {
+      setLocation('/password/update');
+      return;
+    }
     setLocation(user ? redirectPath : authPathWithNext('/signin', redirectPath));
   }, [session, user, loading, setLocation]);
 
@@ -312,7 +320,7 @@ function Router() {
       <Route path="/review"><ConsumerGuard><PostDateReview /></ConsumerGuard></Route>
 
       <Route path="/settings"><ConsumerGuard><Settings /></ConsumerGuard></Route>
-      <Route path="/password/update"><AuthGuard><PasswordUpdate /></AuthGuard></Route>
+      <Route path="/password/update" component={PasswordUpdate} />
 
       {/* Fallback — unauthenticated users see Welcome, authenticated see Home */}
       <Route><ConsumerGuard><HomeDiscovery /></ConsumerGuard></Route>
