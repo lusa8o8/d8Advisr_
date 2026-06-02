@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import {
-  Home, Calendar, User, Bell, Map, Sparkles, Settings, LogOut,
+  Home, Calendar, User, Bell, Map, Sparkles, Settings,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
+import { useAuth } from '@/context/AuthContext';
 
 const NAV = [
   { label: 'Discover',   icon: Home,     path: '/home' },
@@ -138,7 +139,11 @@ const NO_SIDEBAR_PREFIXES = ['/partner', '/admin', '/auth', '/signin', '/signup'
 
 export function DesktopShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
-  const hideSidebar = NO_SIDEBAR_PREFIXES.some(p => location === p || location.startsWith(p + '/'));
+  const { user, loading } = useAuth();
+  const hideSidebar =
+    loading
+    || !user
+    || NO_SIDEBAR_PREFIXES.some(p => location === p || location.startsWith(p + '/'));
 
   if (hideSidebar) {
     return (
