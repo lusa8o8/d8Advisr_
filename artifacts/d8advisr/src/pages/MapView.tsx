@@ -20,15 +20,27 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Custom emoji marker function
-const createCustomIcon = (emoji: string) => L.divIcon({
-  html: `<div class="w-10 h-10 bg-[#FF5A5F] rounded-full flex items-center justify-center text-white text-lg shadow-lg border-2 border-white relative z-10 hover:scale-110 transition-transform cursor-pointer">
-          ${emoji}
-          <div class="absolute -bottom-1.5 w-3 h-3 bg-[#FF5A5F] rotate-45 -z-10 border-r-2 border-b-2 border-white"></div>
-        </div>`,
+// Custom map pin — must use inline styles, Tailwind is not available inside L.divIcon HTML
+const createCustomIcon = (label: string) => L.divIcon({
+  html: `<div style="
+    width:44px; height:44px; border-radius:50%;
+    background:#FF5A5F; border:3px solid white;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; line-height:1; cursor:pointer;
+    position:relative;">
+    ${label}
+    <div style="
+      position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+      width:0; height:0;
+      border-left:6px solid transparent;
+      border-right:6px solid transparent;
+      border-top:8px solid #FF5A5F;">
+    </div>
+  </div>`,
   className: '',
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
+  iconSize: [44, 52],
+  iconAnchor: [22, 52],
 });
 
 // Component to recenter map when region/center changes
@@ -100,21 +112,32 @@ export function MapView() {
           className="w-full h-full"
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            maxZoom={19}
           />
           <RecenterMap center={mapCenter} />
           
-          {mappedVenues.map(venue => (
-            <Marker 
-              key={venue.id}
-              position={[venue.lat as number, venue.lng as number]}
-              icon={createCustomIcon('📍')}
-              eventHandlers={{
-                click: () => setSelectedVenueId(venue.id)
-              }}
-            />
-          ))}
+          {mappedVenues.map(venue => {
+            const cat = (venue.category || '').toLowerCase();
+            const pinEmoji =
+              cat.includes('bar') || cat.includes('night') ? '🍸' :
+              cat.includes('restaurant') || cat.includes('dining') ? '🍽️' :
+              cat.includes('coffee') || cat.includes('cafe') ? '☕' :
+              cat.includes('lounge') ? '🛋️' :
+              cat.includes('rooftop') ? '🌆' :
+              cat.includes('outdoor') || cat.includes('park') ? '🌿' :
+              cat.includes('club') ? '🎵' :
+              '📍';
+            return (
+              <Marker
+                key={venue.id}
+                position={[venue.lat as number, venue.lng as number]}
+                icon={createCustomIcon(pinEmoji)}
+                eventHandlers={{ click: () => setSelectedVenueId(venue.id) }}
+              />
+            );
+          })}
         </MapContainer>
       </div>
 

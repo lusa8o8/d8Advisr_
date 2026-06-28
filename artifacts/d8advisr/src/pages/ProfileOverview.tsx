@@ -36,6 +36,12 @@ export function ProfileOverview() {
 
   const currentAvatar = AVATARS.find(a => a.id === avatar);
 
+  // Emoji choice always wins over OAuth avatar URL.
+  // avatarUrl (from Google) only shows when no emoji is explicitly selected.
+  const showEmoji = !!currentAvatar;
+  const showPhoto = !showEmoji && !!avatarUrl;
+  const showInitials = !showEmoji && !showPhoto;
+
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
@@ -61,15 +67,14 @@ export function ProfileOverview() {
                 onClick={() => setShowPicker(true)}
                 className="group w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center overflow-hidden bg-[#FFE8E8] transition-opacity active:opacity-80"
               >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-                ) : currentAvatar ? (
-                  <span className="text-5xl">{currentAvatar.emoji}</span>
+                {showPhoto ? (
+                  <img src={avatarUrl!} alt={displayName} className="w-full h-full object-cover" />
+                ) : showEmoji ? (
+                  <span className="text-5xl leading-none select-none">{currentAvatar!.emoji}</span>
                 ) : (
-                  <span className="text-primary text-3xl font-bold">
-                  {displayName.split(' ').map((p: string) => p[0]).join('').slice(0,2).toUpperCase()}
-                </span>
+                  <span className="text-primary text-3xl font-bold leading-none">{displayName.split(' ').map((p: string) => p[0]).join('').slice(0,2).toUpperCase()}</span>
                 )}
+
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity rounded-full flex items-center justify-center">
                   <Camera size={22} className="text-white" />
                 </div>
