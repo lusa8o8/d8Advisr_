@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Search, Star } from 'lucide-react';
 import { BottomNav, FAB, cn } from "@/components/SharedUI";
@@ -50,6 +50,40 @@ function RecenterMap({ center }: { center: [number, number] }) {
   return null;
 }
 
+const TILES = {
+  light: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+  },
+};
+
+/** Reactively follows the app theme (light / dark / system) set in Settings. */
+function useMapTheme(): 'light' | 'dark' {
+  const resolvedDark = useCallback(() =>
+    document.documentElement.classList.contains('dark'), []);
+
+  const [isDark, setIsDark] = useState<boolean>(resolvedDark);
+
+  useEffect(() => {
+    // Watch for class changes on <html> (applyTheme toggles 'dark' there)
+    const observer = new MutationObserver(() => setIsDark(resolvedDark()));
+    observer.observe(document.documentElement, { attributeFilter: ['class'] });
+
+    // Also watch system preference changes when theme = 'system'
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onMq = () => setIsDark(resolvedDark());
+    mq.addEventListener('change', onMq);
+
+    return () => { observer.disconnect(); mq.removeEventListener('change', onMq); };
+  }, [resolvedDark]);
+
+  return isDark ? 'dark' : 'light';
+}
+
 export function MapView() {
   const [, setLocation] = useLocation();
   const isDesktop = useIsDesktop();
@@ -75,25 +109,38 @@ export function MapView() {
     return [sumLat / mappedVenues.length, sumLng / mappedVenues.length];
   }, [mappedVenues]);
 
+  const mapTheme = useMapTheme();
+  const tile = TILES[mapTheme];
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col relative bg-[#E5E2DA] overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden" style={{ background: mapTheme === 'dark' ? '#1a1a2e' : '#E5E2DA' }}>
       
       {/* Top Bar (Overlay) */}
       <div className={cn(
-        "absolute top-0 w-full bg-gradient-to-b from-white/90 to-white/0 pb-8 px-6 flex justify-between items-start z-[1000] pointer-events-none",
+        "absolute top-0 w-full pb-8 px-6 flex justify-between items-start z-[1000] pointer-events-none",
+        mapTheme === 'dark'
+          ? "bg-gradient-to-b from-black/80 to-transparent"
+          : "bg-gradient-to-b from-white/90 to-white/0",
         isDesktop ? "pt-5" : "pt-14"
       )}>
         {!isDesktop && (
-          <div className="flex items-baseline bg-white px-4 py-2 rounded-2xl shadow-sm cursor-pointer pointer-events-auto" onClick={() => setLocation('/home')}>
+          <div
+            className="flex items-baseline px-4 py-2 rounded-2xl shadow-sm cursor-pointer pointer-events-auto"
+            style={{ background: mapTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'white' }}
+            onClick={() => setLocation('/home')}
+          >
             <span className="font-bold text-xl text-primary tracking-tight">D8</span>
-            <span className="font-bold text-xl text-foreground tracking-tight">Advisr</span>
+            <span className={cn("font-bold text-xl tracking-tight", mapTheme === 'dark' ? 'text-white' : 'text-foreground')}>Advisr</span>
           </div>
         )}
         
-        <div className="bg-white rounded-full p-1 shadow-sm flex ml-auto pointer-events-auto">
+        <div
+          className="rounded-full p-1 shadow-sm flex ml-auto pointer-events-auto"
+          style={{ background: mapTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'white' }}
+        >
           <button 
             onClick={() => setLocation('/home')}
-            className="px-4 py-1.5 rounded-full text-sm font-semibold text-muted-foreground"
+            className={cn("px-4 py-1.5 rounded-full text-sm font-semibold", mapTheme === 'dark' ? 'text-white/60' : 'text-muted-foreground')}
           >
             Feed
           </button>
@@ -112,8 +159,9 @@ export function MapView() {
           className="w-full h-full"
         >
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            key={mapTheme}
+            attribution={tile.attribution}
+            url={tile.url}
             maxZoom={19}
           />
           <RecenterMap center={mapCenter} />
