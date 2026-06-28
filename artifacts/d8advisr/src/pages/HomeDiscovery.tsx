@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from "wouter";
 import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock, Loader2 } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
@@ -98,6 +98,24 @@ export function HomeDiscovery() {
   }));
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
+
+  // Dynamic filter dates — generated in the active region's timezone
+  const filterDates = useMemo(() => {
+    const tz = activeRegion.timezone;
+    const now = new Date();
+    return Array.from({ length: 4 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i);
+      const dayNum = parseInt(
+        new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone: tz }).format(d), 10
+      );
+      const label =
+        i === 0 ? 'Today' :
+        i === 1 ? 'Tomorrow' :
+        new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz }).format(d);
+      return { label, day: dayNum, active: i === 0 };
+    });
+  }, [activeRegion.timezone]);
   const openEvent = (eventId: string) => {
     void recordEventView(eventId);
     setLocation(`/event/${eventId}`);
@@ -160,7 +178,7 @@ export function HomeDiscovery() {
                 className={cn(
                   "shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm transition-all",
                   activeTab === tab
-                    ? "bg-foreground text-white shadow-md"
+                    ? "bg-primary text-white shadow-md"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 )}
               >
@@ -436,7 +454,7 @@ export function HomeDiscovery() {
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-bold text-foreground text-sm">Price Range</h3>
-                    <span className="text-primary font-bold text-sm">$ — $$$</span>
+                    <span className="text-primary font-bold text-sm">{activeRegion.currency_symbol} — {activeRegion.currency_symbol.repeat(3)}</span>
                   </div>
                   <input type="range" className="w-full accent-primary" defaultValue="70" />
                 </div>
@@ -530,7 +548,7 @@ export function HomeDiscovery() {
               className={cn(
                 "snap-start whitespace-nowrap px-5 py-2.5 rounded-full font-semibold text-sm transition-all",
                 activeTab === tab 
-                  ? "bg-foreground text-card shadow-md" 
+                  ? "bg-primary text-white shadow-md" 
                   : "bg-card text-muted-foreground border border-border hover:border-gray-300"
               )}
             >
@@ -824,7 +842,7 @@ export function HomeDiscovery() {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-bold text-foreground text-sm">Price Range</h3>
-                  <span className="text-primary font-bold text-sm">$ • $$$</span>
+                  <span className="text-primary font-bold text-sm">{activeRegion.currency_symbol} · {activeRegion.currency_symbol.repeat(3)}</span>
                 </div>
                 <div className="h-1 bg-border rounded-full relative mb-2">
                   <div className="absolute left-[20%] right-[30%] h-full bg-primary rounded-full"></div>
@@ -832,8 +850,8 @@ export function HomeDiscovery() {
                   <div className="absolute right-[30%] top-1/2 -translate-y-1/2 -mr-2.5 w-5 h-5 bg-white border-2 border-primary rounded-full shadow-sm"></div>
                 </div>
                 <div className="flex justify-between text-xs text-gray-400">
-                  <span>$</span>
-                  <span>$$$$</span>
+                  <span>{activeRegion.currency_symbol}</span>
+                  <span>{activeRegion.currency_symbol.repeat(4)}</span>
                 </div>
               </div>
 
@@ -848,22 +866,20 @@ export function HomeDiscovery() {
               <div>
                 <h3 className="font-bold text-foreground mb-3 text-sm">Date</h3>
                 <div className="grid grid-cols-4 gap-2">
-                  <div className="bg-primary text-white rounded-xl py-3 flex flex-col items-center justify-center">
-                    <span className="text-xs font-medium opacity-90 mb-1">Today</span>
-                    <span className="text-xl font-bold">14</span>
-                  </div>
-                  <div className="bg-background border border-border text-foreground rounded-xl py-3 flex flex-col items-center justify-center">
-                    <span className="text-xs font-medium text-gray-500 mb-1">Tomorrow</span>
-                    <span className="text-xl font-bold">15</span>
-                  </div>
-                  <div className="bg-background border border-border text-foreground rounded-xl py-3 flex flex-col items-center justify-center">
-                    <span className="text-xs font-medium text-gray-500 mb-1">Sat</span>
-                    <span className="text-xl font-bold">16</span>
-                  </div>
-                  <div className="bg-background border border-border text-foreground rounded-xl py-3 flex flex-col items-center justify-center">
-                    <span className="text-xs font-medium text-gray-500 mb-1">Sun</span>
-                    <span className="text-xl font-bold">17</span>
-                  </div>
+                  {filterDates.map(({ label, day, active }) => (
+                    <div
+                      key={label}
+                      className={cn(
+                        "rounded-xl py-3 flex flex-col items-center justify-center",
+                        active
+                          ? "bg-primary text-white"
+                          : "bg-background border border-border text-foreground"
+                      )}
+                    >
+                      <span className={cn("text-xs font-medium mb-1", active ? "opacity-90" : "text-muted-foreground")}>{label}</span>
+                      <span className="text-xl font-bold">{day}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
