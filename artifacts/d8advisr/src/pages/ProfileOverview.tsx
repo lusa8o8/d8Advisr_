@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
 import { Settings, Heart, Star, Award, ChevronRight, Camera, X, LogOut } from 'lucide-react';
 import { BottomNav } from "@/components/SharedUI";
+import { useProfile } from "@/hooks/useProfile";
 
 const AVATARS = [
   { id: "romantic",    emoji: "🥰", label: "Romantic"     },
@@ -17,15 +18,13 @@ const AVATARS = [
 
 export function ProfileOverview() {
   const [, setLocation] = useLocation();
+  const { displayName, avatarUrl, profile } = useProfile();
   const [avatar, setAvatar] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
-  const [displayName, setDisplayName] = useState('Alex Johnson');
 
   useEffect(() => {
     const saved = localStorage.getItem('d8advisr_avatar');
     if (saved) setAvatar(saved);
-    const name = localStorage.getItem('d8advisr_name');
-    if (name) setDisplayName(name);
   }, []);
 
   function selectAvatar(id: string | null) {
@@ -62,7 +61,9 @@ export function ProfileOverview() {
                 onClick={() => setShowPicker(true)}
                 className="group w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center overflow-hidden bg-[#FFE8E8] transition-opacity active:opacity-80"
               >
-                {currentAvatar ? (
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : currentAvatar ? (
                   <span className="text-5xl">{currentAvatar.emoji}</span>
                 ) : (
                   <span className="text-primary text-3xl font-bold">
@@ -85,7 +86,9 @@ export function ProfileOverview() {
             {currentAvatar && (
               <p className="text-xs font-semibold text-primary mt-0.5">{currentAvatar.label}</p>
             )}
-            <p className="text-sm text-muted-foreground mb-6 font-medium mt-1">Member since Jan 2024</p>
+            <p className="text-sm text-muted-foreground mb-6 font-medium mt-1">
+              Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Jan 2024'}
+            </p>
 
             <div className="w-full grid grid-cols-3 gap-2 border-t border-border pt-5">
               <div className="flex flex-col items-center">

@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ChevronRight, Check, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
-import { CITIES as CITY_LIST } from '@/lib/constants';
 import { usePartner } from '@/hooks/usePartner';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
+import { useRegion } from '@/hooks/useRegion';
 
 type PartnerType = 'venue' | 'organizer' | 'both';
-
-const CITIES = CITY_LIST.map(c => `${c.name}, ${c.country}`);
 
 const TYPE_OPTIONS: { value: PartnerType; label: string; desc: string; emoji: string }[] = [
   {
@@ -35,6 +33,7 @@ export function PartnerPortal() {
   const [, setLocation] = useLocation();
   const { profile, loading, applyAsPartner } = usePartner();
   const { isAdmin, loading: adminLoading } = useAdminStatus();
+  const { regions } = useRegion();
   const [step, setStep] = useState<1 | 2>(1);
   const [type, setType] = useState<PartnerType | null>(null);
   const [name, setName] = useState('');
@@ -233,8 +232,8 @@ export function PartnerPortal() {
                 onChange={e => setCity(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-[14px] text-gray-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white"
               >
-                <option value="">Select city</option>
-                {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="">Select region</option>
+                {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
 

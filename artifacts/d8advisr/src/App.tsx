@@ -428,11 +428,37 @@ function AuthCallback() {
   );
 }
 
+// Redirect authenticated users away from public-only screens (e.g. Welcome).
+// Waits for auth to resolve, then sends logged-in users to their scoped home.
+function PublicOnlyRoute({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminStatus();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (loading || adminLoading) return;
+    if (!user) return;
+    if (isAdmin) { setLocation('/admin'); return; }
+    void getScopedHome(user.id).then(setLocation);
+  }, [user, loading, isAdmin, adminLoading, setLocation]);
+
+  if (loading || adminLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (user) return null;
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Switch>
       {/* ── Public routes ─────────────────────────────────────── */}
-      <Route path="/" component={Welcome} />
+      <Route path="/"><PublicOnlyRoute><Welcome /></PublicOnlyRoute></Route>
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
       <Route path="/password/reset" component={PasswordResetRequest} />

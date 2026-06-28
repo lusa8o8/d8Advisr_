@@ -19,6 +19,7 @@ interface Stop {
   time: string;
   label: string;
   costPP: number;
+  costAmount?: number;
   isFree?: boolean;
   emoji: string;
   image: string;
@@ -89,6 +90,19 @@ const TIER_DOT: Record<Tier, string> = {
 };
 
 const STASH_PCT = 45;
+const LEGACY_COST_MULTIPLIER = 1500;
+
+function stopCostAmount(stop: Stop) {
+  if (stop.isFree) return 0;
+  if (typeof stop.costAmount === 'number' && Number.isFinite(stop.costAmount)) {
+    return stop.costAmount;
+  }
+  return stop.costPP * LEGACY_COST_MULTIPLIER;
+}
+
+function transportCostAmount(transport: Transport) {
+  return transport.cost * LEGACY_COST_MULTIPLIER;
+}
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +126,12 @@ export function PlanOverview() {
               venueName: anchor.venueName,
               category: anchor.venueCategory || s.category,
               emoji: anchor.venueEmoji || s.emoji,
+              venueId: anchor.anchorType === 'venue' && anchor.venueId ? anchor.venueId : s.venueId,
+
+              costAmount: typeof anchor.costAmount === 'number' && Number.isFinite(anchor.costAmount)
+                ? anchor.costAmount
+                : s.costAmount,
+              isFree: anchor.costAmount === 0 ? true : s.isFree,
               isAnchor: true,
             };
           }
@@ -126,8 +146,8 @@ export function PlanOverview() {
     }
   }, []);
 
-  const stopTotal = stops.reduce((sum, s) => sum + (s.isFree ? 0 : s.costPP), 0);
-  const transportTotal = TRANSPORTS.reduce((sum, t) => sum + t.cost, 0);
+  const stopTotal = stops.reduce((sum, s) => sum + stopCostAmount(s), 0);
+  const transportTotal = TRANSPORTS.reduce((sum, t) => sum + transportCostAmount(t), 0);
   const grandTotal = stopTotal + transportTotal;
 
   const handleSave = () => {
@@ -231,7 +251,7 @@ export function PlanOverview() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p className="font-black text-gray-900 text-[16px] leading-tight">
-                        {stop.isFree ? <span className="text-[#00C851]">Free</span> : `₦${(stop.costPP * 1500).toLocaleString()}`}
+                        {stop.isFree ? <span className="text-[#00C851]">Free</span> : `₦${stopCostAmount(stop).toLocaleString()}`}
                       </p>
                       {!stop.isFree && <p className="text-[10px] text-gray-400">per person</p>}
                     </div>
@@ -262,7 +282,7 @@ export function PlanOverview() {
                       </p>
                     </div>
                     <span className="text-[12px] font-bold text-gray-500">
-                      {TRANSPORTS[idx].cost === 0 ? 'Free' : `~₦${(TRANSPORTS[idx].cost * 1500).toLocaleString()}`}
+                      {TRANSPORTS[idx].cost === 0 ? 'Free' : `~₦${transportCostAmount(TRANSPORTS[idx]).toLocaleString()}`}
                     </span>
                   </div>
                 </div>
@@ -287,7 +307,7 @@ export function PlanOverview() {
                   )}
                 </div>
                 <span className="text-[13px] font-bold text-gray-900">
-                  {s.isFree ? <span className="text-[#00C851]">Free</span> : `₦${(s.costPP * 1500).toLocaleString()}`}
+                  {s.isFree ? <span className="text-[#00C851]">Free</span> : `₦${stopCostAmount(s).toLocaleString()}`}
                 </span>
               </div>
             ))}
@@ -296,7 +316,7 @@ export function PlanOverview() {
                 <Car size={15} className="text-blue-400" />
                 <span className="text-[13px] font-semibold text-gray-700">Transport (est.)</span>
               </div>
-              <span className="text-[13px] font-bold text-gray-900">~₦{(transportTotal * 1500).toLocaleString()}</span>
+              <span className="text-[13px] font-bold text-gray-900">~₦{transportTotal.toLocaleString()}</span>
             </div>
           </div>
           <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
@@ -304,7 +324,7 @@ export function PlanOverview() {
               <p className="font-bold text-gray-900 text-[15px]">Total estimate</p>
               <p className="text-[11px] text-gray-400 mt-0.5">±10% depending on choices made</p>
             </div>
-            <p className="font-black text-[22px] text-gray-900">₦{(grandTotal * 1500).toLocaleString()}</p>
+            <p className="font-black text-[22px] text-gray-900">₦{grandTotal.toLocaleString()}</p>
           </div>
         </div>
 
@@ -321,7 +341,7 @@ export function PlanOverview() {
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 text-[14px] leading-tight">Your Evening Fund</p>
                 <p className="text-[12px] text-amber-700 font-medium">
-                  {STASH_PCT}% saved · ₦{Math.round(grandTotal * 1500 * STASH_PCT / 100).toLocaleString()} of ₦{(grandTotal * 1500).toLocaleString()}
+                  {STASH_PCT}% saved · ₦{Math.round(grandTotal * STASH_PCT / 100).toLocaleString()} of ₦{grandTotal.toLocaleString()}
                 </p>
               </div>
               <ChevronRight size={16} className="text-amber-500 shrink-0" />
@@ -334,7 +354,7 @@ export function PlanOverview() {
               />
             </div>
             <p className="text-[11px] text-amber-600 mt-1.5 font-medium">
-              ₦{Math.round(grandTotal * 1500 * (1 - STASH_PCT / 100)).toLocaleString()} more to cover this evening — keep going!
+              ₦{Math.round(grandTotal * (1 - STASH_PCT / 100)).toLocaleString()} more to cover this evening — keep going!
             </p>
           </div>
         </div>

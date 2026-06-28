@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'wouter';
 import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { usePartner } from '@/hooks/usePartner';
+import { useRegion } from '@/hooks/useRegion';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
@@ -42,7 +43,9 @@ export function PartnerEventEditor() {
   const [, setLocation] = useLocation();
   const params = useParams<{ id?: string }>();
   const editId = params?.id;
-  const { saveEvent, events, venueOptions } = usePartner();
+  const { profile, saveEvent, events, venueOptions } = usePartner();
+  const { regions } = useRegion();
+  const currencySymbol = regions.find(r => r.id === profile?.city)?.currency_symbol || 'K';
 
   const existing = editId ? events.find(e => e.id === editId) : null;
 
@@ -565,7 +568,7 @@ export function PartnerEventEditor() {
               <input
                 value={price}
                 onChange={e => setPrice(e.target.value)}
-                placeholder="e.g. K150 or ₦5,000 per person"
+                placeholder={`e.g. ${currencySymbol}150 per person`}
                 className={INPUT}
               />
             )}

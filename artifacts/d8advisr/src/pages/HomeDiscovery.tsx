@@ -5,6 +5,9 @@ import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useVenues, useEvents } from "@/hooks/useVenues";
 import { useDemandSignals } from "@/hooks/useDemandSignals";
+import { useProfile } from "@/hooks/useProfile";
+import { useRegion } from "@/hooks/useRegion";
+import { useGreeting } from "@/hooks/useGreeting";
 
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 
@@ -38,10 +41,6 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-function fmtPrice(price: number, currency: string, isFree: boolean): string {
-  if (isFree) return 'Free';
-  return `${currency} ${price.toLocaleString()}`;
-}
 
 const VIBE_COLORS: Record<string, string> = {
   "Romantic":    "bg-[#FFF0F1] text-primary",
@@ -54,14 +53,17 @@ const VIBE_COLORS: Record<string, string> = {
 
 export function HomeDiscovery() {
   const [, setLocation] = useLocation();
+  const { displayName } = useProfile();
+  const { activeRegion, formatPrice } = useRegion();
+  const { dayContext, greeting } = useGreeting(activeRegion.timezone);
   const { recordEventView, recordVenueView } = useDemandSignals();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [paymentLinked, setPaymentLinked] = useState(false);
   const [showGemGate, setShowGemGate] = useState(false);
   const isDesktop = useIsDesktop();
-  const { venues: rawVenues, loading: venuesLoading, error: venuesError } = useVenues('Lusaka');
-  const { events: rawEvents, loading: eventsLoading, error: eventsError } = useEvents('Lusaka', 6);
+  const { venues: rawVenues, loading: venuesLoading, error: venuesError } = useVenues(activeRegion.id);
+  const { events: rawEvents, loading: eventsLoading, error: eventsError } = useEvents(activeRegion.id, 6);
 
   useEffect(() => {
     setPaymentLinked(localStorage.getItem('d8advisr_payment_linked') === 'true');
@@ -88,7 +90,7 @@ export function HomeDiscovery() {
     location: ev.city,
     date: fmtDate(ev.starts_at),
     time: fmtTime(ev.starts_at),
-    price: fmtPrice(ev.price_pp, ev.currency, ev.is_free),
+    price: formatPrice(ev.price_pp, ev.currency, ev.is_free),
     vibes: ev.vibes ?? [],
     emoji: categoryEmoji(ev.category ?? ''),
     image: ev.cover_image ?? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=480&h=200&fit=crop&auto=format',
@@ -116,11 +118,11 @@ export function HomeDiscovery() {
         >
           <div className="max-w-5xl mx-auto">
             <div className="mb-6">
-              <p className="text-[13px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em' }}>
-                THURSDAY EVENING · LAGOS
+              <p className="text-[13px] font-semibold mb-1 uppercase" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em' }}>
+                {dayContext} · {activeRegion.name}
               </p>
               <h1 className="text-[36px] font-black text-white leading-tight">
-                Good evening, Alex 👋
+                {greeting}, {displayName} 👋
               </h1>
               <p className="mt-1.5 text-[15px] font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Where are you heading tonight?
@@ -244,7 +246,7 @@ export function HomeDiscovery() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-[20px] font-bold text-foreground">Venues For You</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">Handpicked for the best evenings in Lagos</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Handpicked for the best evenings in {activeRegion.name}</p>
               </div>
               <button
                 onClick={() => setLocation('/map')}
@@ -501,7 +503,7 @@ export function HomeDiscovery() {
       <div className="flex-1 min-h-0 overflow-y-auto pb-28 no-scrollbar">
         {/* Greeting & Search */}
         <div className="px-6 pt-6 pb-2">
-          <h1 className="text-[28px] font-bold text-foreground mb-5">Good evening, Alex 👋</h1>
+          <h1 className="text-[28px] font-bold text-foreground mb-5">{greeting}, {displayName.split(' ')[0]} 👋</h1>
           
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />

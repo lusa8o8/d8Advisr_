@@ -8,6 +8,10 @@ import {
 import { cn } from "@/components/SharedUI";
 import { useDemandSignals } from "@/hooks/useDemandSignals";
 import { useVenueEvents } from "@/hooks/useVenues";
+import { supabase } from "@/lib/supabase";
+import type { Database } from "@/lib/supabase";
+
+type VenueRow = Database['public']['Tables']['venues']['Row'];
 
 const VENUE_IMAGES = [
   "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&auto=format",
@@ -159,6 +163,21 @@ function fmtPrice(price: number, currency: string, isFree: boolean): string {
   return `${currency} ${price.toLocaleString()}`;
 }
 
+function categoryEmoji(category: string): string {
+  const normalized = category.toLowerCase();
+  if (normalized.includes('bar') || normalized.includes('cocktail')) return '🍸';
+  if (normalized.includes('restaurant') || normalized.includes('dining') || normalized.includes('food')) return '🍽️';
+  if (normalized.includes('rooftop')) return '🌇';
+  if (normalized.includes('cinema') || normalized.includes('movie')) return '🎬';
+  if (normalized.includes('park') || normalized.includes('outdoor')) return '🌳';
+  return '📍';
+}
+
+function formatVenuePrice(venue: VenueRow | null): string {
+  if (venue?.avg_cost_pp) return `Est. K ${venue.avg_cost_pp.toLocaleString()}/pp`;
+  return venue?.price_tier ? venue.price_tier : 'Price varies';
+}
+
 export function VenueDetails() {
   const [, setLocation] = useLocation();
   const { recordVenueAddToPlan, recordVenueSaved, recordVenueView } = useDemandSignals();
@@ -166,6 +185,7 @@ export function VenueDetails() {
   const [notifyOn, setNotifyOn] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [liveVenue, setLiveVenue] = useState<VenueRow | null>(null);
   const pathParts = window.location.pathname.split('/');
   const venueId = pathParts[pathParts.length - 1];
   const hasLiveVenueId = isUuid(venueId);
@@ -190,6 +210,65 @@ export function VenueDetails() {
   useEffect(() => {
     void recordVenueView(venueId);
   }, [recordVenueView, venueId]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadVenue() {
+      if (!hasLiveVenueId) {
+        setLiveVenue(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('venues')
+        .select('*')
+        .eq('id', venueId)
+        .eq('is_active', true)
+        .eq('listing_status', 'live')
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.warn('[D8 venue] Could not load venue detail context', { venueId, error: error.message });
+        }
+        setLiveVenue(null);
+        return;
+      }
+
+      setLiveVenue(data as VenueRow | null);
+    }
+
+    void loadVenue();
+    return () => { active = false; };
+  }, [hasLiveVenueId, venueId]);
+
+  const venueName = liveVenue?.name ?? 'Lumina Restaurant & Bar';
+  const venueCategory = liveVenue?.category ?? 'Romantic Dining';
+  const venueArea = liveVenue?.area ?? liveVenue?.city ?? 'Downtown';
+  const venueAddress = liveVenue?.address ?? '123 Main St, Downtown District';
+  const venueDescription = liveVenue?.description
+    ?? 'Experience intimate dining with panoramic views of the city skyline. Lumina offers modern fusion cuisine blending local ingredients with international techniques, complemented by an award-winning wine list.';
+  const venueEmoji = categoryEmoji(venueCategory);
+  const venueRating = Number(liveVenue?.rating ?? 4.8);
+  const venueReviewCount = liveVenue?.review_count ?? 324;
+  const venuePrice = formatVenuePrice(liveVenue);
+  const planParams = () => {
+    const params = new URLSearchParams({
+      venueId,
+      venueName,
+      venueEmoji,
+      venueCategory,
+    });
+
+    if (typeof liveVenue?.avg_cost_pp === 'number') {
+      params.set('venueCostAmount', String(liveVenue.avg_cost_pp));
+    }
+
+    return params;
+  };
 
   const prevImg = () => setImgIdx(i => Math.max(0, i - 1));
   const nextImg = () => setImgIdx(i => Math.min(VENUE_IMAGES.length - 1, i + 1));
@@ -278,11 +357,11 @@ export function VenueDetails() {
         {/* Venue name overlay */}
         <div className="absolute bottom-6 left-6 flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl">
-            🍷
+            {venueEmoji}
           </div>
           <div>
-            <p className="text-white font-bold text-[17px] drop-shadow-sm">Lumina Restaurant & Bar</p>
-            <p className="text-white/80 text-[12px] font-medium">Romantic Dining · Downtown</p>
+            <p className="text-white font-bold text-[17px] drop-shadow-sm">{venueName}</p>
+            <p className="text-white/80 text-[12px] font-medium">{venueCategory} · {venueArea}</p>
           </div>
         </div>
       </div>
@@ -291,19 +370,19 @@ export function VenueDetails() {
         {/* Main Info Card */}
         <div className="bg-card rounded-3xl p-6 shadow-md border border-border mb-6">
           <div className="flex justify-between items-start mb-2">
-            <span className="bg-background px-3 py-1 rounded-full text-xs font-bold text-muted-foreground uppercase tracking-wider">Romantic Dining</span>
+            <span className="bg-background px-3 py-1 rounded-full text-xs font-bold text-muted-foreground uppercase tracking-wider">{venueCategory}</span>
             <div className="bg-[#E8FFF0] text-[#00C851] px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-              Est. ₦97,500/pp
+              {venuePrice}
             </div>
           </div>
           
-          <h1 className="text-[26px] font-bold text-foreground leading-tight mb-3">Lumina Restaurant & Bar</h1>
+          <h1 className="text-[26px] font-bold text-foreground leading-tight mb-3">{venueName}</h1>
           
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium mb-4">
             <div className="flex items-center gap-1 text-foreground">
               <Star size={16} className="fill-[#FF9500] text-[#FF9500]" />
-              <span className="font-bold">4.8</span>
-              <span className="text-gray-400 font-normal">(324 reviews)</span>
+              <span className="font-bold">{venueRating.toFixed(1)}</span>
+              <span className="text-gray-400 font-normal">({venueReviewCount} reviews)</span>
             </div>
             <span className="w-1 h-1 rounded-full bg-gray-300"></span>
             <span className="text-primary font-bold">$$$</span>
@@ -311,7 +390,7 @@ export function VenueDetails() {
 
           <div className="flex items-center gap-2 text-sm text-foreground bg-background p-3 rounded-xl">
             <MapPin size={16} className="text-primary shrink-0" />
-            <span className="font-medium">123 Main St, Downtown District</span>
+            <span className="font-medium">{venueAddress}</span>
           </div>
         </div>
 
@@ -341,7 +420,7 @@ export function VenueDetails() {
         {activeTab === 'Overview' && (
           <div className="animate-in fade-in slide-in-from-bottom-2">
             <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">
-              Experience intimate dining with panoramic views of the city skyline. Lumina offers modern fusion cuisine blending local ingredients with international techniques, complemented by an award-winning wine list.
+              {venueDescription}
             </p>
 
             <h3 className="font-bold text-foreground text-lg mb-4">Highlights</h3>
@@ -661,7 +740,7 @@ export function VenueDetails() {
                         onClick={() => {
                           const lat = 6.4550;
                           const lon = 3.3841;
-                          const name = encodeURIComponent('Lumina Restaurant & Bar');
+                          const name = encodeURIComponent(venueName);
                           const yangoUrl = `yango://route?end-lat=${lat}&end-lon=${lon}&end-name=${name}`;
                           const fallbackUrl = `https://maps.google.com/?daddr=${lat},${lon}`;
                           const start = Date.now();
@@ -707,7 +786,7 @@ export function VenueDetails() {
                 <button
                   onClick={() => {
                     void recordVenueAddToPlan(venueId);
-                    setLocation('/plan/generate');
+                    setLocation(`/plan/generate?${planParams().toString()}`);
                   }}
                   className="text-[12px] font-bold text-primary"
                 >
@@ -772,13 +851,7 @@ export function VenueDetails() {
         <button 
           onClick={() => {
             void recordVenueAddToPlan(venueId);
-            const params = new URLSearchParams({
-              venueId: '2',
-              venueName: 'Lumina Restaurant & Bar',
-              venueEmoji: '🍷',
-              venueCategory: 'Romantic Dining',
-            });
-            setLocation(`/plan/generate?${params.toString()}`);
+            setLocation(`/plan/generate?${planParams().toString()}`);
           }}
           className="flex-1 bg-primary text-primary-foreground rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90"
         >
@@ -798,7 +871,7 @@ export function VenueDetails() {
               <X size={20} />
             </button>
             <p className="text-white/80 text-[13px] font-semibold">
-              Lumina Restaurant & Bar
+              {venueName}
             </p>
             <span className="text-white/50 text-[13px] font-medium">{imgIdx + 1} / {VENUE_IMAGES.length}</span>
           </div>

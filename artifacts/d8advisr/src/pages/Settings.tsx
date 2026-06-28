@@ -11,6 +11,9 @@ import { TopBar, BottomNav, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { applyTheme, type ThemeValue } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
+import { useRegion } from "@/hooks/useRegion";
+import { supabase } from "@/lib/supabase";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface PaymentMethod {
@@ -35,17 +38,6 @@ interface PrivacySettings {
 const NEIGHBORHOODS_BY_CITY: Record<string, string[]> = {
   lagos:  ['Victoria Island', 'Lekki Phase 1', 'Ikoyi', 'Surulere', 'Yaba', 'Ikeja', 'Ajah', 'Gbagada'],
   lusaka: ['Kabulonga', 'Woodlands', 'Showgrounds', 'Rhodes Park', 'Northmead', 'Chelston', 'Emmasdale', 'Ibex Hill'],
-};
-const CITIES = [
-  { id: 'lagos',  name: 'Lagos',  flag: '🇳🇬', live: true  },
-  { id: 'lusaka', name: 'Lusaka', flag: '🇿🇲', live: true  },
-  { id: 'london', name: 'London', flag: '🇬🇧', live: false },
-  { id: 'dubai',  name: 'Dubai',  flag: '🇦🇪', live: false },
-];
-
-const CURRENCY_BY_CITY: Record<string, { symbol: string; name: string; market: string }> = {
-  lagos:  { symbol: '₦', name: 'Nigerian Naira (₦)',  market: 'Lagos market' },
-  lusaka: { symbol: 'K',  name: 'Zambian Kwacha (K)', market: 'Lusaka market' },
 };
 
 // ─── Small Toggle ─────────────────────────────────────────────────────────────
@@ -173,7 +165,9 @@ function EditSheet({
 export function Settings() {
   const [, setLocation] = useLocation();
   const isDesktop = useIsDesktop();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { profile, refetch } = useProfile();
+  const { regions, activeRegion } = useRegion();
 
   // Personal info
   const [firstName, setFirstName] = useState('');
@@ -219,18 +213,26 @@ export function Settings() {
     onSave: (v: string) => void;
   }>(null);
 
-  // Load from localStorage
+  // Load from localStorage / Supabase
   useEffect(() => {
     const load = (k: string, fallback = '') => localStorage.getItem(k) ?? fallback;
-    const name = load('d8advisr_name', 'Alex Johnson');
-    const parts = name.split(' ');
-    setFirstName(parts[0] ?? '');
-    setLastName(parts.slice(1).join(' '));
-    setHandle(load('d8advisr_handle', 'alexj'));
-    setEmail(load('d8advisr_email'));
+    
+    // Profile data
+    if (profile) {
+      const parts = (profile.display_name || '').split(' ');
+      setFirstName(parts[0] ?? '');
+      setLastName(parts.slice(1).join(' '));
+      setHandle(profile.username || '');
+      setCity(profile.city || 'lagos');
+    }
+    
+    if (user) {
+      setEmail(user.email || '');
+    }
+
+    // Still load local prefs
     setPhone(load('d8advisr_phone'));
     setDob(load('d8advisr_dob'));
-    setCity(load('d8advisr_city', 'lagos'));
     setNeighborhood(load('d8advisr_neighborhood'));
     setTheme((load('d8advisr_theme', 'system') as 'light' | 'dark' | 'system'));
     setDistUnit((load('d8advisr_dist', 'km') as 'km' | 'mi'));
@@ -241,11 +243,14 @@ export function Settings() {
       const p = JSON.parse(load('d8advisr_privacy', '{}'));
       setPrivacy(prev => ({ ...prev, ...p }));
     } catch { /* ignore */ }
-  }, []);
+  }, [profile, user]);
 
-  function saveName(first: string, last: string) {
+  async function saveName(first: string, last: string) {
     const full = [first, last].filter(Boolean).join(' ');
-    localStorage.setItem('d8advisr_name', full || 'Alex Johnson');
+    if (user) {
+      await supabase.from('profiles').update({ display_name: full }).eq('id', user.id);
+      refetch();
+    }
   }
 
   function saveNotif(updates: Partial<NotifSettings>) {
@@ -318,10 +323,13 @@ export function Settings() {
           onClick={() => setEditing({
             field: 'handle', title: 'Display Name', value: handle,
             placeholder: 'e.g. alexj',
-            onSave: v => {
+            onSave: async v => {
               const clean = v.replace(/^@/, '').replace(/\s+/g, '').toLowerCase();
               setHandle(clean);
-              localStorage.setItem('d8advisr_handle', clean);
+              if (user) {
+                await supabase.from('profiles').update({ username: clean }).eq('id', user.id);
+                refetch();
+              }
             },
           })}
         />
@@ -375,28 +383,30 @@ export function Settings() {
         <div className="px-5 py-4 border-b border-gray-100">
           <p className="font-semibold text-foreground text-[14px] mb-3">City</p>
           <div className="flex gap-2 flex-wrap">
-            {CITIES.map(c => (
+            {regions.map(c => (
               <button
                 key={c.id}
-                disabled={!c.live}
+                disabled={!c.is_live}
                 onClick={() => {
-                  if (c.live) {
+                  if (c.is_live) {
                     setCity(c.id);
-                    localStorage.setItem('d8advisr_city', c.id);
+                    if (user) {
+                      supabase.from('profiles').update({ city: c.id }).eq('id', user.id).then(() => refetch());
+                    }
                     setNeighborhood('');
                     localStorage.removeItem('d8advisr_neighborhood');
                   }
                 }}
                 className={cn(
                   'flex items-center gap-2 px-3.5 py-2 rounded-full font-semibold text-[13px] border transition-all',
-                  !c.live && 'opacity-40 cursor-not-allowed',
+                  !c.is_live && 'opacity-40 cursor-not-allowed',
                   city === c.id
                     ? 'bg-primary text-white border-primary'
                     : 'bg-gray-100 text-gray-600 border-gray-100 hover:border-gray-300',
                 )}
               >
-                <span>{c.flag}</span> {c.name}
-                {!c.live && <span className="text-[10px] font-medium opacity-70">Soon</span>}
+                {c.name}
+                {!c.is_live && <span className="text-[10px] font-medium opacity-70">Soon</span>}
               </button>
             ))}
           </div>
@@ -620,21 +630,16 @@ export function Settings() {
             ))}
           </div>
         </div>
-        {(() => {
-          const curr = CURRENCY_BY_CITY[city] ?? CURRENCY_BY_CITY.lagos;
-          return (
-            <div className="px-5 py-4 flex items-center gap-4">
-              <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-                <span className="font-bold text-sm">{curr.symbol}</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-foreground text-[14px]">Currency</p>
-                <p className="text-[12px] text-muted-foreground mt-0.5">{curr.name} — {curr.market}</p>
-              </div>
-              <span className="text-[12px] font-bold text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">Auto</span>
-            </div>
-          );
-        })()}
+        <div className="px-5 py-4 flex items-center gap-4">
+          <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+            <span className="font-bold text-sm">{activeRegion.currency_symbol}</span>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-foreground text-[14px]">Currency</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">{activeRegion.currency_code} ({activeRegion.currency_symbol})</p>
+          </div>
+          <span className="text-[12px] font-bold text-muted-foreground bg-gray-100 px-2.5 py-1 rounded-full">Auto</span>
+        </div>
       </Section>
 
       {/* ── Account ───────────────────────────────────────────── */}

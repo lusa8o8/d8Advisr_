@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { useAuth } from '@/context/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 const NAV = [
   { label: 'Discover',   icon: Home,     path: '/home' },
@@ -16,6 +17,7 @@ const NAV = [
 
 function Sidebar() {
   const [location, setLocation] = useLocation();
+  const { displayName, avatarUrl } = useProfile();
 
   const isActive = (path: string) =>
     path === '/home'
@@ -109,14 +111,31 @@ function Sidebar() {
           onClick={() => setLocation('/profile')}
           className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 transition-colors w-full text-left"
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
-            style={{ background: 'rgba(255,90,95,0.15)' }}
-          >
-            🥰
-          </div>
+          {avatarUrl ? (
+            <img 
+              src={avatarUrl} 
+              alt={displayName} 
+              className="w-9 h-9 rounded-xl object-cover shrink-0" 
+            />
+          ) : (
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+              style={{ background: 'rgba(255,90,95,0.15)' }}
+            >
+              {localStorage.getItem('d8advisr_avatar') ? (
+                <span>
+                  {/* Default to the romantic emoji if there's an issue with local storage or no avatar is set yet but we expect one, or maybe just render the letter */}
+                  {/* Actually, let's use the local storage emoji or first letter */}
+                  {/* We can just use the same logic as profile but simplified: */}
+                  {['🥰', '😎', '🤩', '🌹', '🦋', '🌙', '🍕', '🎭', '✨'].find(e => ['romantic', 'cool', 'excited', 'rose', 'free-spirit', 'night-owl', 'foodie', 'adventurer', 'sparkle'].includes(localStorage.getItem('d8advisr_avatar') as string)) ? '🥰' : displayName.charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                 <span className="text-white font-bold">{displayName.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-[13px] leading-tight truncate">Alex</p>
+            <p className="text-white font-semibold text-[13px] leading-tight truncate">{displayName}</p>
             <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
               Your profile
             </p>
@@ -135,7 +154,7 @@ function Sidebar() {
   );
 }
 
-const NO_SIDEBAR_PREFIXES = ['/partner', '/admin', '/auth', '/signin', '/signup', '/password'];
+const NO_SIDEBAR_PREFIXES = ['/', '/partner', '/admin', '/auth', '/signin', '/signup', '/password'];
 
 export function DesktopShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();

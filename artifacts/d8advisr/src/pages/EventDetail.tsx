@@ -26,6 +26,7 @@ interface EventData {
   recurrence: Recurrence;
   recurrenceLabel: string | null;
   price: string;
+  priceAmount: number | null;
   vibes: string[];
   desc: string;
   image: string;
@@ -53,6 +54,12 @@ function fmtTime(iso: string): string {
 function fmtPrice(price: number, currency: string, isFree: boolean): string {
   if (isFree) return 'Free';
   return `${currency} ${price.toLocaleString()} /pp`;
+}
+
+function priceAmountFromLabel(label: string): number | null {
+  if (/free/i.test(label)) return 0;
+  const digits = label.replace(/[^\d]/g, '');
+  return digits ? Number(digits) : null;
 }
 
 function toRecurrence(value: unknown): Recurrence {
@@ -92,6 +99,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     recurrence: toRecurrence(row.frequency),
     recurrenceLabel: row.next_occurrence ?? null,
     price: fmtPrice(Number(row.price_pp ?? 0), String(row.currency ?? 'K'), Boolean(row.is_free)),
+    priceAmount: Boolean(row.is_free) ? 0 : Number(row.price_pp ?? 0),
     vibes: Array.isArray(row.vibes) ? row.vibes : [],
     desc: row.description ?? 'Details will be added by the organizer soon.',
     image: row.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
@@ -123,6 +131,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrence: 'weekly',
     recurrenceLabel: 'Every Friday',
     price: '₦30,000 /pp',
+    priceAmount: 30000,
     vibes: ['Romantic', 'Foodie'],
     desc: 'Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening. Tables are intimate with candlelit settings and a dedicated wine sommelier on the night. Reservations recommended — spots fill quickly on Fridays.',
     image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
@@ -146,6 +155,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrence: null,
     recurrenceLabel: null,
     price: '₦142,500 /pp',
+    priceAmount: 142500,
     vibes: ['Romantic', 'Adventurous'],
     desc: '6-course tasting menu crafted live by the head chef. Limited to 10 guests per sitting. Wine pairings available as an add-on (₦25,000). Dietary requirements accommodated with 48h notice.',
     image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=400&fit=crop&auto=format',
@@ -169,6 +179,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrence: 'monthly',
     recurrenceLabel: 'Every last Sunday',
     price: '₦22,500 /pp',
+    priceAmount: 22500,
     vibes: ['Group', 'Date Night'],
     desc: 'Cocktails and small bites as the sun sets over downtown. Relaxed open format — come solo or bring the group. Live DJ from 7PM. Rooftop seating for up to 60 guests.',
     image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&h=400&fit=crop&auto=format',
@@ -192,6 +203,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrence: null,
     recurrenceLabel: null,
     price: '$35 /pp',
+    priceAmount: 35,
     vibes: ['Romantic', 'Culture'],
     desc: 'An intimate evening of classical music performed by candlelight inside a beautifully restored historic venue. Four musicians, one stage, no distractions — just pure sound in a space that makes every note feel personal.',
     image: 'https://images.unsplash.com/photo-1501612780327-45045538702b?w=800&h=400&fit=crop&auto=format',
@@ -215,6 +227,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrence: null,
     recurrenceLabel: null,
     price: '$18 /pp',
+    priceAmount: 18,
     vibes: ['Date Night', 'Relaxing'],
     desc: 'Watch La La Land on a rooftop under the stars. Blankets provided, bring your own snacks or grab drinks from the bar. Doors open at 8:30 PM — arrive early for the best spots.',
     image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&h=400&fit=crop&auto=format',
@@ -238,6 +251,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrence: null,
     recurrenceLabel: null,
     price: 'Free',
+    priceAmount: 0,
     vibes: ['Adventurous', 'Group'],
     desc: 'A free open-air night market with live painting, craft stalls, street food, and local music. Bring friends, explore the art, grab something to eat, and stay as long as you like. Open to everyone.',
     image: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&h=400&fit=crop&auto=format',
@@ -313,6 +327,22 @@ export function EventDetail() {
   }, [eventId, isPersistedEvent]);
 
   const event = liveEvent ?? (!isPersistedEvent ? (ALL_EVENTS[eventId] ?? ALL_EVENTS['e1']) : null);
+  const planParams = event
+    ? (() => {
+      const params = new URLSearchParams({
+        eventId,
+        eventName: event.name,
+        eventEmoji: event.emoji,
+        eventCategory: event.category,
+        eventPrice: event.price,
+        venueId: event.venueId ?? '',
+        venueName: event.venueName,
+      });
+      const eventCostAmount = event.priceAmount ?? priceAmountFromLabel(event.price);
+      if (eventCostAmount !== null) params.set('eventCostAmount', String(eventCostAmount));
+      return params;
+    })()
+    : null;
 
   if (loadingLiveEvent) {
     return (
@@ -573,7 +603,7 @@ export function EventDetail() {
         <button
           onClick={() => {
             void recordEventAddToPlan(eventId);
-            setLocation('/plan/generate');
+            setLocation(planParams ? `/plan/generate?${planParams.toString()}` : '/plan/generate');
           }}
           className="flex-1 bg-primary text-white rounded-xl font-bold text-[16px] py-4 shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2"
         >

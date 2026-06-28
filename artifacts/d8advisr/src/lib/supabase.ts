@@ -219,6 +219,20 @@ export type Database = {
           created_at: string;
         };
       };
+      regions: {
+        Row: {
+          id: string;
+          name: string;
+          country_code: string;
+          currency_code: string;
+          currency_symbol: string;
+          timezone: string;
+          is_live: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['regions']['Row'], 'created_at'> & { created_at?: string };
+        Update: Partial<Database['public']['Tables']['regions']['Row']>;
+      };
       stash_funds: {
         Row: {
           id: string;

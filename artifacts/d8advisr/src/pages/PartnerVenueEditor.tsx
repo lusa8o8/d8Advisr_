@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { usePartner } from '@/hooks/usePartner';
+import { useRegion } from '@/hooks/useRegion';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
@@ -50,7 +51,9 @@ export function PartnerVenueEditor() {
   const [venueType, setVenueType]   = useState('');
   const [address, setAddress]       = useState('');
   const [area, setArea]             = useState('');
-  const city                        = profile?.city ?? '';
+  const { regions } = useRegion();
+  const cityId                      = profile?.city ?? '';
+  const cityName                    = regions.find(r => r.id === cityId)?.name ?? cityId;
   const [phone, setPhone]           = useState(profile?.contact ?? '');
   const [website, setWebsite]       = useState('');
   const [desc, setDesc]             = useState('');
@@ -334,9 +337,9 @@ export function PartnerVenueEditor() {
             <p className={REVIEW_HELPER}>Area changes can affect discovery and may require review.</p>
           </div>
           <div>
-            <label className={LABEL}>City</label>
-            <div className="px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-100 text-[14px] text-gray-400 font-medium">
-              {city || 'Set in your profile'}
+            <label className={LABEL}>Region</label>
+            <div className="px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-100 text-[14px] text-gray-800 font-medium capitalize">
+              {cityName || 'Set in your profile'}
             </div>
           </div>
         </div>

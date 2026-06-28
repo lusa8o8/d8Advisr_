@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { ChevronLeft, Check, Loader2, MapPin } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
 import { useAuth } from "@/context/AuthContext";
+import { useRegion } from "@/hooks/useRegion";
 import { supabase } from "@/lib/supabase";
 
 const PLAN_TYPES = [
@@ -47,15 +48,10 @@ const VIBE_CHIPS = [
   { label: "Casual",     emoji: "😎" },
 ];
 
-const CITIES = [
-  { id: "lagos",  name: "Lagos",  flag: "🇳🇬", sub: "Available now",        live: true  },
-  { id: "lusaka", name: "Lusaka", flag: "🇿🇲", sub: "Available now",        live: true  },
-  { id: "london", name: "London", flag: "🇬🇧", sub: "Coming soon",           live: false },
-  { id: "dubai",  name: "Dubai",  flag: "🇦🇪", sub: "Coming soon",           live: false },
-];
 
 export function InitialPreferences() {
   const { user } = useAuth();
+  const { regions } = useRegion();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -69,7 +65,7 @@ export function InitialPreferences() {
   const [budget, setBudget] = useState(150);
 
   // Step 3 — city
-  const [city, setCity] = useState("lagos");
+  const [city, setCity] = useState("");
 
   const TOTAL_STEPS = 4;
 
@@ -88,6 +84,7 @@ export function InitialPreferences() {
   const canAdvance = () => {
     if (step === 1) return planTypes.length > 0;
     if (step === 2) return vibes.length > 0;
+    if (step === 3) return !!city;
     if (step === TOTAL_STEPS) return vibes.length > 0 && !saving;
     return true;
   };
@@ -98,14 +95,13 @@ export function InitialPreferences() {
       return;
     }
 
-    const selectedCity = CITIES.find(c => c.id === city)?.name ?? 'Lagos';
     setSaving(true);
     setSaveError(null);
 
     const { error } = await supabase
       .from('profiles')
       .update({
-        city: selectedCity,
+        city: city, 
         budget_pref: budget,
         vibe_prefs: vibes,
       })
@@ -282,35 +278,28 @@ export function InitialPreferences() {
             </p>
 
             <div className="flex flex-col gap-3 mb-8">
-              {CITIES.map(c => {
+              {regions.map(c => {
                 const selected = city === c.id;
                 return (
                   <button
                     key={c.id}
-                    onClick={() => c.live && setCity(c.id)}
-                    disabled={!c.live}
+                    onClick={() => c.is_live && setCity(c.id)}
+                    disabled={!c.is_live}
                     className={cn(
                       "w-full flex items-center gap-4 p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.98]",
-                      !c.live && "opacity-50 cursor-not-allowed",
+                      !c.is_live && "opacity-50 cursor-not-allowed",
                       selected
                         ? "border-primary bg-[#FFF0F1] shadow-[0_4px_16px_-4px_rgba(255,90,95,0.2)]"
                         : "border-border bg-card hover:border-gray-300"
                     )}
                   >
-                    <span className="text-3xl shrink-0">{c.flag}</span>
                     <div className="flex-1 min-w-0">
-                      <p className={cn("font-bold text-[16px]", selected ? "text-primary" : "text-foreground")}>
+                      <p className={cn("font-bold text-[17px]", selected ? "text-primary" : "text-foreground")}>
                         {c.name}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {c.live && <MapPin size={11} className="text-[#00C851]" />}
-                        <span className={cn(
-                          "text-[12px] font-semibold",
-                          c.live ? "text-[#00C851]" : "text-muted-foreground"
-                        )}>
-                          {c.sub}
-                        </span>
-                      </div>
+                      <p className="text-[14px] text-muted-foreground mt-0.5">
+                        {c.is_live ? "Available now" : "Coming soon"}
+                      </p>
                     </div>
                     {selected && (
                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">

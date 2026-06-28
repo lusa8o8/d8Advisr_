@@ -47,7 +47,20 @@ function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
   const spotsFilled = Number(row.spots_filled ?? 0);
   const isFree = Boolean(row.is_free);
   const pricePp = Number(row.price_pp ?? 0);
-  const currency = String(row.currency ?? 'K');
+  const currency = String(row.currency ?? 'ZMW');
+
+  let priceStr = 'Free';
+  if (!isFree) {
+    if (currency === 'ZMW' || currency === 'K') {
+      priceStr = `K${pricePp}/pp`;
+    } else {
+      priceStr = new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: currency === '₦' ? 'NGN' : currency,
+        maximumFractionDigits: 0
+      }).format(pricePp) + '/pp';
+    }
+  }
 
   return {
     id: String(row.id),
@@ -58,7 +71,7 @@ function dbEventToPartnerEvent(row: Record<string, unknown>): PartnerEvent {
     spotsTotal,
     spotsFilled,
     interestCount: spotsTotal === 0 ? spotsFilled : undefined,
-    price: isFree ? 'Free' : `${currency}${pricePp}/pp`,
+    price: priceStr,
     isFree,
     status: (row.event_status as PartnerEvent['status']) ?? 'live',
     category: String(row.category ?? ''),

@@ -232,14 +232,20 @@ const WHO_OPTIONS = [
 const BUDGET_STEPS = [25000, 50000, 75000, 100000, 150000, 200000, 300000];
 
 function BuildAroundMode({
+  anchorType,
+  anchorId,
   venueName,
   venueEmoji,
   venueCategory,
+  anchorCostAmount,
   onGenerate,
 }: {
+  anchorType: 'venue' | 'event';
+  anchorId: string | null;
   venueName: string;
   venueEmoji: string;
   venueCategory: string;
+  anchorCostAmount: number | null;
   onGenerate: () => void;
 }) {
   const [, setLocation] = useLocation();
@@ -249,10 +255,13 @@ function BuildAroundMode({
 
   const handleGenerate = () => {
     localStorage.setItem('d8advisr_plan_anchor', JSON.stringify({
-      venueId: new URLSearchParams(window.location.search).get('venueId') || '2',
+      anchorType,
+      venueId: anchorType === 'venue' ? anchorId : new URLSearchParams(window.location.search).get('venueId'),
+      eventId: anchorType === 'event' ? anchorId : null,
       venueName,
       venueEmoji,
       venueCategory,
+      costAmount: anchorCostAmount,
       when,
       who,
       budgetPerPerson: BUDGET_STEPS[budgetIdx],
@@ -540,9 +549,20 @@ export function PlanGenerator() {
   // Read anchor params from URL
   const params = new URLSearchParams(window.location.search);
   const venueName = params.get('venueName');
-  const venueEmoji = params.get('venueEmoji') || '📍';
-  const venueCategory = params.get('venueCategory') || '';
-  const isAnchorMode = Boolean(venueName);
+  const eventName = params.get('eventName');
+  const anchorType: 'venue' | 'event' = eventName ? 'event' : 'venue';
+  const anchorId = eventName ? params.get('eventId') : params.get('venueId');
+  const anchorName = venueName ?? eventName;
+  const venueEmoji = params.get('venueEmoji') || params.get('eventEmoji') || '📍';
+  const venueCategory = params.get('venueCategory') || params.get('eventCategory') || '';
+  const rawAnchorCostAmount = params.get('venueCostAmount') || params.get('eventCostAmount');
+  const parsedAnchorCostAmount = rawAnchorCostAmount !== null && rawAnchorCostAmount !== ''
+    ? Number(rawAnchorCostAmount)
+    : null;
+  const anchorCostAmount = parsedAnchorCostAmount !== null && Number.isFinite(parsedAnchorCostAmount)
+    ? parsedAnchorCostAmount
+    : null;
+  const isAnchorMode = Boolean(anchorName);
 
   const handleGenerate = useCallback(() => {
     setGenerating(true);
@@ -558,9 +578,12 @@ export function PlanGenerator() {
 
       {isAnchorMode ? (
         <BuildAroundMode
-          venueName={venueName!}
+          anchorType={anchorType}
+          anchorId={anchorId}
+          venueName={anchorName!}
           venueEmoji={venueEmoji}
           venueCategory={venueCategory}
+          anchorCostAmount={anchorCostAmount}
           onGenerate={handleGenerate}
         />
       ) : (
