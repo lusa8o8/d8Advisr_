@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Map, Clock, Share2, Edit3, Wallet, X, Check } from 'lucide-react';
+import { useRegion } from "@/hooks/useRegion";
 import { cn } from "@/components/SharedUI";
 
 const WEEKLY_PRESETS = [10, 20, 30, 50];
 
 export function PlanDetail() {
   const [, setLocation] = useLocation();
+  const { formatPrice } = useRegion();
   const [showStash, setShowStash] = useState(false);
   const [autoSave, setAutoSave] = useState(20);
   const [stashDone, setStashDone] = useState(false);
@@ -50,7 +52,7 @@ export function PlanDetail() {
               <div className="flex-1 pt-0.5">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-bold text-foreground text-[16px]">Lumina Restaurant</h3>
-                  <span className="font-bold text-[#00C851]">$85</span>
+                  <span className="font-bold text-[#00C851]">{formatPrice(85)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <span className="bg-background px-2 py-0.5 rounded text-xs font-semibold text-foreground">7:00 PM</span>
@@ -80,7 +82,7 @@ export function PlanDetail() {
               <div className="flex-1 pt-0.5">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-bold text-foreground text-[16px]">Sweeties Gelato</h3>
-                  <span className="font-bold text-[#00C851]">$15</span>
+                  <span className="font-bold text-[#00C851]">{formatPrice(15)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <span className="bg-background px-2 py-0.5 rounded text-xs font-semibold text-foreground">9:15 PM</span>
@@ -97,7 +99,7 @@ export function PlanDetail() {
         <div className="bg-card rounded-3xl p-6 shadow-sm border border-border mb-6">
           <div className="flex justify-between text-[15px] mb-3">
             <span className="text-muted-foreground font-medium">Dinner</span>
-            <span className="font-semibold text-foreground">$85.00</span>
+            <span className="font-semibold text-foreground">{formatPrice(85)}</span>
           </div>
           <div className="flex justify-between text-[15px] mb-3">
             <span className="text-muted-foreground font-medium">Activity</span>
@@ -105,17 +107,17 @@ export function PlanDetail() {
           </div>
           <div className="flex justify-between text-[15px] mb-4">
             <span className="text-muted-foreground font-medium">Dessert</span>
-            <span className="font-semibold text-foreground">$15.00</span>
+            <span className="font-semibold text-foreground">{formatPrice(15)}</span>
           </div>
           <div className="flex justify-between text-[15px] mb-5 text-gray-400 font-medium">
             <span>Est. Tip (18%)</span>
-            <span>$15.30</span>
+            <span>{formatPrice(15.30)}</span>
           </div>
           
           <div className="border-t border-border pt-4 mb-6">
             <div className="flex justify-between items-center">
               <span className="font-bold text-foreground text-[17px]">Total Estimate</span>
-              <span className="font-bold text-2xl text-foreground">$115.30</span>
+              <span className="font-bold text-2xl text-foreground">{formatPrice(115.30)}</span>
             </div>
           </div>
 
@@ -123,7 +125,7 @@ export function PlanDetail() {
           <div className="bg-background p-4 rounded-xl border border-border/50 mb-4">
             <div className="flex justify-between text-xs font-bold mb-2">
               <span className="text-[#00C851] flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#00C851]"></div> Under Budget</span>
-              <span className="text-muted-foreground">Target: $150</span>
+              <span className="text-muted-foreground">Target: {formatPrice(150)}</span>
             </div>
             <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
               <div className="w-[76%] h-full bg-[#00C851] rounded-full"></div>
@@ -195,7 +197,7 @@ export function PlanDetail() {
                 <p className="text-[12px] text-muted-foreground font-medium mt-0.5">3 stops · Tonight, 7:00 PM</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-bold text-foreground text-[17px]">$115.30</p>
+                <p className="font-bold text-foreground text-[17px]">{formatPrice(115.30)}</p>
                 <p className="text-[11px] text-muted-foreground font-medium">total</p>
               </div>
             </div>
@@ -215,7 +217,7 @@ export function PlanDetail() {
                         : 'bg-background text-foreground border-border hover:border-primary/50'
                     )}
                   >
-                    ${amt}
+                    {formatPrice(amt)}
                   </button>
                 ))}
               </div>
@@ -242,7 +244,7 @@ export function PlanDetail() {
               onClick={() => { setShowStash(false); setStashDone(true); }}
               className="w-full bg-primary text-white py-4 rounded-xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all"
             >
-              Start Saving ${autoSave}/wk ✨
+              Start Saving {formatPrice(autoSave)}/wk ✨
             </button>
           </div>
         </div>

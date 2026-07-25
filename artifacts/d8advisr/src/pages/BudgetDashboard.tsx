@@ -417,11 +417,11 @@ export function BudgetDashboard() {
           </div>
           <div className="flex flex-col gap-3">
             {[
-              { label: "Jazz Night stash",      sub: "Auto-save · Today",        amount: "+$20",  icon: "🎷", positive: true  },
-              { label: "Downtown Romance",       sub: "Spent · Oct 12",           amount: "-$115", icon: null, positive: false },
-              { label: "Anniversary fund",       sub: "Auto-save · Oct 11",       amount: "+$20",  icon: "💍", positive: true  },
-              { label: "Weekend Ski Trip",       sub: "Sarah added · Oct 10",     amount: "+$100", icon: "⛷️", positive: true  },
-              { label: "Friday Fun",             sub: "Spent · Sep 28",           amount: "-$70",  icon: null, positive: false },
+              { label: "Jazz Night stash",      sub: "Auto-save · Today",        amount: 20,  icon: "🎷", positive: true  },
+              { label: "Downtown Romance",       sub: "Spent · Oct 12",           amount: 115, icon: null, positive: false },
+              { label: "Anniversary fund",       sub: "Auto-save · Oct 11",       amount: 20,  icon: "💍", positive: true  },
+              { label: "Weekend Ski Trip",       sub: "Sarah added · Oct 10",     amount: 100, icon: "⛷️", positive: true  },
+              { label: "Friday Fun",             sub: "Spent · Sep 28",           amount: 70,  icon: null, positive: false },
             ].map((tx, i) => (
               <div key={i} className="bg-card p-4 rounded-2xl border border-border shadow-sm flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -442,7 +442,7 @@ export function BudgetDashboard() {
                   </div>
                 </div>
                 <span className={cn("font-bold text-[15px]", tx.positive ? "text-[#00C851]" : "text-foreground")}>
-                  {tx.amount}
+                  {tx.positive ? '+' : '-'}{formatPrice(tx.amount)}
                 </span>
               </div>
             ))}

@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Settings, Heart, Star, Award, ChevronRight, Camera, X, LogOut } from 'lucide-react';
 import { BottomNav } from "@/components/SharedUI";
 import { useProfile } from "@/hooks/useProfile";
+import { useRegion } from "@/hooks/useRegion";
 
 const AVATARS = [
   { id: "romantic",    emoji: "🥰", label: "Romantic"     },
@@ -19,6 +20,7 @@ const AVATARS = [
 export function ProfileOverview() {
   const [, setLocation] = useLocation();
   const { displayName, avatarUrl, profile } = useProfile();
+  const { formatPrice } = useRegion();
   const [avatar, setAvatar] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -105,7 +107,7 @@ export function ProfileOverview() {
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center mt-1">Dates<br/>Done</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-[#00C851]">$240</span>
+                <span className="text-2xl font-black text-[#00C851]">{formatPrice(240)}</span>
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center mt-1">Budget<br/>Saved</span>
               </div>
             </div>
