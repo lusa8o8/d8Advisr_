@@ -54,11 +54,13 @@ Do not commit real `.env` files.
 
 Create two Vercel projects from this repository:
 
-1. Consumer: repository root `.` using the root `vercel.json`.
+1. Consumer: root directory `artifacts/d8advisr` using that package's
+   `vercel.json`.
 2. Partner: root directory `artifacts/d8advisr-partner` using that package's
-   `vercel.json`. Enable Vercel's option to include source files outside the
-   root directory because the app imports `lib/d8-core` and uses the workspace
-   lockfile.
+   `vercel.json`.
+
+Enable Vercel's option to include source files outside the root directory for
+both projects because they import `lib/d8-core` and use the workspace lockfile.
 
 Set the same Supabase public variables in both projects. Set the consumer
 project's `VITE_PARTNER_ORIGIN` to the partner domain, and set the partner
