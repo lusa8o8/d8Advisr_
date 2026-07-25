@@ -1,8 +1,10 @@
 import { useLocation } from "wouter";
 import { ArrowLeft, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { useRegion } from "@/hooks/useRegion";
 
 export function PlanEdit() {
   const [, setLocation] = useLocation();
+  const { formatPrice } = useRegion();
 
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
@@ -66,7 +68,7 @@ export function PlanEdit() {
            <div className="bg-card p-5 border border-border rounded-2xl shadow-sm">
               <div className="flex justify-between items-center mb-4">
                  <span className="font-medium text-foreground">Target Amount</span>
-                 <span className="font-bold text-primary text-xl">$150</span>
+                 <span className="font-bold text-primary text-xl">{formatPrice(150)}</span>
               </div>
               <input type="range" min="50" max="300" defaultValue="150" className="w-full accent-primary h-2 bg-background rounded-lg appearance-none" />
            </div>

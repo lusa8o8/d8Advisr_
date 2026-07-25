@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Flame, Users, Heart, Sparkles, ArrowUpRight, ArrowDownLeft, CalendarDays, Check } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
+import { useRegion } from "@/hooks/useRegion";
 
 type FundType = 'experience' | 'group' | 'anniversary' | 'milestone';
 
@@ -185,6 +186,7 @@ function closeNewSheet(setShowNew: (v: boolean) => void, setNewType: (v: FundTyp
 
 export function BudgetDashboard() {
   const [, setLocation] = useLocation();
+  const { formatPrice, activeRegion } = useRegion();
   const [showNew, setShowNew] = useState(false);
   const [newType, setNewType] = useState<FundType | null>(null);
   const [expandedFund, setExpandedFund] = useState<string | null>(null);
@@ -222,8 +224,8 @@ export function BudgetDashboard() {
           <div className="absolute -top-8 -right-8 w-36 h-36 bg-white/5 rounded-full" />
           <div className="absolute -bottom-10 -left-6 w-28 h-28 bg-white/5 rounded-full" />
           <p className="text-white/60 text-sm font-medium mb-1 relative z-10">Total stashed</p>
-          <h2 className="text-4xl font-black text-white relative z-10">
-            ${totalSaved}<span className="text-white/40 text-2xl font-semibold">.00</span>
+          <h2 className="text-4xl font-black text-white relative z-10 flex items-baseline">
+            {formatPrice(totalSaved, undefined, false).replace('.00', '')}<span className="text-white/40 text-2xl font-semibold">.00</span>
           </h2>
           <div className="flex items-center gap-4 mt-4 relative z-10">
             <div>
@@ -237,8 +239,7 @@ export function BudgetDashboard() {
             </div>
             <div className="w-px h-8 bg-white/10" />
             <div>
-              <p className="text-white/50 text-[11px] font-bold uppercase tracking-wider">Goal</p>
-              <p className="text-white font-bold text-[15px]">${totalGoal}</p>
+              <p className="text-white font-bold text-[15px]">{formatPrice(totalGoal)}</p>
             </div>
           </div>
         </div>
@@ -296,10 +297,10 @@ export function BudgetDashboard() {
                   {/* Amount row */}
                   <div className="flex justify-between items-end mb-3">
                     <span className={cn("text-[22px] font-extrabold", theme.text)}>
-                      ${fund.saved}
+                      {formatPrice(fund.saved)}
                     </span>
                     <span className={cn("text-sm font-medium", theme.sub)}>
-                      of ${fund.goal}
+                      of {formatPrice(fund.goal)}
                     </span>
                   </div>
 
@@ -323,7 +324,7 @@ export function BudgetDashboard() {
                     <WarmthDots warmth={fund.warmth} />
                     {fund.autoSave > 0 && (
                       <span className={cn("text-[11px] font-semibold", theme.sub)}>
-                        ${fund.autoSave}/wk auto
+                        {formatPrice(fund.autoSave)}/wk auto
                       </span>
                     )}
                   </div>
@@ -542,7 +543,7 @@ export function BudgetDashboard() {
                           <Check size={10} /> Saving
                         </span>
                       ) : (
-                        <span className="font-bold text-foreground text-[15px]">{plan.currency}{plan.total}</span>
+                        <span className="font-bold text-foreground text-[15px]">{formatPrice(plan.total)}</span>
                       )}
                     </div>
                   </button>

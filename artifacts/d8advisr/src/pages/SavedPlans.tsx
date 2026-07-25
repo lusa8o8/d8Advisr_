@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from "wouter";
 import { BottomNav, FAB, cn } from "@/components/SharedUI";
 import { Calendar, ChevronRight, Star, Users, MapPin, Clock, Plus, Filter } from 'lucide-react';
+import { useRegion } from "@/hooks/useRegion";
 
 // ─── Mock saved plans ─────────────────────────────────────────────────────────
 
@@ -112,6 +113,7 @@ type FilterTab = typeof FILTER_TABS[number];
 
 export function SavedPlans() {
   const [, setLocation] = useLocation();
+  const { formatPrice } = useRegion();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All');
 
   const filtered = PLANS.filter(p => {
@@ -235,9 +237,9 @@ export function SavedPlans() {
 
                   {/* Bottom row: cost + rating/action */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <span className="text-[13px] font-bold text-gray-900">
-                      ~${plan.totalCost.toLocaleString()} <span className="font-normal text-gray-400 text-[11px]">est. total</span>
-                    </span>
+                    <div className="bg-gray-100/80 px-2.5 py-1 rounded-lg text-[13px] font-bold text-gray-900">
+                      ~{formatPrice(plan.totalCost)} <span className="font-normal text-gray-400 text-[11px]">est. total</span>
+                    </div>
                     <div className="flex items-center gap-2">
                       {plan.status === 'done' && plan.rating && (
                         <div className="flex items-center gap-1">

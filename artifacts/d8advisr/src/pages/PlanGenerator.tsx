@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from "wouter";
 import { TopBar, BottomNav, cn } from "@/components/SharedUI";
+import { useRegion } from "@/hooks/useRegion";
 
 const MESSAGES = [
   "Reading your vibe...",
@@ -248,6 +249,7 @@ function BuildAroundMode({
   anchorCostAmount: number | null;
   onGenerate: () => void;
 }) {
+  const { formatPrice } = useRegion();
   const [, setLocation] = useLocation();
   const [when, setWhen] = useState('Tonight');
   const [who, setWho] = useState('couple');
@@ -360,7 +362,7 @@ function BuildAroundMode({
               <div className="flex items-baseline justify-between mb-3">
                 <h3 className="font-bold text-foreground text-[15px]">Budget per person</h3>
                 <span className="text-primary font-bold text-[15px]">
-                  ${BUDGET_STEPS[budgetIdx].toLocaleString()}
+                  {formatPrice(BUDGET_STEPS[budgetIdx])}
                 </span>
               </div>
               <input
@@ -372,8 +374,8 @@ function BuildAroundMode({
                 className="w-full accent-primary"
               />
               <div className="flex justify-between mt-1">
-                <span className="text-xs text-muted-foreground">${BUDGET_STEPS[0].toLocaleString()}</span>
-                <span className="text-xs text-muted-foreground">${BUDGET_STEPS[BUDGET_STEPS.length - 1].toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground">{formatPrice(BUDGET_STEPS[0])}</span>
+                <span className="text-xs text-muted-foreground">{formatPrice(BUDGET_STEPS[BUDGET_STEPS.length - 1])}</span>
               </div>
             </div>
           </div>
@@ -506,9 +508,9 @@ function FullFormMode({ onGenerate }: { onGenerate: () => void }) {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget per person ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget per person ({activeRegion.currency_symbol})</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold text-sm">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold text-sm">{activeRegion.currency_symbol}</span>
                 <input
                   type="number"
                   defaultValue={75}
@@ -540,11 +542,11 @@ function FullFormMode({ onGenerate }: { onGenerate: () => void }) {
     </div>
   );
 }
-
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export function PlanGenerator() {
   const [, setLocation] = useLocation();
+  const { activeRegion } = useRegion();
   const [generating, setGenerating] = useState(false);
 
   // Read anchor params from URL

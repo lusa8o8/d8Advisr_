@@ -7,6 +7,7 @@ import {
 import { cn } from '@/components/SharedUI';
 import { useDemandSignals } from '@/hooks/useDemandSignals';
 import { supabase } from '@/lib/supabase';
+import { useRegion } from '@/hooks/useRegion';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
 
@@ -51,15 +52,10 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-function fmtPrice(price: number, currency: string, isFree: boolean): string {
-  if (isFree) return 'Free';
-  return `${currency} ${price.toLocaleString()} /pp`;
-}
-
-function priceAmountFromLabel(label: string): number | null {
-  if (/free/i.test(label)) return 0;
-  const digits = label.replace(/[^\d]/g, '');
-  return digits ? Number(digits) : null;
+function priceAmountFromLabel(label: string | undefined): number | null {
+  if (!label) return null;
+  const match = label.match(/\d+/g);
+  return match ? parseInt(match.join(''), 10) : null;
 }
 
 function toRecurrence(value: unknown): Recurrence {
@@ -98,7 +94,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     endTime: row.ends_at ? fmtTime(String(row.ends_at)) : undefined,
     recurrence: toRecurrence(row.frequency),
     recurrenceLabel: row.next_occurrence ?? null,
-    price: fmtPrice(Number(row.price_pp ?? 0), String(row.currency ?? 'K'), Boolean(row.is_free)),
+    price: '', 
     priceAmount: Boolean(row.is_free) ? 0 : Number(row.price_pp ?? 0),
     vibes: Array.isArray(row.vibes) ? row.vibes : [],
     desc: row.description ?? 'Details will be added by the organizer soon.',
@@ -130,7 +126,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     endTime: '11:00 PM',
     recurrence: 'weekly',
     recurrenceLabel: 'Every Friday',
-    price: 'K 350 /pp',
+    price: '350',
     priceAmount: 350,
     vibes: ['Romantic', 'Foodie'],
     desc: 'Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening. Tables are intimate with candlelit settings and a dedicated wine sommelier on the night. Reservations recommended — spots fill quickly on Fridays.',
@@ -154,7 +150,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     endTime: '11:30 PM',
     recurrence: null,
     recurrenceLabel: null,
-    price: 'K 1,200 /pp',
+    price: '1200',
     priceAmount: 1200,
     vibes: ['Romantic', 'Adventurous'],
     desc: '6-course tasting menu crafted live by the head chef. Limited to 10 guests per sitting. Wine pairings available as an add-on (K 250). Dietary requirements accommodated with 48h notice.',
@@ -178,8 +174,8 @@ const ALL_EVENTS: Record<string, EventData> = {
     endTime: '10:00 PM',
     recurrence: 'monthly',
     recurrenceLabel: 'Every last Sunday',
-    price: '₦22,500 /pp',
-    priceAmount: 22500,
+    price: '250',
+    priceAmount: 250,
     vibes: ['Group', 'Date Night'],
     desc: 'Cocktails and small bites as the sun sets over downtown. Relaxed open format — come solo or bring the group. Live DJ from 7PM. Rooftop seating for up to 60 guests.',
     image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&h=400&fit=crop&auto=format',
@@ -202,7 +198,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     endTime: '10:30 PM',
     recurrence: null,
     recurrenceLabel: null,
-    price: '$35 /pp',
+    price: '35',
     priceAmount: 35,
     vibes: ['Romantic', 'Culture'],
     desc: 'An intimate evening of classical music performed by candlelight inside a beautifully restored historic venue. Four musicians, one stage, no distractions — just pure sound in a space that makes every note feel personal.',
@@ -226,7 +222,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     endTime: '11:30 PM',
     recurrence: null,
     recurrenceLabel: null,
-    price: '$18 /pp',
+    price: '18',
     priceAmount: 18,
     vibes: ['Date Night', 'Relaxing'],
     desc: 'Watch La La Land on a rooftop under the stars. Blankets provided, bring your own snacks or grab drinks from the bar. Doors open at 8:30 PM — arrive early for the best spots.',
@@ -250,7 +246,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     endTime: '10:00 PM',
     recurrence: null,
     recurrenceLabel: null,
-    price: 'Free',
+    price: '0',
     priceAmount: 0,
     vibes: ['Adventurous', 'Group'],
     desc: 'A free open-air night market with live painting, craft stalls, street food, and local music. Bring friends, explore the art, grab something to eat, and stay as long as you like. Open to everyone.',
@@ -279,6 +275,7 @@ const RECURRENCE_META: Record<NonNullable<Recurrence>, { color: string; icon: st
 
 export function EventDetail() {
   const [, setLocation] = useLocation();
+  const { formatPrice } = useRegion();
   const [notifyOn, setNotifyOn] = useState(false);
   const [liveEvent, setLiveEvent] = useState<EventData | null>(null);
   const [loadingLiveEvent, setLoadingLiveEvent] = useState(false);
@@ -468,7 +465,7 @@ export function EventDetail() {
           {/* Price */}
           <div className="flex items-center justify-between bg-[#FFF0F1] rounded-2xl px-4 py-3.5">
             <span className="font-semibold text-gray-700 text-[14px]">Price per person</span>
-            <span className="font-black text-primary text-[20px]">{event.price}</span>
+            <span className="font-black text-primary text-[20px]">{event.priceAmount != null ? formatPrice(event.priceAmount) : event.price}</span>
           </div>
         </div>
 
@@ -598,7 +595,7 @@ export function EventDetail() {
       <div className="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-gray-100 px-6 py-5 flex items-center gap-4 z-20 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
         <div>
           <p className="text-[11px] text-gray-400 font-medium">Per person</p>
-          <p className="font-black text-primary text-[18px] leading-tight">{event.price}</p>
+          <p className="font-black text-primary text-[18px] leading-tight">{event.priceAmount != null ? formatPrice(event.priceAmount) : event.price}</p>
         </div>
         <button
           onClick={() => {

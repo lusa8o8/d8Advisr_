@@ -10,6 +10,7 @@ import { useDemandSignals } from "@/hooks/useDemandSignals";
 import { useVenueEvents } from "@/hooks/useVenues";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/supabase";
+import { useRegion } from "@/hooks/useRegion";
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
@@ -88,7 +89,7 @@ const VENUE_EVENTS = [
     date: "Fri, Oct 18",
     time: "7:30 PM",
     vibes: ["Romantic", "Foodie"],
-    price: "K 350 /pp",
+    price: 350,
     emoji: "🎷",
     desc: "Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening.",
     image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format",
@@ -102,7 +103,7 @@ const VENUE_EVENTS = [
     date: "Sat, Oct 19",
     time: "8:00 PM",
     vibes: ["Romantic", "Adventurous"],
-    price: "K 1,200 /pp",
+    price: 1200,
     emoji: "👨‍🍳",
     desc: "6-course tasting menu crafted live by the head chef. Limited to 10 guests.",
     image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=200&fit=crop&auto=format",
@@ -116,7 +117,7 @@ const VENUE_EVENTS = [
     date: "Sun, Oct 20",
     time: "6:00 PM",
     vibes: ["Group", "Date Night"],
-    price: "K 250 /pp",
+    price: 250,
     emoji: "🌅",
     desc: "Cocktails and small bites as the sun sets over downtown. Relaxed and open format.",
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&h=200&fit=crop&auto=format",
@@ -241,7 +242,8 @@ function formatVenuePrice(venue: VenueRow | null): string {
 export function VenueDetails() {
   const [, setLocation] = useLocation();
   const { recordVenueAddToPlan, recordVenueSaved, recordVenueView } = useDemandSignals();
-  const [activeTab, setActiveTab] = useState('Overview');
+  const { activeRegion, formatPrice } = useRegion();
+  const [activeTab, setActiveTab] = useState<'Overview' | 'Events' | 'Reviews' | 'Location'>('Overview');
   const [notifyOn, setNotifyOn] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -257,7 +259,7 @@ export function VenueDetails() {
         date: fmtDate(event.starts_at),
         time: fmtTime(event.starts_at),
         vibes: event.vibes ?? [],
-        price: fmtPrice(event.price_pp, event.currency, event.is_free),
+        price: formatPrice(event.price_pp, event.currency, event.is_free),
         emoji: event.emoji ?? 'ðŸ“…',
         desc: event.description ?? '',
         image: event.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format',
@@ -514,7 +516,7 @@ export function VenueDetails() {
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-2xl shadow-sm shrink-0">🎷</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-foreground text-[15px] leading-tight">Jazz & Wine Night</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">Every Friday · 7:30 PM · ₦30,000/pp</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Every Friday · 7:30 PM · {formatPrice(350)}/pp</p>
                   <div className="flex gap-1.5 mt-2">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF0F1] text-primary">Romantic</span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">Foodie</span>
@@ -623,7 +625,7 @@ export function VenueDetails() {
                         )}
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-foreground text-[13px]">{event.price}</span>
+                        <span className="font-bold text-foreground text-[13px]">{typeof event.price === 'number' ? formatPrice(event.price) : event.price}</span>
                         <div className="flex items-center gap-1 bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-sm">
                           <Ticket size={11} /> View
                         </div>
@@ -781,7 +783,7 @@ export function VenueDetails() {
                       <span className="text-[10px] font-bold bg-[#FF5A5F]/10 text-[#FF5A5F] px-2 py-0.5 rounded-full">Recommended</span>
                     </div>
                     <p className="text-[12px] text-muted-foreground mb-3">
-                      Est. K 80–150 · ~5 min
+                      Est. {formatPrice(80)}–{formatPrice(150, undefined, false).replace(activeRegion.currency_symbol + ' ', '')} · ~5 min
                       <span className="ml-1.5 text-[11px] text-gray-400 italic">(estimate only, may vary)</span>
                     </p>
                     <div className="flex items-center gap-2">
@@ -822,7 +824,7 @@ export function VenueDetails() {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-foreground text-[14px]">Parking</p>
-                  <p className="text-[12px] text-muted-foreground">2nd St Garage · ₦2,000/hr</p>
+                  <p className="text-[12px] text-muted-foreground">2nd St Garage · {formatPrice(20)}/hr</p>
                 </div>
               </div>
             </div>
