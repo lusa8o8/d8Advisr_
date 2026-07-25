@@ -1,87 +1,280 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { useLocation } from "wouter";
-import { Search, Star } from 'lucide-react';
-import { BottomNav, FAB, cn } from "@/components/SharedUI";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
-import { useRegion } from "@/hooks/useRegion";
-import { useVenues } from "@/hooks/useVenues";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+import { AlertTriangle, Loader2, Search, Star } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { BottomNav, FAB, cn } from '@/components/SharedUI';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useRegion } from '@/hooks/useRegion';
+import { useVenues } from '@/hooks/useVenues';
 
-// Leaflet imports
-// @ts-ignore
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID?.trim();
+const DEFAULT_MAP_CENTER = { lat: -15.3875, lng: 28.3228 };
 
-// Fix for leaflet default icons just in case
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+let mapsLoaderConfigured = false;
 
-// Custom map pin — must use inline styles, Tailwind is not available inside L.divIcon HTML
-const createCustomIcon = (label: string) => L.divIcon({
-  html: `<div style="
-    width:44px; height:44px; border-radius:50%;
-    background:#FF5A5F; border:3px solid white;
-    box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    display:flex; align-items:center; justify-content:center;
-    font-size:20px; line-height:1; cursor:pointer;
-    position:relative;">
-    ${label}
-    <div style="
-      position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
-      width:0; height:0;
-      border-left:6px solid transparent;
-      border-right:6px solid transparent;
-      border-top:8px solid #FF5A5F;">
-    </div>
-  </div>`,
-  className: '',
-  iconSize: [44, 52],
-  iconAnchor: [22, 52],
-});
+type MapTheme = 'light' | 'dark';
 
-// Component to recenter map when region/center changes
-function RecenterMap({ center }: { center: [number, number] }) {
-  const map = useMap();
-  map.setView(center, map.getZoom());
-  return null;
-}
-
-const TILES = {
-  light: {
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-  },
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-  },
+type MappedVenue = {
+  id: string;
+  name: string;
+  category: string | null;
+  lat: number;
+  lng: number;
 };
 
-/** Reactively follows the app theme (light / dark / system) set in Settings. */
-function useMapTheme(): 'light' | 'dark' {
-  const resolvedDark = useCallback(() =>
-    document.documentElement.classList.contains('dark'), []);
+function hasGoogleMapsConfig() {
+  return Boolean(
+    GOOGLE_MAPS_API_KEY
+    && GOOGLE_MAPS_MAP_ID
+    && !GOOGLE_MAPS_API_KEY.startsWith('replace_')
+    && !GOOGLE_MAPS_MAP_ID.startsWith('replace_'),
+  );
+}
 
+function configureMapsLoader() {
+  if (mapsLoaderConfigured || !GOOGLE_MAPS_API_KEY || !GOOGLE_MAPS_MAP_ID) return;
+
+  setOptions({
+    key: GOOGLE_MAPS_API_KEY,
+    v: 'weekly',
+    authReferrerPolicy: 'origin',
+    mapIds: [GOOGLE_MAPS_MAP_ID],
+  });
+  mapsLoaderConfigured = true;
+}
+
+function markerEmoji(category: string | null) {
+  const normalized = (category ?? '').toLowerCase();
+
+  if (normalized.includes('bar') || normalized.includes('night')) return '🍸';
+  if (normalized.includes('restaurant') || normalized.includes('dining')) return '🍽️';
+  if (normalized.includes('coffee') || normalized.includes('cafe')) return '☕';
+  if (normalized.includes('lounge')) return '🛋️';
+  if (normalized.includes('rooftop')) return '🌆';
+  if (normalized.includes('outdoor') || normalized.includes('park')) return '🌿';
+  if (normalized.includes('club')) return '🎵';
+  return '📍';
+}
+
+function createMarkerContent(venue: MappedVenue) {
+  const marker = document.createElement('div');
+  marker.setAttribute('aria-label', venue.name);
+  marker.style.cssText = [
+    'position:relative',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'width:44px',
+    'height:44px',
+    'border:3px solid #fff',
+    'border-radius:999px',
+    'background:#FF5A5F',
+    'box-shadow:0 4px 12px rgba(0,0,0,.3)',
+    'font-size:20px',
+    'line-height:1',
+    'cursor:pointer',
+    'user-select:none',
+  ].join(';');
+  marker.textContent = markerEmoji(venue.category);
+
+  const pointer = document.createElement('span');
+  pointer.setAttribute('aria-hidden', 'true');
+  pointer.style.cssText = [
+    'position:absolute',
+    'bottom:-9px',
+    'left:50%',
+    'width:0',
+    'height:0',
+    'transform:translateX(-50%)',
+    'border-left:6px solid transparent',
+    'border-right:6px solid transparent',
+    'border-top:9px solid #FF5A5F',
+  ].join(';');
+  marker.append(pointer);
+
+  return marker;
+}
+
+/** Reactively follows the app theme (light / dark / system) set in Settings. */
+function useMapTheme(): MapTheme {
+  const resolvedDark = useCallback(
+    () => document.documentElement.classList.contains('dark'),
+    [],
+  );
   const [isDark, setIsDark] = useState<boolean>(resolvedDark);
 
   useEffect(() => {
-    // Watch for class changes on <html> (applyTheme toggles 'dark' there)
     const observer = new MutationObserver(() => setIsDark(resolvedDark()));
     observer.observe(document.documentElement, { attributeFilter: ['class'] });
 
-    // Also watch system preference changes when theme = 'system'
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onMq = () => setIsDark(resolvedDark());
-    mq.addEventListener('change', onMq);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const onMediaQueryChange = () => setIsDark(resolvedDark());
+    mediaQuery.addEventListener('change', onMediaQueryChange);
 
-    return () => { observer.disconnect(); mq.removeEventListener('change', onMq); };
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener('change', onMediaQueryChange);
+    };
   }, [resolvedDark]);
 
   return isDark ? 'dark' : 'light';
+}
+
+function GoogleVenueMap({
+  center,
+  mapTheme,
+  venues,
+  onVenueSelect,
+}: {
+  center: google.maps.LatLngLiteral;
+  mapTheme: MapTheme;
+  venues: MappedVenue[];
+  onVenueSelect: (venueId: string) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerClassRef = useRef<typeof google.maps.marker.AdvancedMarkerElement | null>(null);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const selectionHandlerRef = useRef(onVenueSelect);
+  const [mapGeneration, setMapGeneration] = useState(0);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error' | 'missing'>(
+    hasGoogleMapsConfig() ? 'loading' : 'missing',
+  );
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    selectionHandlerRef.current = onVenueSelect;
+  }, [onVenueSelect]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    markersRef.current.forEach(marker => {
+      marker.map = null;
+    });
+    markersRef.current = [];
+    markerClassRef.current = null;
+    mapRef.current = null;
+
+    if (!hasGoogleMapsConfig()) {
+      setLoadState('missing');
+      return;
+    }
+
+    setLoadState('loading');
+    configureMapsLoader();
+
+    void Promise.all([importLibrary('maps'), importLibrary('marker')])
+      .then(([mapsLibrary, markerLibrary]) => {
+        if (cancelled || !containerRef.current) return;
+
+        const map = new mapsLibrary.Map(containerRef.current, {
+          center,
+          zoom: 13,
+          mapId: GOOGLE_MAPS_MAP_ID,
+          colorScheme:
+            mapTheme === 'dark'
+              ? mapsLibrary.ColorScheme.DARK
+              : mapsLibrary.ColorScheme.LIGHT,
+          clickableIcons: false,
+          disableDefaultUI: true,
+          gestureHandling: 'greedy',
+          keyboardShortcuts: true,
+        });
+
+        mapRef.current = map;
+        markerClassRef.current = markerLibrary.AdvancedMarkerElement;
+        setLoadState('ready');
+        setMapGeneration(generation => generation + 1);
+      })
+      .catch(error => {
+        if (cancelled) return;
+        console.error('[D8 map] Google Maps failed to load', error);
+        setLoadState('error');
+      });
+
+    return () => {
+      cancelled = true;
+      markersRef.current.forEach(marker => {
+        marker.map = null;
+      });
+      markersRef.current = [];
+      markerClassRef.current = null;
+      mapRef.current = null;
+    };
+  }, [center.lat, center.lng, mapTheme, retryCount]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const AdvancedMarkerElement = markerClassRef.current;
+    if (!map || !AdvancedMarkerElement || loadState !== 'ready') return;
+
+    map.setCenter(center);
+    markersRef.current.forEach(marker => {
+      marker.map = null;
+    });
+
+    markersRef.current = venues.map(venue => {
+      const marker = new AdvancedMarkerElement({
+        map,
+        position: { lat: venue.lat, lng: venue.lng },
+        title: venue.name,
+        content: createMarkerContent(venue),
+      });
+      marker.addListener('click', () => selectionHandlerRef.current(venue.id));
+      return marker;
+    });
+
+    return () => {
+      markersRef.current.forEach(marker => {
+        marker.map = null;
+      });
+      markersRef.current = [];
+    };
+  }, [center, loadState, mapGeneration, venues]);
+
+  return (
+    <div className="absolute inset-0">
+      <div ref={containerRef} className="h-full w-full" aria-label="D8Advisr venue map" />
+
+      {loadState === 'loading' && (
+        <div className="absolute inset-0 grid place-items-center bg-background/90">
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <Loader2 className="animate-spin text-primary" size={30} />
+            <p className="text-sm font-semibold">Loading the map…</p>
+          </div>
+        </div>
+      )}
+
+      {(loadState === 'missing' || loadState === 'error') && (
+        <div className="absolute inset-0 grid place-items-center bg-background p-6">
+          <div className="max-w-sm rounded-3xl border border-border bg-card p-6 text-center shadow-sm">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <AlertTriangle size={24} />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">
+              {loadState === 'missing' ? 'Map configuration needed' : 'The map could not load'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {loadState === 'missing'
+                ? 'Add the Google Maps API key and Map ID to the consumer environment.'
+                : 'Check your connection and the Google Maps key restrictions, then try again.'}
+            </p>
+            {loadState === 'error' && (
+              <button
+                type="button"
+                onClick={() => setRetryCount(count => count + 1)}
+                className="mt-5 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+              >
+                Try again
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function MapView() {
@@ -89,144 +282,167 @@ export function MapView() {
   const isDesktop = useIsDesktop();
   const { activeRegion } = useRegion();
   const { venues } = useVenues(activeRegion.id);
+  const mapTheme = useMapTheme();
 
-  // Filter venues that have coordinates
-  const mappedVenues = useMemo(() => {
-    return (venues || []).filter(v => v.lat !== null && v.lng !== null);
-  }, [venues]);
+  const mappedVenues = useMemo<MappedVenue[]>(
+    () => (venues ?? [])
+      .filter(
+        (venue): venue is typeof venue & { lat: number; lng: number } =>
+          venue.lat !== null && venue.lng !== null,
+      )
+      .map(venue => ({
+        id: venue.id,
+        name: venue.name,
+        category: venue.category,
+        lat: venue.lat,
+        lng: venue.lng,
+      })),
+    [venues],
+  );
 
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
-  const selectedVenue = mappedVenues.find(v => v.id === selectedVenueId);
+  const mapCenter = useMemo<google.maps.LatLngLiteral>(() => {
+    if (mappedVenues.length === 0) return DEFAULT_MAP_CENTER;
 
-  // Compute center based on venues, fallback to [0, 0] if none
-  const mapCenter: [number, number] = useMemo(() => {
-    if (mappedVenues.length === 0) {
-      // Default to Lusaka center if no venues to avoid [0,0] ocean
-      return [-15.3875, 28.3228]; 
-    }
-    const sumLat = mappedVenues.reduce((acc, v) => acc + (v.lat as number), 0);
-    const sumLng = mappedVenues.reduce((acc, v) => acc + (v.lng as number), 0);
-    return [sumLat / mappedVenues.length, sumLng / mappedVenues.length];
+    const total = mappedVenues.reduce(
+      (sum, venue) => ({
+        lat: sum.lat + venue.lat,
+        lng: sum.lng + venue.lng,
+      }),
+      { lat: 0, lng: 0 },
+    );
+
+    return {
+      lat: total.lat / mappedVenues.length,
+      lng: total.lng / mappedVenues.length,
+    };
   }, [mappedVenues]);
 
-  const mapTheme = useMapTheme();
-  const tile = TILES[mapTheme];
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  const selectedVenue = mappedVenues.find(venue => venue.id === selectedVenueId);
+
+  useEffect(() => {
+    if (selectedVenueId && !selectedVenue) setSelectedVenueId(null);
+  }, [selectedVenue, selectedVenueId]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden" style={{ background: mapTheme === 'dark' ? '#1a1a2e' : '#E5E2DA' }}>
-      
-      {/* Top Bar (Overlay) */}
-      <div className={cn(
-        "absolute top-0 w-full pb-8 px-6 flex justify-between items-start z-[1000] pointer-events-none",
-        mapTheme === 'dark'
-          ? "bg-gradient-to-b from-black/80 to-transparent"
-          : "bg-gradient-to-b from-white/90 to-white/0",
-        isDesktop ? "pt-5" : "pt-14"
-      )}>
+    <div
+      className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+      style={{ background: mapTheme === 'dark' ? '#1a1a2e' : '#E5E2DA' }}
+    >
+      <GoogleVenueMap
+        center={mapCenter}
+        mapTheme={mapTheme}
+        venues={mappedVenues}
+        onVenueSelect={setSelectedVenueId}
+      />
+
+      <div
+        className={cn(
+          'pointer-events-none absolute top-0 z-20 flex w-full items-start justify-between px-6 pb-8',
+          mapTheme === 'dark'
+            ? 'bg-gradient-to-b from-black/80 to-transparent'
+            : 'bg-gradient-to-b from-white/90 to-white/0',
+          isDesktop ? 'pt-5' : 'pt-14',
+        )}
+      >
         {!isDesktop && (
-          <div
-            className="flex items-baseline px-4 py-2 rounded-2xl shadow-sm cursor-pointer pointer-events-auto"
+          <button
+            type="button"
+            className="pointer-events-auto flex items-baseline rounded-2xl px-4 py-2 shadow-sm"
             style={{ background: mapTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'white' }}
             onClick={() => setLocation('/home')}
+            aria-label="Back to D8Advisr home"
           >
-            <span className="font-bold text-xl text-primary tracking-tight">D8</span>
-            <span className={cn("font-bold text-xl tracking-tight", mapTheme === 'dark' ? 'text-white' : 'text-foreground')}>Advisr</span>
-          </div>
+            <span className="text-xl font-bold tracking-tight text-primary">D8</span>
+            <span
+              className={cn(
+                'text-xl font-bold tracking-tight',
+                mapTheme === 'dark' ? 'text-white' : 'text-foreground',
+              )}
+            >
+              Advisr
+            </span>
+          </button>
         )}
-        
+
         <div
-          className="rounded-full p-1 shadow-sm flex ml-auto pointer-events-auto"
+          className="pointer-events-auto ml-auto flex rounded-full p-1 shadow-sm"
           style={{ background: mapTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'white' }}
         >
-          <button 
+          <button
+            type="button"
             onClick={() => setLocation('/home')}
-            className={cn("px-4 py-1.5 rounded-full text-sm font-semibold", mapTheme === 'dark' ? 'text-white/60' : 'text-muted-foreground')}
+            className={cn(
+              'rounded-full px-4 py-1.5 text-sm font-semibold',
+              mapTheme === 'dark' ? 'text-white/60' : 'text-muted-foreground',
+            )}
           >
             Feed
           </button>
-          <button className="px-4 py-1.5 rounded-full text-sm font-semibold bg-primary text-white shadow-sm">
+          <button
+            type="button"
+            className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm"
+          >
             Map
           </button>
         </div>
       </div>
 
-      {/* Actual Map */}
-      <div className="absolute inset-0 z-0">
-        <MapContainer 
-          center={mapCenter} 
-          zoom={13} 
-          zoomControl={false}
-          className="w-full h-full"
-        >
-          <TileLayer
-            key={mapTheme}
-            attribution={tile.attribution}
-            url={tile.url}
-            maxZoom={19}
-          />
-          <RecenterMap center={mapCenter} />
-          
-          {mappedVenues.map(venue => {
-            const cat = (venue.category || '').toLowerCase();
-            const pinEmoji =
-              cat.includes('bar') || cat.includes('night') ? '🍸' :
-              cat.includes('restaurant') || cat.includes('dining') ? '🍽️' :
-              cat.includes('coffee') || cat.includes('cafe') ? '☕' :
-              cat.includes('lounge') ? '🛋️' :
-              cat.includes('rooftop') ? '🌆' :
-              cat.includes('outdoor') || cat.includes('park') ? '🌿' :
-              cat.includes('club') ? '🎵' :
-              '📍';
-            return (
-              <Marker
-                key={venue.id}
-                position={[venue.lat as number, venue.lng as number]}
-                icon={createCustomIcon(pinEmoji)}
-                eventHandlers={{ click: () => setSelectedVenueId(venue.id) }}
-              />
-            );
-          })}
-        </MapContainer>
-      </div>
-
-      {/* Search Overlay */}
-      <div className={cn("absolute w-full px-6 z-[1000] pointer-events-none", isDesktop ? "top-[72px]" : "top-[110px]")}>
-        <div className="bg-white rounded-2xl shadow-md p-3.5 flex items-center gap-3 pointer-events-auto">
+      <div
+        className={cn(
+          'pointer-events-none absolute z-20 w-full px-6',
+          isDesktop ? 'top-[72px]' : 'top-[110px]',
+        )}
+      >
+        <div className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-md">
           <Search size={20} className="text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Search this area..." 
-            className="w-full text-sm font-medium focus:outline-none text-foreground"
+          <input
+            type="text"
+            placeholder="Search this area..."
+            className="w-full text-sm font-medium text-foreground focus:outline-none"
           />
         </div>
       </div>
 
-      {/* Selected Venue Bottom Sheet (Peek) */}
       {selectedVenue && (
-        <div className={cn("absolute w-full px-6 z-[1000] pointer-events-none transition-all duration-300", isDesktop ? "bottom-6" : "bottom-[90px]")}>
-          <div 
+        <div
+          className={cn(
+            'pointer-events-none absolute z-20 w-full px-6 transition-all duration-300',
+            isDesktop ? 'bottom-6' : 'bottom-[90px]',
+          )}
+        >
+          <div
             onClick={() => setLocation(`/venue/${selectedVenue.id}`)}
-            className="bg-white rounded-3xl p-4 shadow-xl border border-border flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors pointer-events-auto relative"
+            className="pointer-events-auto relative flex cursor-pointer items-center gap-4 rounded-3xl border border-border bg-white p-4 shadow-xl transition-colors hover:bg-gray-50"
           >
-            <button 
-              onClick={(e) => { e.stopPropagation(); setSelectedVenueId(null); }}
-              className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 shadow-sm hover:text-black"
+            <button
+              type="button"
+              onClick={event => {
+                event.stopPropagation();
+                setSelectedVenueId(null);
+              }}
+              className="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm hover:text-black"
+              aria-label="Close venue preview"
             >
               ×
             </button>
-            <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-red-500 rounded-2xl flex items-center justify-center text-3xl shadow-inner shrink-0">
-              📍
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 text-3xl shadow-inner">
+              {markerEmoji(selectedVenue.category)}
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-[16px] text-foreground leading-tight mb-1">{selectedVenue.name}</h3>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
+            <div className="min-w-0 flex-1">
+              <h3 className="mb-1 text-[16px] font-bold leading-tight text-foreground">
+                {selectedVenue.name}
+              </h3>
+              <div className="mb-1.5 flex items-center gap-1 text-xs text-muted-foreground">
                 <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
                 <span className="font-bold text-foreground">4.8</span>
                 <span>(124)</span>
                 <span className="mx-1">•</span>
-                <span className="text-primary font-bold">$$$</span>
+                <span className="font-bold text-primary">$$$</span>
               </div>
-              <p className="text-xs text-gray-500 truncate">{selectedVenue.category || 'Venue'} • {selectedVenue.area || activeRegion.name}</p>
+              <p className="truncate text-xs text-gray-500">
+                {selectedVenue.category || 'Venue'} • {activeRegion.name}
+              </p>
             </div>
           </div>
         </div>
