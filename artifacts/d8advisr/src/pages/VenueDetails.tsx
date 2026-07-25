@@ -444,8 +444,6 @@ export function VenueDetails() {
               <span className="font-bold">{venueRating.toFixed(1)}</span>
               <span className="text-gray-400 font-normal">({venueReviewCount} reviews)</span>
             </div>
-            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-            <span className="text-primary font-bold">$$$</span>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-foreground bg-background p-3 rounded-xl">

@@ -328,9 +328,6 @@ export function HomeDiscovery() {
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
                             {venue.type}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
-                            {venue.price}
-                          </span>
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-amber-300 flex items-center gap-1 border border-amber-800/40" style={{ background: 'rgba(120,53,15,0.30)' }}>
                             <Star size={8} fill="currentColor" /> {venue.rating}
                           </span>
@@ -392,9 +389,6 @@ export function HomeDiscovery() {
                     <div className="p-5">
                       <div className="flex justify-between items-start mb-1">
                         <h3 className="font-bold text-[17px] text-foreground leading-tight">{venue.name}</h3>
-                        <span className={cn("font-bold text-[15px] shrink-0 ml-2", venue.price === 'Free' ? "text-[#00C851]" : "text-primary")}>
-                          {venue.price}
-                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-400 mb-3 font-medium">
                         <span>{venue.type}</span>
@@ -682,9 +676,6 @@ export function HomeDiscovery() {
                       <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
                         {venue.type}
                       </span>
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
-                        {venue.price}
-                      </span>
                       <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-amber-300 flex items-center gap-1 border border-amber-800/40" style={{ background: 'rgba(120,53,15,0.30)' }}>
                         <Star size={9} fill="currentColor" /> {venue.rating} · {venue.reviews} reviews
                       </span>
@@ -753,7 +744,6 @@ export function HomeDiscovery() {
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="font-bold text-[18px] text-foreground leading-tight">{venue.name}</h3>
-                    <span className={cn("font-bold text-[15px]", venue.price === 'Free' ? "text-[#00C851]" : "text-primary")}>{venue.price}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-3 font-medium">
                     <span>{venue.type}</span>
