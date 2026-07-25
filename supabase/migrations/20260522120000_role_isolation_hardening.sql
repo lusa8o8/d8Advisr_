@@ -4,6 +4,12 @@
 
 create extension if not exists "uuid-ossp";
 
+-- The remote project already had this operational column when the original
+-- hardening migration was authored. Declare it here as well so a clean local
+-- rebuild does not depend on untracked remote schema drift.
+alter table public.profiles
+  add column if not exists is_admin boolean not null default false;
+
 -- ---------------------------------------------------------------------------
 -- Helper functions
 -- ---------------------------------------------------------------------------
