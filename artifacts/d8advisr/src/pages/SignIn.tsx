@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { authPathWithNext, consumeOAuthError, getPostAuthRedirectPath, getSafeNextPath } from '@/lib/authRedirect';
+import { LegalLinks } from '@workspace/d8-core/legal';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -178,7 +179,7 @@ export function SignIn() {
         </button>
       </div>
 
-      <div className="mt-8 pb-10">
+      <div className="mt-8 pb-5">
         <p className="text-muted-foreground font-medium text-[15px]">
           Don't have an account?{' '}
           <button onClick={() => setLocation(authPathWithNext('/signup', nextPath))} className="text-primary font-semibold hover:underline">
@@ -186,6 +187,7 @@ export function SignIn() {
           </button>
         </p>
       </div>
+      <LegalLinks className="pb-10" />
     </div>
   );
 }

@@ -44,6 +44,7 @@ import { ReviewComplete } from "@/pages/ReviewComplete";
 import { Settings } from "@/pages/Settings";
 import { authPathWithNext, getPostAuthRedirectPath, storeOAuthError } from "@/lib/authRedirect";
 import { getCurrentAccountContext } from "@workspace/d8-core/account-scope";
+import { PrivacyPolicyPage, TermsOfServicePage } from "@workspace/d8-core/legal";
 import { redirectToPartner } from "@/lib/clientOrigins";
 
 const queryClient = new QueryClient();
@@ -330,6 +331,8 @@ function Router() {
       <Route path="/signin" component={SignIn} />
       <Route path="/password/reset" component={PasswordResetRequest} />
       <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/privacy"><PrivacyPolicyPage /></Route>
+      <Route path="/terms"><TermsOfServicePage /></Route>
 
       {/* ── Authenticated routes ──────────────────────────────── */}
       <Route path="/preferences"><ConsumerGuard><InitialPreferences /></ConsumerGuard></Route>

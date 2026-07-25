@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@workspace/d8-core/auth';
 import { authPathWithNext, consumeOAuthError, getSafeNextPath } from '@workspace/d8-core/auth-redirect';
+import { AccountLegalNotice, LegalLinks } from '@workspace/d8-core/legal';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -188,9 +189,12 @@ export function SignUp() {
           }
           {googleLoading ? 'Redirecting…' : 'Continue with Google'}
         </button>
+        <div className="mt-6">
+          <AccountLegalNotice />
+        </div>
       </div>
 
-      <div className="mt-8 pb-10">
+      <div className="mt-8 pb-5">
         <p className="text-muted-foreground font-medium text-[15px]">
           Already have an account?{' '}
           <button onClick={() => setLocation(authPathWithNext('/signin', nextPath))} className="text-primary font-semibold hover:underline">
@@ -198,6 +202,7 @@ export function SignUp() {
           </button>
         </p>
       </div>
+      <LegalLinks className="pb-10" />
     </div>
   );
 }

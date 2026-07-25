@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { Check } from "lucide-react";
+import { LegalLinks } from "@workspace/d8-core/legal";
 
 export function Welcome() {
   const [, setLocation] = useLocation();
@@ -30,7 +31,7 @@ export function Welcome() {
         </h1>
       </div>
       
-      <div className="w-full flex flex-col gap-4 mb-10 z-10">
+      <div className="w-full flex flex-col gap-4 mb-6 z-10">
         <button 
           onClick={() => setLocation('/signup')}
           className="w-full bg-primary text-primary-foreground py-[18px] rounded-xl font-semibold text-lg shadow-[0_8px_20px_-6px_rgba(255,90,95,0.6)] active:scale-[0.98] transition-all hover:bg-primary/90"
@@ -44,6 +45,7 @@ export function Welcome() {
           Sign In
         </button>
       </div>
+      <LegalLinks className="relative z-10 pb-4" />
     </div>
   );
 }

@@ -8,6 +8,7 @@
     "./auth": "./src/auth.tsx",
     "./auth-redirect": "./src/authRedirect.ts",
     "./constants": "./src/constants.ts",
+    "./legal": "./src/legal.tsx",
     "./partner-capabilities": "./src/partnerCapabilities.ts",
     "./supabase": "./src/supabase.ts",
     "./types": "./src/types.ts",
