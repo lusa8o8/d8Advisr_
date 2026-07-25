@@ -236,7 +236,7 @@ export function SavedPlans() {
                   {/* Bottom row: cost + rating/action */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <span className="text-[13px] font-bold text-gray-900">
-                      ~₦{(plan.totalCost * 1500).toLocaleString()} <span className="font-normal text-gray-400 text-[11px]">est. total</span>
+                      ~${plan.totalCost.toLocaleString()} <span className="font-normal text-gray-400 text-[11px]">est. total</span>
                     </span>
                     <div className="flex items-center gap-2">
                       {plan.status === 'done' && plan.rating && (
@@ -252,7 +252,7 @@ export function SavedPlans() {
                       )}
                       {plan.status === 'upcoming' && (
                         <span className="text-[11px] font-bold text-[#00C851] bg-[#00C851]/10 px-2.5 py-1 rounded-full">
-                          View →
+                          View
                         </span>
                       )}
                       {plan.status === 'draft' && (

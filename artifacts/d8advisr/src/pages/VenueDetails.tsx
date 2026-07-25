@@ -88,7 +88,7 @@ const VENUE_EVENTS = [
     date: "Fri, Oct 18",
     time: "7:30 PM",
     vibes: ["Romantic", "Foodie"],
-    price: "₦30,000 /pp",
+    price: "K 350 /pp",
     emoji: "🎷",
     desc: "Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening.",
     image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format",
@@ -102,7 +102,7 @@ const VENUE_EVENTS = [
     date: "Sat, Oct 19",
     time: "8:00 PM",
     vibes: ["Romantic", "Adventurous"],
-    price: "₦142,500 /pp",
+    price: "K 1,200 /pp",
     emoji: "👨‍🍳",
     desc: "6-course tasting menu crafted live by the head chef. Limited to 10 guests.",
     image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=200&fit=crop&auto=format",
@@ -116,7 +116,7 @@ const VENUE_EVENTS = [
     date: "Sun, Oct 20",
     time: "6:00 PM",
     vibes: ["Group", "Date Night"],
-    price: "₦22,500 /pp",
+    price: "K 250 /pp",
     emoji: "🌅",
     desc: "Cocktails and small bites as the sun sets over downtown. Relaxed and open format.",
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&h=200&fit=crop&auto=format",
@@ -777,11 +777,11 @@ export function VenueDetails() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-bold text-foreground text-[14px]">Yango</p>
+                      <p className="font-bold text-foreground text-[14px]">Rideshare</p>
                       <span className="text-[10px] font-bold bg-[#FF5A5F]/10 text-[#FF5A5F] px-2 py-0.5 rounded-full">Recommended</span>
                     </div>
                     <p className="text-[12px] text-muted-foreground mb-3">
-                      Est. ₦800–1,500 · ~5 min
+                      Est. K 80–150 · ~5 min
                       <span className="ml-1.5 text-[11px] text-gray-400 italic">(estimate only, may vary)</span>
                     </p>
                     <div className="flex items-center gap-2">
@@ -791,17 +791,17 @@ export function VenueDetails() {
                           const lat = liveVenue.lat;
                           const lon = liveVenue.lng;
                           const name = encodeURIComponent(venueName);
-                          const yangoUrl = `yango://route?end-lat=${lat}&end-lon=${lon}&end-name=${name}`;
+                          const rideUrl = `uber://?action=setPickup&dropoff[latitude]=${lat}&dropoff[longitude]=${lon}&dropoff[nickname]=${name}`;
                           const fallbackUrl = `https://maps.google.com/?daddr=${lat},${lon}`;
                           const start = Date.now();
-                          window.location.href = yangoUrl;
+                          window.location.href = rideUrl;
                           setTimeout(() => {
                             if (Date.now() - start < 2000) window.open(fallbackUrl, '_blank');
                           }, 1500);
                         }}
                         className="flex items-center gap-1.5 bg-[#FF5A5F] text-white px-4 py-2 rounded-xl text-[13px] font-bold shadow-sm active:scale-95 transition-transform hover:bg-[#FF5A5F]/90"
                       >
-                        <Car size={13} /> Open in Yango
+                        <Car size={13} /> Open in App
                       </button>
                       <a
                         href={liveVenue?.lat != null && liveVenue?.lng != null ? `https://maps.google.com/?daddr=${liveVenue.lat},${liveVenue.lng}` : '#'}
@@ -838,9 +838,9 @@ export function VenueDetails() {
                     void recordVenueAddToPlan(venueId);
                     setLocation(`/plan/generate?${planParams().toString()}`);
                   }}
-                  className="text-[12px] font-bold text-primary"
+                  className="text-primary text-[13px] font-bold hover:underline"
                 >
-                  Plan full night →
+                  Plan full night
                 </button>
               </div>
 

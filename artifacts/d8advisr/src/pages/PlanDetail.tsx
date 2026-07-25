@@ -151,9 +151,9 @@ export function PlanDetail() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-foreground text-[14px]">Fund this in your Stash</p>
-                <p className="text-[12px] text-muted-foreground mt-0.5">Save $20/wk and cover this in ~6 weeks</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">Save a little each week to cover this</p>
               </div>
-              <span className="text-primary font-bold text-[13px] shrink-0">Set up →</span>
+              <span className="text-primary font-bold text-[13px] shrink-0">Set up</span>
             </button>
           )}
         </div>
@@ -168,7 +168,7 @@ export function PlanDetail() {
           onClick={() => setLocation('/tracker')}
           className="flex-1 bg-primary text-primary-foreground rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90"
         >
-          Let's Go! &rarr;
+          Let's Go!
         </button>
       </div>
 

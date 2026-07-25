@@ -229,7 +229,7 @@ const WHO_OPTIONS = [
   { label: 'Small Group', emoji: '👥', value: 'small' },
   { label: 'Group 5+', emoji: '🎉', value: 'large' },
 ];
-const BUDGET_STEPS = [25000, 50000, 75000, 100000, 150000, 200000, 300000];
+const BUDGET_STEPS = [25, 50, 75, 100, 150, 200, 300];
 
 function BuildAroundMode({
   anchorType,
@@ -360,7 +360,7 @@ function BuildAroundMode({
               <div className="flex items-baseline justify-between mb-3">
                 <h3 className="font-bold text-foreground text-[15px]">Budget per person</h3>
                 <span className="text-primary font-bold text-[15px]">
-                  ₦{BUDGET_STEPS[budgetIdx].toLocaleString()}
+                  ${BUDGET_STEPS[budgetIdx].toLocaleString()}
                 </span>
               </div>
               <input
@@ -372,8 +372,8 @@ function BuildAroundMode({
                 className="w-full accent-primary"
               />
               <div className="flex justify-between mt-1">
-                <span className="text-xs text-muted-foreground">₦{BUDGET_STEPS[0].toLocaleString()}</span>
-                <span className="text-xs text-muted-foreground">₦{BUDGET_STEPS[BUDGET_STEPS.length - 1].toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground">${BUDGET_STEPS[0].toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground">${BUDGET_STEPS[BUDGET_STEPS.length - 1].toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -506,13 +506,14 @@ function FullFormMode({ onGenerate }: { onGenerate: () => void }) {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget per person (₦)</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget per person ($)</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold text-sm">₦</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold text-sm">$</span>
                 <input
                   type="number"
-                  defaultValue={75000}
+                  defaultValue={75}
                   className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+                  placeholder="e.g. 75"
                 />
               </div>
             </div>
