@@ -192,3 +192,24 @@
     scrollbar-width: none;
   }
 }
+
+/* Custom Budget Slider Thumb */
+.budget-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #FF5A5F;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 90, 95, 0.4);
+}
+
+.budget-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #FF5A5F;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(255, 90, 95, 0.4);
+}

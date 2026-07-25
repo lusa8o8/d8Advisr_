@@ -249,15 +249,22 @@ export function InitialPreferences() {
                 </div>
               </div>
 
-              <input
-                type="range"
-                min="25"
-                max="500"
-                step="25"
-                value={budget}
-                onChange={e => setBudget(Number(e.target.value))}
-                className="w-full accent-primary h-2 rounded-lg appearance-none cursor-pointer"
-              />
+              <div className="relative w-full h-2 mt-1">
+                <div className="absolute inset-0 rounded-full bg-gray-200" />
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+                  style={{ width: `${((budget - 25) / (500 - 25)) * 100}%` }}
+                />
+                <input
+                  type="range"
+                  min="25"
+                  max="500"
+                  step="25"
+                  value={budget}
+                  onChange={e => setBudget(Number(e.target.value))}
+                  className="budget-slider absolute inset-0 w-full appearance-none bg-transparent cursor-pointer"
+                />
+              </div>
               <div className="flex justify-between text-xs text-muted-foreground font-medium mt-2">
                 <span>$25</span>
                 <span>$250</span>
@@ -380,7 +387,7 @@ export function InitialPreferences() {
                   Saving...
                 </span>
               ) : (
-                "Start Exploring →"
+                "Start Exploring"
               )}
             </button>
 
@@ -404,7 +411,7 @@ export function InitialPreferences() {
                 : "bg-border text-muted-foreground cursor-not-allowed"
             )}
           >
-            {step === 3 ? "Almost there →" : "Continue →"}
+            {step === 3 ? "Almost there" : "Continue"}
           </button>
         </div>
       )}
