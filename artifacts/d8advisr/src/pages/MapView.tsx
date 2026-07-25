@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
-import { AlertTriangle, Loader2, Search, Star } from 'lucide-react';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
+import { AlertTriangle, Crosshair, Loader2, Search, Star } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { BottomNav, FAB, cn } from '@/components/SharedUI';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -140,12 +141,15 @@ function GoogleVenueMap({
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerClassRef = useRef<typeof google.maps.marker.AdvancedMarkerElement | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
+  const userMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const selectionHandlerRef = useRef(onVenueSelect);
   const [mapGeneration, setMapGeneration] = useState(0);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error' | 'missing'>(
     hasGoogleMapsConfig() ? 'loading' : 'missing',
   );
   const [retryCount, setRetryCount] = useState(0);
+  const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null);
 
   useEffect(() => {
     selectionHandlerRef.current = onVenueSelect;
@@ -154,10 +158,18 @@ function GoogleVenueMap({
   useEffect(() => {
     let cancelled = false;
 
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+      clustererRef.current = null;
+    }
     markersRef.current.forEach(marker => {
       marker.map = null;
     });
     markersRef.current = [];
+    if (userMarkerRef.current) {
+      userMarkerRef.current.map = null;
+      userMarkerRef.current = null;
+    }
     markerClassRef.current = null;
     mapRef.current = null;
 
@@ -191,6 +203,32 @@ function GoogleVenueMap({
         markerClassRef.current = markerLibrary.AdvancedMarkerElement;
         setLoadState('ready');
         setMapGeneration(generation => generation + 1);
+
+        // Request user geolocation after map loads
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            pos => {
+              if (cancelled) return;
+              const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+              setUserLocation(loc);
+              const dot = document.createElement('div');
+              dot.style.cssText = 'position:relative;width:18px;height:18px';
+              dot.innerHTML = `
+                <span style="position:absolute;inset:0;border-radius:999px;background:#4285F4;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></span>
+                <span style="position:absolute;inset:-6px;border-radius:999px;background:#4285F4;opacity:0.25;animation:d8-pulse 2s ease-out infinite"></span>
+              `;
+              const userMarker = new markerLibrary.AdvancedMarkerElement({
+                map,
+                position: loc,
+                content: dot,
+                zIndex: 999,
+              });
+              userMarkerRef.current = userMarker;
+            },
+            () => { /* permission denied or error — silently skip */ },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+          );
+        }
       })
       .catch(error => {
         if (cancelled) return;
@@ -200,10 +238,18 @@ function GoogleVenueMap({
 
     return () => {
       cancelled = true;
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+        clustererRef.current = null;
+      }
       markersRef.current.forEach(marker => {
         marker.map = null;
       });
       markersRef.current = [];
+      if (userMarkerRef.current) {
+        userMarkerRef.current.map = null;
+        userMarkerRef.current = null;
+      }
       markerClassRef.current = null;
       mapRef.current = null;
     };
@@ -215,11 +261,17 @@ function GoogleVenueMap({
     if (!map || !AdvancedMarkerElement || loadState !== 'ready') return;
 
     map.setCenter(center);
+
+    // Clean up previous markers and clusterer
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+      clustererRef.current = null;
+    }
     markersRef.current.forEach(marker => {
       marker.map = null;
     });
 
-    markersRef.current = venues.map(venue => {
+    const newMarkers = venues.map(venue => {
       const marker = new AdvancedMarkerElement({
         map,
         position: { lat: venue.lat, lng: venue.lng },
@@ -229,8 +281,42 @@ function GoogleVenueMap({
       marker.addListener('click', () => selectionHandlerRef.current(venue.id));
       return marker;
     });
+    markersRef.current = newMarkers;
+
+    // Create clusterer with custom renderer matching D8 design
+    const clusterer = new MarkerClusterer({
+      map,
+      markers: newMarkers,
+      renderer: {
+        render({ count, position }) {
+          const el = document.createElement('div');
+          el.style.cssText = [
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'width:40px',
+            'height:40px',
+            'border:3px solid #fff',
+            'border-radius:999px',
+            'background:#FF5A5F',
+            'box-shadow:0 4px 12px rgba(0,0,0,.3)',
+            'color:#fff',
+            'font-size:14px',
+            'font-weight:700',
+            'cursor:pointer',
+          ].join(';');
+          el.textContent = String(count);
+          return new AdvancedMarkerElement({ position, content: el });
+        },
+      },
+    });
+    clustererRef.current = clusterer;
 
     return () => {
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+        clustererRef.current = null;
+      }
       markersRef.current.forEach(marker => {
         marker.map = null;
       });
@@ -238,8 +324,16 @@ function GoogleVenueMap({
     };
   }, [center, loadState, mapGeneration, venues]);
 
+  const handleRecenter = useCallback(() => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.panTo(userLocation);
+      mapRef.current.setZoom(15);
+    }
+  }, [userLocation]);
+
   return (
     <div className="absolute inset-0">
+      <style>{`@keyframes d8-pulse { 0% { transform:scale(1); opacity:0.25 } 100% { transform:scale(2.5); opacity:0 } }`}</style>
       <div ref={containerRef} className="h-full w-full" aria-label="D8Advisr venue map" />
 
       {loadState === 'loading' && (
@@ -276,6 +370,17 @@ function GoogleVenueMap({
             )}
           </div>
         </div>
+      )}
+
+      {userLocation && loadState === 'ready' && (
+        <button
+          type="button"
+          onClick={handleRecenter}
+          className="absolute bottom-6 left-6 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg border border-gray-200 text-gray-600 hover:text-primary transition-colors active:scale-95"
+          aria-label="Centre map on my location"
+        >
+          <Crosshair size={20} />
+        </button>
       )}
     </div>
   );
