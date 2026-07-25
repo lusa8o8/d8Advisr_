@@ -191,8 +191,8 @@ function GoogleVenueMap({
           mapId: GOOGLE_MAPS_MAP_ID,
           colorScheme:
             mapTheme === 'dark'
-              ? mapsLibrary.ColorScheme.DARK
-              : mapsLibrary.ColorScheme.LIGHT,
+              ? google.maps.ColorScheme.DARK
+              : google.maps.ColorScheme.LIGHT,
           clickableIcons: false,
           disableDefaultUI: true,
           gestureHandling: 'greedy',
@@ -273,12 +273,11 @@ function GoogleVenueMap({
 
     const newMarkers = venues.map(venue => {
       const marker = new AdvancedMarkerElement({
-        map,
         position: { lat: venue.lat, lng: venue.lng },
         title: venue.name,
         content: createMarkerContent(venue),
       });
-      marker.addListener('click', () => selectionHandlerRef.current(venue.id));
+      marker.addListener('gmp-click', () => selectionHandlerRef.current(venue.id));
       return marker;
     });
     markersRef.current = newMarkers;
