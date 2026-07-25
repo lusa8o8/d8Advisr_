@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Users, Plus } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
+import { useRegion } from "@/hooks/useRegion";
 
 export function CreateGroupPlan() {
   const [, setLocation] = useLocation();
+  const { activeRegion } = useRegion();
   const [occasion, setOccasion] = useState('Night Out');
 
   return (
@@ -75,8 +77,8 @@ export function CreateGroupPlan() {
             <div className="flex-1">
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Budget / Person</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold">$</span>
-                <input type="number" placeholder="50" className="w-full bg-card border border-border rounded-xl pl-8 pr-4 py-4 text-foreground font-semibold focus:outline-none shadow-sm" defaultValue={75} />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold">{activeRegion.currency_symbol}</span>
+                <input type="number" placeholder="e.g. 50" className="w-full bg-card border-2 border-border rounded-xl pl-10 pr-4 py-3.5 font-semibold text-foreground focus:outline-none focus:border-primary transition-colors" />
               </div>
             </div>
           </div>

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Save } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
+import { useRegion } from "@/hooks/useRegion";
 
 export function PreferenceEdit() {
   const [, setLocation] = useLocation();
+  const { formatPrice } = useRegion();
   const [budget, setBudget] = useState(150);
 
   const renderChips = (options: string[], defaultSelected: string[]) => {
@@ -65,9 +67,9 @@ export function PreferenceEdit() {
         </div>
 
         <div className="bg-card rounded-3xl p-6 border border-border shadow-sm">
-          <div className="flex justify-between items-start mb-6">
-            <h3 className="font-bold text-foreground text-[16px]">Default Budget</h3>
-            <span className="text-xl font-bold text-primary">${budget}</span>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-foreground">Target Amount</h3>
+            <span className="text-xl font-bold text-primary">{formatPrice(budget)}</span>
           </div>
           
           <input 
@@ -78,9 +80,9 @@ export function PreferenceEdit() {
             onChange={(e) => setBudget(Number(e.target.value))}
             className="w-full accent-primary h-2 bg-background rounded-lg appearance-none cursor-pointer"
           />
-          <div className="flex justify-between text-xs text-gray-400 font-medium mt-3">
-            <span>$25</span>
-            <span>$500+</span>
+          <div className="flex justify-between text-xs text-muted-foreground font-medium mt-3">
+            <span>{formatPrice(25)}</span>
+            <span>{formatPrice(500)}+</span>
           </div>
         </div>
 

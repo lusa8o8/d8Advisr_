@@ -163,7 +163,7 @@ export function ProfileOverview() {
             >
               <div className="flex items-center gap-4 text-foreground">
                 <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center text-[#00C851] border border-border">
-                  <span className="font-bold text-[18px]">$</span>
+                  <span className="font-bold text-[18px]">{activeRegion.currency_symbol}</span>
                 </div>
                 <span className="font-semibold text-[16px]">Budget & Sinking Fund</span>
               </div>

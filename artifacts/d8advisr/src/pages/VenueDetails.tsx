@@ -234,8 +234,8 @@ function categoryEmoji(category: string): string {
   return '📍';
 }
 
-function formatVenuePrice(venue: VenueRow | null): string {
-  if (venue?.avg_cost_pp) return `Est. K ${venue.avg_cost_pp.toLocaleString()}/pp`;
+function formatVenuePrice(venue: VenueRow | null, formatPriceFn: (amt: number) => string): string {
+  if (venue?.avg_cost_pp) return `Est. ${formatPriceFn(venue.avg_cost_pp)}/pp`;
   return venue?.price_tier ? venue.price_tier : 'Price varies';
 }
 
@@ -316,7 +316,7 @@ export function VenueDetails() {
   const venueEmoji = categoryEmoji(venueCategory);
   const venueRating = Number(liveVenue?.rating ?? 4.8);
   const venueReviewCount = liveVenue?.review_count ?? 324;
-  const venuePrice = formatVenuePrice(liveVenue);
+  const venuePrice = formatVenuePrice(liveVenue, (amt) => formatPrice(amt));
   const planParams = () => {
     const params = new URLSearchParams({
       venueId,

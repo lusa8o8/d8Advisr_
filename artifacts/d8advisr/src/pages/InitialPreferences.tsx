@@ -245,7 +245,7 @@ export function InitialPreferences() {
                   <p className="text-sm text-muted-foreground">Per night out, per person</p>
                 </div>
                 <div className="bg-[#FFF0F1] px-3 py-1.5 rounded-xl">
-                  <span className="text-xl font-black text-primary">${budget}</span>
+                  <span className="text-xl font-black text-primary">{formatPrice(budget)}</span>
                 </div>
               </div>
 
@@ -266,9 +266,9 @@ export function InitialPreferences() {
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground font-medium mt-2">
-                <span>$25</span>
-                <span>$250</span>
-                <span>$500+</span>
+                <span>{formatPrice(25)}</span>
+                <span>{formatPrice(250)}</span>
+                <span>{formatPrice(500)}+</span>
               </div>
             </div>
           </div>

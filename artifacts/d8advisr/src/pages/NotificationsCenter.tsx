@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Calendar, AlertCircle, Star, Users, MapPin, Check, Ticket, BellOff } from 'lucide-react';
+import { useRegion } from "@/hooks/useRegion";
 
 export function NotificationsCenter() {
   const [, setLocation] = useLocation();
+  const { formatPrice } = useRegion();
   const [dismissed, setDismissed] = useState<string[]>([]);
 
   function dismiss(id: string) {
@@ -86,7 +88,7 @@ export function NotificationsCenter() {
             <div className="pr-6 flex-1">
               <p className="font-extrabold text-foreground text-[16px] leading-tight mb-0.5">Matches your Date Night vibe</p>
               <p className="text-[14px] text-muted-foreground font-medium mb-2 leading-snug">
-                <span className="font-bold text-foreground">Rooftop Cinema: La La Land</span> — Sat, Oct 19 · 9:00 PM · Midtown rooftop venue · $18/pp.
+                <span className="font-bold text-foreground">Rooftop Cinema: La La Land</span> — Sat, Oct 19 · 9:00 PM · Midtown rooftop venue · {formatPrice(18)}/pp.
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <button

@@ -575,7 +575,7 @@ export function BudgetDashboard() {
                 </div>
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Goal ($)</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Goal ({activeRegion.currency_symbol})</label>
                     <input
                       type="number"
                       defaultValue={prefillGoal}
@@ -584,7 +584,7 @@ export function BudgetDashboard() {
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Auto-save /wk ($)</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Auto-save /wk ({activeRegion.currency_symbol})</label>
                     <input type="number" placeholder="20" className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary" />
                   </div>
                 </div>

@@ -140,7 +140,7 @@ export function PlanDetail() {
               </div>
               <div>
                 <p className="font-bold text-[#00C851] text-[14px] leading-tight">Stash fund created!</p>
-                <p className="text-[12px] text-[#00C851]/70 font-medium mt-0.5">Saving $20/wk for Date Night Downtown</p>
+                <p className="text-[12px] text-[#00C851]/70 font-medium mt-0.5">Saving {formatPrice(autoSave)}/wk for Date Night Downtown</p>
               </div>
             </div>
           ) : (
