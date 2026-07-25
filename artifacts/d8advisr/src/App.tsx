@@ -38,56 +38,23 @@ import { NotificationsCenter } from "@/pages/NotificationsCenter";
 import { AdminPanel } from "@/pages/AdminPanel";
 import { EventDetail } from "@/pages/EventDetail";
 import { VenueSubmit } from "@/pages/VenueSubmit";
-import { PartnerPortal } from "@/pages/PartnerPortal";
-import { PartnerDashboard } from "@/pages/PartnerDashboard";
-import { PartnerNotifications } from "@/pages/PartnerNotifications";
-import { PartnerEventEditor } from "@/pages/PartnerEventEditor";
-import { PartnerVenueEditor } from "@/pages/PartnerVenueEditor";
-import { PartnerSocialCompose } from "@/pages/PartnerSocialCompose";
 import { SavedPlans } from "@/pages/SavedPlans";
 import { PostDateReview } from "@/pages/PostDateReview";
 import { ReviewComplete } from "@/pages/ReviewComplete";
 import { Settings } from "@/pages/Settings";
-import { hasPartnerCapability, type PartnerCapability, type PartnerType } from "@/lib/partnerCapabilities";
-import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { authPathWithNext, getPostAuthRedirectPath, storeOAuthError } from "@/lib/authRedirect";
+import { getCurrentAccountContext } from "@workspace/d8-core/account-scope";
+import { redirectToPartner } from "@/lib/clientOrigins";
 
 const queryClient = new QueryClient();
 const PASSWORD_RECOVERY_KEY = 'd8advisr_password_recovery';
 
-// Redirect unauthenticated users to welcome screen
-function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, loading, isPasswordRecovery } = useAuth();
-  const [location, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!loading && isPasswordRecovery && location !== '/password/update') {
-      setLocation('/password/update');
-      return;
-    }
-    if (!loading && !user) setLocation(authPathWithNext('/signin', location));
-  }, [user, loading, isPasswordRecovery, location, setLocation]);
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) return null;
-  return <>{children}</>;
-}
-
-async function getScopedHome(userId: string) {
-  const { data, error } = await supabase.rpc('get_current_account_scope');
-  if (error && import.meta.env.DEV) {
-    console.warn('[D8 scope] Could not resolve account scope', { userId, error: error.message });
-  }
-
-  const scope = Array.isArray(data) ? data[0] : null;
-  return typeof scope?.home_path === 'string' ? scope.home_path : '/home';
+function LoadingScreen() {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-background">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 }
 
 async function hasCompletedConsumerOnboarding(userId: string) {
@@ -109,16 +76,16 @@ async function hasCompletedConsumerOnboarding(userId: string) {
 
 function ConsumerGuard({ children }: { children: ReactNode }) {
   const { user, loading, isPasswordRecovery } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminStatus();
   const [location, setLocation] = useLocation();
   const [checkingScope, setCheckingScope] = useState(true);
   const [allowed, setAllowed] = useState(false);
+  const [scopeError, setScopeError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
     async function checkScope() {
-      if (loading || adminLoading) return;
+      if (loading) return;
 
       if (isPasswordRecovery) {
         setLocation('/password/update');
@@ -130,16 +97,16 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (isAdmin) {
+      const context = await getCurrentAccountContext();
+      if (!active) return;
+
+      if (context.scope === 'admin') {
         setLocation('/admin');
         return;
       }
 
-      const destination = await getScopedHome(user.id);
-      if (!active) return;
-
-      if (destination !== '/home') {
-        setLocation(destination);
+      if (context.scope === 'partner') {
+        redirectToPartner(context.partnerStatus);
         return;
       }
 
@@ -157,17 +124,19 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
 
     setAllowed(false);
     setCheckingScope(true);
-    void checkScope();
+    setScopeError(null);
+    void checkScope().catch(error => {
+      if (!active) return;
+      setScopeError(error instanceof Error ? error.message : 'Could not resolve account access');
+      setCheckingScope(false);
+    });
 
     return () => { active = false; };
-  }, [adminLoading, isAdmin, isPasswordRecovery, loading, location, setLocation, user]);
+  }, [isPasswordRecovery, loading, location, setLocation, user]);
 
-  if (loading || adminLoading || checkingScope) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || checkingScope) return <LoadingScreen />;
+  if (scopeError) {
+    return <div className="flex-1 grid place-items-center p-6 text-sm text-red-600">{scopeError}</div>;
   }
 
   if (!allowed) return null;
@@ -176,171 +145,53 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
 
 function AdminGuard({ children }: { children: ReactNode }) {
   const { user, loading, isPasswordRecovery } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminStatus();
-  const [location, setLocation] = useLocation();
-  const checking = loading || adminLoading;
-  const allowed = Boolean(user && isAdmin);
-
-  useEffect(() => {
-    if (checking) return;
-    if (isPasswordRecovery) {
-      setLocation('/password/update');
-      return;
-    }
-    if (!user) {
-      setLocation(authPathWithNext('/signin', location));
-      return;
-    }
-    if (!allowed) {
-      void getScopedHome(user.id).then(destination => setLocation(destination));
-    }
-  }, [allowed, user, isPasswordRecovery, checking, location, setLocation]);
-
-  if (checking) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!allowed) return null;
-  return <>{children}</>;
-}
-
-// Partner application entry is explicit at /partner/apply; /partner itself is scoped.
-async function getPartnerApplication(userId: string) {
-  const { data, error } = await supabase
-    .from('partner_applications')
-    .select('id,status,partner_type')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (error && import.meta.env.DEV) {
-    console.warn('[D8 partner] Could not resolve partner application', { userId, error: error.message });
-  }
-
-  return error ? null : data;
-}
-
-function PartnerEntryGuard({
-  children,
-  allowNewApplication = false,
-}: {
-  children: ReactNode;
-  allowNewApplication?: boolean;
-}) {
-  const { user, loading: authLoading, isPasswordRecovery } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminStatus();
   const [location, setLocation] = useLocation();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
+  const [scopeError, setScopeError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    async function checkPartnerEntry() {
-      if (authLoading || adminLoading) return;
-
+    async function checkAdmin() {
+      if (loading) return;
       if (isPasswordRecovery) {
         setLocation('/password/update');
         return;
       }
-
       if (!user) {
         setLocation(authPathWithNext('/signin', location));
         return;
       }
 
-      if (isAdmin) {
-        setLocation('/admin');
-        return;
-      }
-
-      const application = await getPartnerApplication(user.id);
+      const context = await getCurrentAccountContext();
       if (!active) return;
-
-      if (application?.status === 'live') {
-        setLocation('/partner/dashboard');
-        return;
-      }
-
-      if (application) {
+      if (context.scope === 'admin') {
         setAllowed(true);
         setChecking(false);
-        return;
+      } else if (context.scope === 'partner') {
+        redirectToPartner(context.partnerStatus);
+      } else {
+        setLocation('/home');
       }
-
-      if (allowNewApplication) {
-        setAllowed(true);
-        setChecking(false);
-        return;
-      }
-
-      setLocation('/home');
     }
 
     setAllowed(false);
     setChecking(true);
-    void checkPartnerEntry();
+    setScopeError(null);
+    void checkAdmin().catch(error => {
+      if (!active) return;
+      setScopeError(error instanceof Error ? error.message : 'Could not resolve admin access');
+      setChecking(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user, isPasswordRecovery, loading, location, setLocation]);
 
-    return () => { active = false; };
-  }, [adminLoading, allowNewApplication, authLoading, isAdmin, isPasswordRecovery, location, setLocation, user]);
-
-  if (authLoading || adminLoading || checking) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!allowed) return null;
-  return <>{children}</>;
-}
-
-function PartnerGuard({
-  children,
-  capability,
-}: {
-  children: ReactNode;
-  capability?: PartnerCapability;
-}) {
-  const { user, loading: authLoading, isPasswordRecovery } = useAuth();
-  const [location, setLocation] = useLocation();
-  const [checking, setChecking] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (isPasswordRecovery) {
-      setLocation('/password/update');
-      return;
-    }
-    if (!user) { setLocation(authPathWithNext('/signin', location)); return; }
-
-    getPartnerApplication(user.id)
-      .then((data) => {
-        if (data?.status === 'live' && hasPartnerCapability(data.partner_type as PartnerType, capability)) {
-          setAllowed(true);
-        } else if (data?.status === 'live') {
-          setLocation('/partner/dashboard');
-        } else if (data) {
-          setLocation('/partner');
-        } else {
-          setLocation('/home');
-          return;
-        }
-        setChecking(false);
-      });
-  }, [user, authLoading, isPasswordRecovery, location, setLocation, capability]);
-
-  if (authLoading || checking) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || checking) return <LoadingScreen />;
+  if (scopeError) {
+    return <div className="flex-1 grid place-items-center p-6 text-sm text-red-600">{scopeError}</div>;
   }
 
   if (!allowed) return null;
@@ -432,23 +283,39 @@ function AuthCallback() {
 // Waits for auth to resolve, then sends logged-in users to their scoped home.
 function PublicOnlyRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminStatus();
   const [, setLocation] = useLocation();
+  const [checkingScope, setCheckingScope] = useState(false);
 
   useEffect(() => {
-    if (loading || adminLoading) return;
+    let active = true;
+    if (loading) return;
     if (!user) return;
-    if (isAdmin) { setLocation('/admin'); return; }
-    void getScopedHome(user.id).then(setLocation);
-  }, [user, loading, isAdmin, adminLoading, setLocation]);
 
-  if (loading || adminLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+    setCheckingScope(true);
+    void getCurrentAccountContext()
+      .then(context => {
+        if (!active) return;
+        if (context.scope === 'admin') {
+          setLocation('/admin');
+        } else if (context.scope === 'partner') {
+          redirectToPartner(context.partnerStatus);
+        } else {
+          setLocation('/home');
+        }
+      })
+      .catch(() => {
+        if (active) setLocation('/home');
+      })
+      .finally(() => {
+        if (active) setCheckingScope(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user, loading, setLocation]);
+
+  if (loading || checkingScope) return <LoadingScreen />;
 
   if (user) return null;
   return <>{children}</>;
@@ -489,33 +356,6 @@ function Router() {
       <Route path="/group/create"><ConsumerGuard><CreateGroupPlan /></ConsumerGuard></Route>
       <Route path="/notifications"><ConsumerGuard><NotificationsCenter /></ConsumerGuard></Route>
       <Route path="/admin"><AdminGuard><AdminPanel /></AdminGuard></Route>
-
-      {/* Partner application is explicit; /partner is a scoped partner landing route. */}
-      <Route path="/partner/apply">
-        <PartnerEntryGuard allowNewApplication><PartnerPortal /></PartnerEntryGuard>
-      </Route>
-      <Route path="/partner">
-        <PartnerEntryGuard><PartnerPortal /></PartnerEntryGuard>
-      </Route>
-      {/* Partner sub-routes — also require an existing partner_application record */}
-      <Route path="/partner/dashboard">
-        <PartnerGuard><PartnerDashboard /></PartnerGuard>
-      </Route>
-      <Route path="/partner/notifications">
-        <PartnerGuard><PartnerNotifications /></PartnerGuard>
-      </Route>
-      <Route path="/partner/event/new">
-        <PartnerGuard capability="events"><PartnerEventEditor /></PartnerGuard>
-      </Route>
-      <Route path="/partner/event/:id/edit">
-        <PartnerGuard capability="events"><PartnerEventEditor /></PartnerGuard>
-      </Route>
-      <Route path="/partner/venue/edit">
-        <PartnerGuard capability="venues"><PartnerVenueEditor /></PartnerGuard>
-      </Route>
-      <Route path="/partner/social/compose">
-        <PartnerGuard capability="events"><PartnerSocialCompose /></PartnerGuard>
-      </Route>
 
       <Route path="/review/complete"><ConsumerGuard><ReviewComplete /></ConsumerGuard></Route>
       <Route path="/review"><ConsumerGuard><PostDateReview /></ConsumerGuard></Route>

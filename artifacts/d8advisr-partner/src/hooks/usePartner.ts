@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { DemandSignal, PartnerEvent, ListingStatus, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@/lib/types';
-import { canManageEvents, canManageVenues, type PartnerType } from '@/lib/partnerCapabilities';
+import { supabase } from '@workspace/d8-core/supabase';
+import type { DemandSignal, PartnerEvent, ListingStatus, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@workspace/d8-core/types';
+import { canManageEvents, canManageVenues, type PartnerType } from '@workspace/d8-core/partner-capabilities';
 
 export interface PartnerProfile {
   id: string;

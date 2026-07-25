@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ChevronRight, Check, Loader2, AlertCircle, XCircle } from 'lucide-react';
-import { cn } from '@/components/SharedUI';
+import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
-import { useAdminStatus } from '@/hooks/useAdminStatus';
-import { useRegion } from '@/hooks/useRegion';
+import { useRegion } from '@workspace/d8-core/use-region';
 
 type PartnerType = 'venue' | 'organizer' | 'both';
 
@@ -32,7 +31,6 @@ const TYPE_OPTIONS: { value: PartnerType; label: string; desc: string; emoji: st
 export function PartnerPortal() {
   const [, setLocation] = useLocation();
   const { profile, loading, applyAsPartner } = usePartner();
-  const { isAdmin, loading: adminLoading } = useAdminStatus();
   const { regions } = useRegion();
   const [step, setStep] = useState<1 | 2>(1);
   const [type, setType] = useState<PartnerType | null>(null);
@@ -43,26 +41,18 @@ export function PartnerPortal() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (loading || adminLoading) return;
-    if (isAdmin) {
-      setLocation('/admin');
-      return;
-    }
+    if (loading) return;
     if (profile?.status === 'live') {
-      setLocation('/partner/dashboard');
+      setLocation('/dashboard');
     }
-  }, [adminLoading, isAdmin, loading, profile?.status, setLocation]);
+  }, [loading, profile?.status, setLocation]);
 
-  if (loading || adminLoading) {
+  if (loading) {
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center bg-white">
         <Loader2 size={24} className="text-primary animate-spin" />
       </div>
     );
-  }
-
-  if (isAdmin) {
-    return null;
   }
 
   if (profile?.status === 'live') {
@@ -121,7 +111,7 @@ export function PartnerPortal() {
     setSubmitError(null);
     try {
       await applyAsPartner({ name: name.trim(), partner_type: type, city, contact: contact.trim() });
-      setLocation('/partner');
+      setLocation('/');
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
       setSubmitting(false);

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
-import { cn } from '@/components/SharedUI';
+import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
-import { useRegion } from '@/hooks/useRegion';
+import { useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
@@ -152,7 +152,7 @@ export function PartnerVenueEditor() {
         images: imageUrls,
       });
       setSaved(true);
-      setTimeout(() => setLocation('/partner/dashboard'), 1200);
+      setTimeout(() => setLocation('/dashboard'), 1200);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Failed to save venue. Please try again.');
       setSaving(false);
@@ -183,7 +183,7 @@ export function PartnerVenueEditor() {
 
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0">
         <button
-          onClick={() => setLocation('/partner/dashboard')}
+          onClick={() => setLocation('/dashboard')}
           className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-4 active:scale-95 transition-transform"
         >
           <ArrowLeft size={18} />
@@ -437,7 +437,7 @@ export function PartnerVenueEditor() {
           {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : 'Save changes'}
         </button>
         <button
-          onClick={() => setLocation('/partner/dashboard')}
+          onClick={() => setLocation('/dashboard')}
           className="w-full py-3 rounded-xl font-bold text-[14px] bg-gray-100 text-gray-600 active:scale-[0.98] hover:bg-gray-200 transition-all"
         >
           Cancel

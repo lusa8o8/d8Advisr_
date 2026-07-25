@@ -1,44 +1,117 @@
 # D8Advisr
 
-D8Advisr is a Vite/React app backed by Supabase and deployed to Vercel.
+D8Advisr is a pnpm monorepo containing separate Vite/React clients backed by
+one Supabase project.
 
-## Local Development
+## Client architecture
+
+| Package | Purpose | Suggested production origin |
+| --- | --- | --- |
+| `artifacts/d8advisr` | Consumer experience and the seeded-admin console | `https://d8advisr.com` |
+| `artifacts/d8advisr-partner` | Partner application, venue, and event tools | `https://partner.d8advisr.com` |
+| `lib/d8-core` | Shared Supabase client, auth state, account context, and domain types | Not deployed |
+
+Admin remains in the consumer client. Access is decided by the server-backed
+`profiles.is_admin` flag; there is no UI flow that can create or promote an
+admin. Partner capability checks remain enforced by PostgreSQL/RLS as well as
+the partner client.
+
+The database returns account identity through
+`get_current_account_context()`. Each client owns its own URL decisions, so the
+database no longer routes users to consumer or partner paths.
+
+## Local development
+
+Install dependencies and copy the environment examples:
 
 ```bash
 pnpm install
-pnpm --filter @workspace/d8advisr run dev
+copy .env.example .env
+copy artifacts\d8advisr-partner\.env.example artifacts\d8advisr-partner\.env
 ```
 
-Copy `.env.example` to a local `.env` file or configure the same variables in Vercel:
+Use the same `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in both env
+files, then run the clients in separate terminals:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-- `VITE_AUTH_REDIRECT_ORIGIN` optionally pins Supabase auth callbacks to a public origin for production or mobile testing. Leave unset for normal localhost desktop development.
-- `VITE_ADMIN_EMAILS` as a comma-separated list for `/admin` access
-- `DEV_ALLOWED_HOSTS` if you need Vite dev/preview access from a LAN hostname
+```bash
+pnpm dev:consumer
+pnpm dev:partner
+```
 
-Do not commit real `.env` files. Supabase anon keys are public runtime keys, but keeping environment-specific values out of source avoids accidental project coupling and rotation mistakes.
+The defaults are consumer on `http://localhost:3000` and partner on
+`http://localhost:3001`.
+
+Important client variables:
+
+- Consumer: `VITE_PARTNER_ORIGIN` and, for OAuth, `VITE_AUTH_REDIRECT_ORIGIN`.
+- Partner: `VITE_CONSUMER_ORIGIN` and `VITE_AUTH_REDIRECT_ORIGIN`.
+- Both: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and optionally
+  `DEV_ALLOWED_HOSTS`.
+
+Do not commit real `.env` files.
 
 ## Deployment
 
-The root `vercel.json` builds the frontend from `artifacts/d8advisr` and serves `artifacts/d8advisr/dist/public`.
+Create two Vercel projects from this repository:
 
-If the Express API artifact is deployed separately, set `ALLOWED_ORIGINS` to the exact production frontend origins. Without that variable, CORS only allows local development origins.
+1. Consumer: repository root `.` using the root `vercel.json`.
+2. Partner: root directory `artifacts/d8advisr-partner` using that package's
+   `vercel.json`. Enable Vercel's option to include source files outside the
+   root directory because the app imports `lib/d8-core` and uses the workspace
+   lockfile.
 
-For Google/Supabase OAuth, add the matching callback URLs in Supabase Auth settings, for example:
+Set the same Supabase public variables in both projects. Set the consumer
+project's `VITE_PARTNER_ORIGIN` to the partner domain, and set the partner
+project's `VITE_CONSUMER_ORIGIN` to the consumer domain. Each project's
+`VITE_AUTH_REDIRECT_ORIGIN` must be its own public origin.
 
-- `https://your-production-domain.com/auth/callback`
-- `http://localhost:3000/auth/callback`
-- your tunnel or LAN testing origin if testing OAuth from a phone
+Add both origins to Supabase Auth URL configuration:
+
+- `https://d8advisr.com/auth/callback`
+- `https://d8advisr.com/password/update`
+- `https://partner.d8advisr.com/auth/callback`
+- `https://partner.d8advisr.com/password/update`
+
+Supabase browser sessions use origin-scoped storage, so signing into one
+subdomain does not automatically sign the browser into the other. Account
+classification still prevents a signed-in consumer, partner, or admin from
+using the wrong client.
+
+The checked-in `vercel-partner.json` is available for CLI deployments initiated
+from the repository root; dashboard deployments should use the partner package
+as their root.
 
 ## Supabase
 
-Schema migrations live in `supabase/migrations`.
-
-Apply migrations with the Supabase CLI after logging in and linking the project:
+The CLI configuration and migrations live in `supabase/`. Local services
+require Docker:
 
 ```bash
+supabase start
+supabase db reset
+```
+
+Linking or pushing to the hosted project is a separate production action:
+
+```bash
+supabase link --project-ref <project-ref>
 supabase db push
 ```
 
-Partner venue/event writes require a `partner_applications.status` of `live`. Users can create and update their own application details, but cannot self-approve through the public client.
+The route-neutral account-context migration must be applied before the split
+clients are released. The shared client temporarily falls back to the legacy
+RPC so deployment can be staged safely.
+
+To replace the Supabase project URL shown during Google OAuth, configure a
+Supabase custom domain (for example `auth.d8advisr.com`), add its callback URL
+to the Google OAuth application, and use that custom URL as
+`VITE_SUPABASE_URL`. This is an infrastructure setting, not a client-side
+branding change.
+
+## Verification
+
+```bash
+pnpm run typecheck
+pnpm --filter @workspace/d8advisr run build
+pnpm --filter @workspace/d8advisr-partner run build
+```

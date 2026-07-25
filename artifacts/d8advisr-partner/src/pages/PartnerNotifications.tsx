@@ -1,6 +1,6 @@
 import { ArrowLeft, Bell, CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { cn } from '@/components/SharedUI';
+import { cn } from '@/lib/utils';
 import { usePartnerNotifications, type PartnerNotification } from '@/hooks/usePartnerNotifications';
 
 function formatTime(value: string) {
@@ -32,7 +32,7 @@ export function PartnerNotifications() {
       <div className="bg-[#111] px-5 pt-12 pb-5 shrink-0">
         <div className="flex items-center justify-between mb-5">
           <button
-            onClick={() => setLocation('/partner/dashboard')}
+            onClick={() => setLocation('/dashboard')}
             className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-95 transition-transform"
           >
             <ArrowLeft size={18} />

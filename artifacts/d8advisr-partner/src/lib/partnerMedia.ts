@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@workspace/d8-core/supabase';
 
 export type PartnerMediaScope = 'events' | 'venues';
 

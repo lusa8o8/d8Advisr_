@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2 } from 'lucide-react';
-import { cn } from '@/components/SharedUI';
+import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
-import { useRegion } from '@/hooks/useRegion';
+import { useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
@@ -184,7 +184,7 @@ export function PartnerEventEditor() {
         images: imageUrls,
       }, editId);
       setSaved(true);
-      setTimeout(() => setLocation('/partner/dashboard'), 1200);
+      setTimeout(() => setLocation('/dashboard'), 1200);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Failed to save event. Please try again.');
       setSaving(false);
@@ -211,7 +211,7 @@ export function PartnerEventEditor() {
 
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0">
         <button
-          onClick={() => setLocation('/partner/dashboard')}
+          onClick={() => setLocation('/dashboard')}
           className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-4 active:scale-95 transition-transform"
         >
           <ArrowLeft size={18} />

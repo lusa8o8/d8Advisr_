@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
 import { supabase } from "@/lib/supabase";
+import { getPartnerOrigin } from "@/lib/clientOrigins";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface PaymentMethod {
@@ -459,7 +460,7 @@ export function Settings() {
           icon={<Store size={16} className="text-primary" />}
           label="Become a D8 Partner"
           value="List your venue or events on D8Advisr"
-          onClick={() => setLocation('/partner/apply')}
+          onClick={() => window.location.assign(getPartnerOrigin())}
           border={false}
         />
       </Section>

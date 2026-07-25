@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { Database } from '@/lib/supabase';
+import { supabase } from '@workspace/d8-core/supabase';
+import type { Database } from '@workspace/d8-core/supabase';
 
 export type PartnerNotification = Database['public']['Tables']['partner_notifications']['Row'];
 

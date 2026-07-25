@@ -4,17 +4,17 @@ import {
   Plus, ChevronRight, AlertCircle, CheckCircle,
   Clock, Pause, Users, Edit3, Bell, Loader2, LogOut,
 } from 'lucide-react';
-import { cn } from '@/components/SharedUI';
-import type { PartnerEvent } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import type { PartnerEvent } from '@workspace/d8-core/types';
 import {
   LISTING_STATUS_PILL as STATUS_PILL,
   EVENT_STATUS_PILL,
   FREQ_LABEL,
-} from '@/lib/constants';
+} from '@workspace/d8-core/constants';
 import { usePartner } from '@/hooks/usePartner';
 import { usePartnerNotifications } from '@/hooks/usePartnerNotifications';
-import { canManageEvents, canManageVenues } from '@/lib/partnerCapabilities';
-import { useAuth } from '@/context/AuthContext';
+import { canManageEvents, canManageVenues } from '@workspace/d8-core/partner-capabilities';
+import { useAuth } from '@workspace/d8-core/auth';
 
 function SpotsBar({ filled, total }: { filled: number; total: number }) {
   const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
@@ -97,7 +97,7 @@ export function PartnerDashboard() {
   }
 
   if (!profile) {
-    setLocation('/partner');
+    setLocation('/');
     return null;
   }
 
@@ -143,7 +143,7 @@ export function PartnerDashboard() {
         <div className="flex items-center justify-end mb-3">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setLocation('/partner/notifications')}
+              onClick={() => setLocation('/notifications')}
               className="relative w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-95 transition-transform"
               aria-label="Partner notifications"
             >
@@ -163,7 +163,7 @@ export function PartnerDashboard() {
             </button>
             {canCreateEvents && (
               <button
-                onClick={() => setLocation('/partner/event/new')}
+                onClick={() => setLocation('/event/new')}
                 className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3.5 py-2 rounded-full active:scale-95 transition-transform"
               >
                 <Plus size={13} /> Add event
@@ -230,7 +230,7 @@ export function PartnerDashboard() {
                 )}
               </div>
               <button
-                onClick={() => setLocation('/partner/venue/edit')}
+                onClick={() => setLocation('/venue/edit')}
                 className="mt-3 text-[12px] font-bold text-primary"
               >
                 {venueListingCopy.action}
@@ -361,7 +361,7 @@ export function PartnerDashboard() {
           <div className="flex items-center justify-between mb-3 px-1">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Your events</p>
             <button
-              onClick={() => setLocation('/partner/event/new')}
+              onClick={() => setLocation('/event/new')}
               className="text-[12px] font-bold text-primary flex items-center gap-1"
             >
               <Plus size={13} /> New event
@@ -373,7 +373,7 @@ export function PartnerDashboard() {
               <p className="text-gray-400 text-[14px] font-medium">No events yet</p>
               <p className="text-gray-300 text-[12px] mt-1">Add an event to start appearing in user plans</p>
               <button
-                onClick={() => setLocation('/partner/event/new')}
+                onClick={() => setLocation('/event/new')}
                 className="mt-4 bg-primary text-white text-[13px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 mx-auto active:scale-95 transition-transform"
               >
                 <Plus size={14} /> Add your first event
@@ -472,7 +472,7 @@ export function PartnerDashboard() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setLocation(`/partner/event/${event.id}/edit`)}
+                      onClick={() => setLocation(`/event/${event.id}/edit`)}
                       className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
                     >
                       <Edit3 size={13} /> Edit
@@ -532,7 +532,7 @@ export function PartnerDashboard() {
           {canEditVenue && (
             <button
               className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors active:bg-gray-100"
-              onClick={() => setLocation('/partner/venue/edit')}
+              onClick={() => setLocation('/venue/edit')}
             >
               <div>
                 <p className="font-semibold text-gray-800 text-[13px]">Edit venue details</p>
@@ -547,7 +547,7 @@ export function PartnerDashboard() {
                 "w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors active:bg-gray-100",
                 canEditVenue && "border-t border-gray-50"
               )}
-              onClick={() => setLocation('/partner/event/new')}
+              onClick={() => setLocation('/event/new')}
             >
               <div>
                 <p className="font-semibold text-gray-800 text-[13px]">Add a recurring activity</p>

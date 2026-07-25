@@ -8,7 +8,7 @@ export function PartnerSocialCompose() {
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar">
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0">
         <button
-          onClick={() => setLocation('/partner/dashboard')}
+          onClick={() => setLocation('/dashboard')}
           className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-4 active:scale-95 transition-transform"
           aria-label="Back to partner dashboard"
         >
@@ -31,7 +31,7 @@ export function PartnerSocialCompose() {
             Social channel connections and posting are disabled in this version.
           </p>
           <button
-            onClick={() => setLocation('/partner/dashboard')}
+            onClick={() => setLocation('/dashboard')}
             className="mt-5 bg-primary text-white text-[13px] font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
           >
             Back to dashboard
