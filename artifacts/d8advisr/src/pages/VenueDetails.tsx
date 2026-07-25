@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket,
@@ -10,6 +10,66 @@ import { useDemandSignals } from "@/hooks/useDemandSignals";
 import { useVenueEvents } from "@/hooks/useVenues";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/supabase";
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+
+const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+const GMAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID?.trim();
+
+let loaderConfigured = false;
+function ensureLoaderConfigured() {
+  if (loaderConfigured || !GMAPS_KEY || !GMAPS_MAP_ID) return;
+  setOptions({ key: GMAPS_KEY, v: 'weekly', authReferrerPolicy: 'origin', mapIds: [GMAPS_MAP_ID] });
+  loaderConfigured = true;
+}
+
+function VenueLocationMap({ lat, lng, emoji }: { lat: number; lng: number; emoji: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!GMAPS_KEY || !GMAPS_MAP_ID) return;
+    ensureLoaderConfigured();
+
+    void Promise.all([importLibrary('maps'), importLibrary('marker')])
+      .then(([mapsLib, markerLib]) => {
+        if (cancelled || !containerRef.current) return;
+        const map = new mapsLib.Map(containerRef.current, {
+          center: { lat, lng },
+          zoom: 15,
+          mapId: GMAPS_MAP_ID,
+          disableDefaultUI: true,
+          zoomControl: false,
+          gestureHandling: 'none',
+          clickableIcons: false,
+          keyboardShortcuts: false,
+        });
+        const pin = document.createElement('div');
+        pin.style.cssText = 'display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:3px solid #fff;border-radius:999px;background:#FF5A5F;box-shadow:0 4px 12px rgba(0,0,0,.3);font-size:18px;line-height:1';
+        pin.textContent = emoji;
+        new markerLib.AdvancedMarkerElement({ map, position: { lat, lng }, content: pin });
+        setReady(true);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [lat, lng, emoji]);
+
+  return (
+    <div className="rounded-3xl overflow-hidden h-44 mb-5 relative shadow-sm border border-border">
+      <div ref={containerRef} className="h-full w-full" />
+      {!ready && (
+        <div className="absolute inset-0 bg-muted grid place-items-center">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-primary shadow-lg flex items-center justify-center">
+              <span className="text-white text-lg">{emoji}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type VenueRow = Database['public']['Tables']['venues']['Row'];
 
@@ -671,25 +731,16 @@ export function VenueDetails() {
         {activeTab === 'Location' && (
           <div className="animate-in fade-in slide-in-from-bottom-2">
 
-            <div className="rounded-3xl overflow-hidden h-44 mb-5 relative shadow-sm border border-border">
-              <img
-                src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=700&h=300&fit=crop&auto=format"
-                alt="Map"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-primary shadow-lg flex items-center justify-center">
-                    <MapPin size={18} className="text-white fill-white" />
-                  </div>
-                  <div className="w-2 h-2 bg-primary/40 rounded-full mt-0.5 blur-sm" />
+            {liveVenue?.lat != null && liveVenue?.lng != null ? (
+              <VenueLocationMap lat={liveVenue.lat} lng={liveVenue.lng} emoji="📍" />
+            ) : (
+              <div className="rounded-3xl overflow-hidden h-44 mb-5 relative shadow-sm border border-border bg-muted grid place-items-center">
+                <div className="flex flex-col items-center gap-2">
+                  <MapPin size={24} className="text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-medium">Location not available</p>
                 </div>
               </div>
-              <button className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-foreground text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform">
-                <Navigation size={11} className="text-primary" /> Open in Maps
-              </button>
-            </div>
+            )}
 
             <div className="bg-card rounded-2xl p-4 border border-border shadow-sm mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -697,8 +748,8 @@ export function VenueDetails() {
                   <MapPin size={18} />
                 </div>
                 <div>
-                  <p className="font-bold text-foreground text-[14px]">123 Main St</p>
-                  <p className="text-[12px] text-muted-foreground font-medium">Downtown District · 1.2 mi away</p>
+                  <p className="font-bold text-foreground text-[14px]">{liveVenue?.address || liveVenue?.name || 'Address not available'}</p>
+                  <p className="text-[12px] text-muted-foreground font-medium">{liveVenue?.area || liveVenue?.city || ''}</p>
                 </div>
               </div>
               <button className="w-9 h-9 rounded-xl bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
@@ -738,8 +789,9 @@ export function VenueDetails() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          const lat = 6.4550;
-                          const lon = 3.3841;
+                          if (liveVenue?.lat == null || liveVenue?.lng == null) return;
+                          const lat = liveVenue.lat;
+                          const lon = liveVenue.lng;
                           const name = encodeURIComponent(venueName);
                           const yangoUrl = `yango://route?end-lat=${lat}&end-lon=${lon}&end-name=${name}`;
                           const fallbackUrl = `https://maps.google.com/?daddr=${lat},${lon}`;
@@ -754,7 +806,7 @@ export function VenueDetails() {
                         <Car size={13} /> Open in Yango
                       </button>
                       <a
-                        href="https://maps.google.com/?daddr=6.4550,3.3841"
+                        href={liveVenue?.lat != null && liveVenue?.lng != null ? `https://maps.google.com/?daddr=${liveVenue.lat},${liveVenue.lng}` : '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-2"
