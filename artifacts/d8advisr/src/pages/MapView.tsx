@@ -21,6 +21,10 @@ type MappedVenue = {
   category: string | null;
   lat: number;
   lng: number;
+  rating: number | null;
+  reviewCount: number | null;
+  priceTier: string | null;
+  area: string | null;
 };
 
 function hasGoogleMapsConfig() {
@@ -283,6 +287,7 @@ export function MapView() {
   const { activeRegion } = useRegion();
   const { venues } = useVenues(activeRegion.id);
   const mapTheme = useMapTheme();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const mappedVenues = useMemo<MappedVenue[]>(
     () => (venues ?? [])
@@ -296,9 +301,21 @@ export function MapView() {
         category: venue.category,
         lat: venue.lat,
         lng: venue.lng,
+        rating: typeof (venue as any).rating === 'number' ? (venue as any).rating : null,
+        reviewCount: typeof (venue as any).review_count === 'number' ? (venue as any).review_count : null,
+        priceTier: (venue as any).price_tier ?? null,
+        area: (venue as any).area ?? null,
       })),
     [venues],
   );
+
+  const filteredVenues = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return mappedVenues;
+    return mappedVenues.filter(
+      v => v.name.toLowerCase().includes(q) || (v.category ?? '').toLowerCase().includes(q),
+    );
+  }, [mappedVenues, searchQuery]);
 
   const mapCenter = useMemo<google.maps.LatLngLiteral>(() => {
     if (mappedVenues.length === 0) return DEFAULT_MAP_CENTER;
@@ -332,7 +349,7 @@ export function MapView() {
       <GoogleVenueMap
         center={mapCenter}
         mapTheme={mapTheme}
-        venues={mappedVenues}
+        venues={filteredVenues}
         onVenueSelect={setSelectedVenueId}
       />
 
@@ -399,8 +416,20 @@ export function MapView() {
           <input
             type="text"
             placeholder="Search this area..."
-            className="w-full text-sm font-medium text-foreground focus:outline-none"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full text-sm font-medium text-foreground placeholder:text-gray-400 focus:outline-none"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="shrink-0 rounded-full p-1 text-gray-400 hover:text-foreground transition-colors"
+              aria-label="Clear search"
+            >
+              <span className="block h-4 w-4 leading-none text-center text-sm">×</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -435,13 +464,13 @@ export function MapView() {
               </h3>
               <div className="mb-1.5 flex items-center gap-1 text-xs text-muted-foreground">
                 <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
-                <span className="font-bold text-foreground">4.8</span>
-                <span>(124)</span>
+                <span className="font-bold text-foreground">{selectedVenue.rating?.toFixed(1) ?? '—'}</span>
+                <span>({selectedVenue.reviewCount ?? 0})</span>
                 <span className="mx-1">•</span>
-                <span className="font-bold text-primary">$$$</span>
+                <span className="font-bold text-primary">{selectedVenue.priceTier || '—'}</span>
               </div>
               <p className="truncate text-xs text-gray-500">
-                {selectedVenue.category || 'Venue'} • {activeRegion.name}
+                {selectedVenue.category || 'Venue'} • {selectedVenue.area || activeRegion.name}
               </p>
             </div>
           </div>
