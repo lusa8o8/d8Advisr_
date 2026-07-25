@@ -20,7 +20,7 @@ const AVATARS = [
 export function ProfileOverview() {
   const [, setLocation] = useLocation();
   const { displayName, avatarUrl, profile } = useProfile();
-  const { formatPrice } = useRegion();
+  const { formatPrice, activeRegion } = useRegion();
   const [avatar, setAvatar] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 

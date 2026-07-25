@@ -401,7 +401,8 @@ function BuildAroundMode({
 // ─── Full blank form mode ────────────────────────────────────────────────────
 
 function FullFormMode({ onGenerate }: { onGenerate: () => void }) {
-  const [type, setType] = useState<'solo' | 'group'>('solo');
+  const { activeRegion } = useRegion();
+  const [type, setType] = useState<'solo' | 'couple' | 'group'>('couple');
   const [occasion, setOccasion] = useState('Date Night');
   const [mood, setMood] = useState('Romantic');
 

@@ -51,7 +51,7 @@ const VIBE_CHIPS = [
 
 export function InitialPreferences() {
   const { user } = useAuth();
-  const { regions } = useRegion();
+  const { regions, formatPrice } = useRegion();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);

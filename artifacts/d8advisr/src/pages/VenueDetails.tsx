@@ -459,7 +459,7 @@ export function VenueDetails() {
           {['Overview', 'Events', 'Reviews', 'Location'].map(tab => (
             <button 
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTab(tab as 'Overview' | 'Events' | 'Reviews' | 'Location')}
               className={cn(
                 "flex-1 pb-4 font-semibold text-[13px] relative transition-colors",
                 activeTab === tab ? "text-primary" : "text-muted-foreground hover:text-foreground"
