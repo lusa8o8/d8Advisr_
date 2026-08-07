@@ -10,8 +10,8 @@ export function Welcome() {
       {/* Left side (Desktop only) */}
       <div className="hidden lg:flex flex-1 relative bg-zinc-900 overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1559311648-d46f5d8593d6?w=1200&h=1600&fit=crop"
-          alt="Couple dining"
+          src="/images/landing-1.jpg"
+          alt="African youth culture"
           className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
