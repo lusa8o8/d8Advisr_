@@ -65,7 +65,14 @@ both projects because they import `lib/d8-core` and use the workspace lockfile.
 Set the same Supabase public variables in both projects. Set the consumer
 project's `VITE_PARTNER_ORIGIN` to the partner domain, and set the partner
 project's `VITE_CONSUMER_ORIGIN` to the consumer domain. Each project's
-`VITE_AUTH_REDIRECT_ORIGIN` must be its own public origin.
+`VITE_AUTH_REDIRECT_ORIGIN` must be its own public origin, entered once as a
+single-line value with no path:
+
+- Consumer: `https://d8advisr.com`
+- Partner: `https://partner.d8advisr.com`
+
+Configure these values separately for Production, Preview, and Development in
+Vercel. Do not paste multiple environment values into one field.
 
 Add both origins to Supabase Auth URL configuration:
 

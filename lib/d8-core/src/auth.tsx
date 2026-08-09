@@ -32,7 +32,12 @@ function getAppRedirectUrl(path: string) {
 }
 
 function getBasePath() {
-  return import.meta.env.BASE_URL.replace(/\/$/, '');
+  const baseUrl = import.meta.env.BASE_URL;
+  if (!baseUrl.startsWith('/') || baseUrl.startsWith('//')) {
+    console.warn('[D8 auth] Invalid Vite base path; falling back to the origin root');
+    return '';
+  }
+  return baseUrl.replace(/\/$/, '');
 }
 
 function getRedirectOrigin() {
@@ -42,11 +47,28 @@ function getRedirectOrigin() {
 
   if (configuredOrigin) {
     try {
-      redirectOrigin = new URL(configuredOrigin).origin;
-    } catch {
-      if (import.meta.env.DEV) {
-        console.warn('[D8 auth] Invalid VITE_AUTH_REDIRECT_ORIGIN; falling back to current origin');
+      if (/\s/.test(configuredOrigin)) throw new Error('Origin cannot contain whitespace');
+
+      const parsedOrigin = new URL(configuredOrigin);
+      const isBareOrigin = parsedOrigin.pathname === '/'
+        && !parsedOrigin.search
+        && !parsedOrigin.hash
+        && !parsedOrigin.username
+        && !parsedOrigin.password;
+
+      if (!isBareOrigin) throw new Error('Origin cannot contain a path or credentials');
+
+      const canonicalOrigins = new Set([
+        'https://d8advisr.com',
+        'https://partner.d8advisr.com',
+      ]);
+      if (canonicalOrigins.has(fallbackOrigin) && parsedOrigin.origin !== fallbackOrigin) {
+        throw new Error('Canonical deployments must redirect to their current origin');
       }
+
+      redirectOrigin = parsedOrigin.origin;
+    } catch {
+      console.warn('[D8 auth] Invalid VITE_AUTH_REDIRECT_ORIGIN; falling back to current origin');
     }
   }
 
