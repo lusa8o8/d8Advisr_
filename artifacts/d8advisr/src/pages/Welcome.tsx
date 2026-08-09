@@ -44,9 +44,12 @@ export function Welcome() {
             </div>
           </div>
 
-          <h1 className="text-[1.35rem] text-muted-foreground text-center font-medium leading-[1.6] px-2 mb-12">
+          <h1 className="text-[1.35rem] text-muted-foreground text-center font-medium leading-[1.6] px-2 mb-4 lg:mb-12">
             Plan unforgettable dates & group experiences <span className="text-primary">— effortlessly.</span>
           </h1>
+          <p className="text-sm text-muted-foreground text-center px-4 mb-12 lg:hidden">
+            D8Advisr is a social planning platform that helps you discover curated venues and events, build itineraries, and manage budgets for group outings.
+          </p>
         </div>
         
         <div className="w-full flex flex-col gap-4 mb-6 z-10 shrink-0">
