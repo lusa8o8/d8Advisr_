@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@workspace/d8-core/auth';
 import { authPathWithNext, consumeOAuthError, getSafeNextPath } from '@workspace/d8-core/auth-redirect';
 import { AccountLegalNotice, LegalLinks } from '@workspace/d8-core/legal';
+import { AuthLayout } from '@workspace/d8-core/ui/auth-layout';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -59,34 +60,29 @@ export function SignUp() {
 
   if (confirmSent) {
     return (
-      <div className="flex-1 min-h-0 bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-20 h-20 rounded-full bg-[#E8FFF0] flex items-center justify-center mb-6">
-          <span className="text-4xl">📬</span>
+      <AuthLayout>
+        <div className="w-full max-w-sm flex flex-col items-center justify-center p-6 mt-12">
+          <div className="w-20 h-20 rounded-full bg-[#E8FFF0] flex items-center justify-center mb-6">
+            <span className="text-4xl">📬</span>
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3 text-center">Check your email</h1>
+          <p className="text-muted-foreground text-center text-[15px] leading-relaxed mb-8 px-4">
+            We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Click it to activate your account.
+          </p>
+          <button
+            onClick={() => setLocation(authPathWithNext('/signin', nextPath))}
+            className="text-primary font-semibold text-[15px] hover:underline"
+          >
+            Back to Sign In
+          </button>
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-3 text-center">Check your email</h1>
-        <p className="text-muted-foreground text-center text-[15px] leading-relaxed mb-8 px-4">
-          We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Click it to activate your account.
-        </p>
-        <button
-          onClick={() => setLocation(authPathWithNext('/signin', nextPath))}
-          className="text-primary font-semibold text-[15px] hover:underline"
-        >
-          Back to Sign In
-        </button>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
-      <div className="w-full flex justify-center mt-12 mb-8 cursor-pointer" onClick={() => setLocation('/')}>
-        <div className="flex items-baseline">
-          <span className="font-bold text-3xl text-primary tracking-tight">D8</span>
-          <span className="font-bold text-3xl text-foreground tracking-tight">Advisr</span>
-        </div>
-      </div>
-
-      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border">
+    <AuthLayout>
+      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border mt-4">
         <h1 className="text-2xl font-bold text-foreground mb-8 text-center">Create your account</h1>
 
         {error && (
@@ -162,7 +158,7 @@ export function SignUp() {
           </button>
         </p>
       </div>
-      <LegalLinks className="pb-10" />
-    </div>
+      <LegalLinks className="pb-4" />
+    </AuthLayout>
   );
 }

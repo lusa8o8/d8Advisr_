@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight, Check, Loader2, AlertCircle, XCircle } from 'l
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
 import { useRegion } from '@workspace/d8-core/use-region';
+import { AuthLayout } from '@workspace/d8-core/ui/auth-layout';
 
 type PartnerType = 'venue' | 'organizer' | 'both';
 
@@ -49,9 +50,11 @@ export function PartnerPortal() {
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-white">
-        <Loader2 size={24} className="text-primary animate-spin" />
-      </div>
+      <AuthLayout showLogo={false}>
+        <div className="flex-1 w-full min-h-0 flex items-center justify-center">
+          <Loader2 size={24} className="text-primary animate-spin" />
+        </div>
+      </AuthLayout>
     );
   }
 
@@ -73,32 +76,33 @@ export function PartnerPortal() {
         : 'The D8 team is reviewing your application. Partner tools unlock once your status is live.';
 
     return (
-      <div className="flex-1 min-h-0 bg-white flex flex-col overflow-y-auto no-scrollbar pb-10">
-        <div className="px-6 pt-14 pb-6 border-b border-gray-100">
-          <p className="text-[11px] font-black text-primary tracking-widest uppercase mb-1">D8 Partner Portal</p>
-          <h1 className="text-[24px] font-black text-gray-900 leading-tight">{title}</h1>
-          <p className="text-[13px] text-gray-400 mt-1.5 leading-relaxed">{message}</p>
-        </div>
-
-        <div className="px-6 pt-6">
-          <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 flex items-start gap-3">
-            {isRejected ? (
-              <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-            )}
-            <div>
-              <p className="font-bold text-gray-900 text-[14px]">{profile.name}</p>
-              <p className="text-[12px] text-gray-500 mt-1">
-                {profile.partner_type === 'venue' ? 'Venue' : profile.partner_type === 'organizer' ? 'Organiser' : 'Venue & Organiser'} · {profile.city}
-              </p>
-              <p className="text-[11px] text-gray-400 mt-3 uppercase font-bold tracking-wider">
-                Status: {profile.status.replace('_', ' ')}
-              </p>
+      <AuthLayout showLogo={true}>
+        <div className="w-full flex-1 flex flex-col mt-4">
+          <div className="pb-6 border-b border-gray-100 text-center">
+            <h1 className="text-[24px] font-black text-gray-900 leading-tight">{title}</h1>
+            <p className="text-[13px] text-gray-400 mt-1.5 leading-relaxed">{message}</p>
+          </div>
+  
+          <div className="pt-6">
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 flex items-start gap-3">
+              {isRejected ? (
+                <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              )}
+              <div className="text-left">
+                <p className="font-bold text-gray-900 text-[14px]">{profile.name}</p>
+                <p className="text-[12px] text-gray-500 mt-1">
+                  {profile.partner_type === 'venue' ? 'Venue' : profile.partner_type === 'organizer' ? 'Organiser' : 'Venue & Organiser'} · {profile.city}
+                </p>
+                <p className="text-[11px] text-gray-400 mt-3 uppercase font-bold tracking-wider">
+                  Status: {profile.status.replace('_', ' ')}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
@@ -119,32 +123,32 @@ export function PartnerPortal() {
   };
 
   return (
-    <div className="flex-1 min-h-0 bg-white flex flex-col overflow-y-auto no-scrollbar pb-28">
+    <AuthLayout showLogo={true}>
+      <div className="w-full flex-1 flex flex-col pb-10 mt-4">
 
-      <div className="px-6 pt-14 pb-6 border-b border-gray-100">
-        {step === 2 && (
-          <button
-            onClick={() => setStep(1)}
-            className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-5 active:scale-95 transition-transform"
-          >
-            <ArrowLeft size={18} />
-          </button>
-        )}
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-black text-primary tracking-widest uppercase">D8 Partner Portal</span>
-          <span className="text-[10px] font-bold text-gray-300 tracking-widest uppercase">— Step {step} of 2</span>
+        <div className="pb-6 border-b border-gray-100">
+          {step === 2 && (
+            <button
+              onClick={() => setStep(1)}
+              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-5 active:scale-95 transition-transform"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <div className="flex items-center gap-2 mb-1 justify-center">
+            <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Step {step} of 2</span>
+          </div>
+          <h1 className="text-[24px] font-black text-gray-900 leading-tight text-center">
+            {step === 1 ? 'What best describes you?' : 'Your details'}
+          </h1>
+          <p className="text-[13px] text-gray-400 mt-1.5 leading-relaxed text-center">
+            {step === 1
+              ? 'This determines what tools and fields are most relevant to you.'
+              : 'We\'ll review your submission within 48 hours before your listing goes live.'}
+          </p>
         </div>
-        <h1 className="text-[24px] font-black text-gray-900 leading-tight">
-          {step === 1 ? 'What best describes you?' : 'Your details'}
-        </h1>
-        <p className="text-[13px] text-gray-400 mt-1.5 leading-relaxed">
-          {step === 1
-            ? 'This determines what tools and fields are most relevant to you.'
-            : 'We\'ll review your submission within 48 hours before your listing goes live.'}
-        </p>
-      </div>
 
-      <div className="px-6 pt-6 flex flex-col gap-3">
+        <div className="pt-6 flex flex-col gap-3">
 
         {step === 1 && (
           <>
@@ -268,7 +272,8 @@ export function PartnerPortal() {
             </button>
           </>
         )}
+        </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

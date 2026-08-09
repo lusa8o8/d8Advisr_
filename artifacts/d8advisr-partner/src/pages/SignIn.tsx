@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@workspace/d8-core/auth';
 import { authPathWithNext, consumeOAuthError, getSafeNextPath } from '@workspace/d8-core/auth-redirect';
 import { LegalLinks } from '@workspace/d8-core/legal';
+import { AuthLayout } from '@workspace/d8-core/ui/auth-layout';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -45,15 +46,8 @@ export function SignIn() {
   };
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
-      <div className="w-full flex justify-center mt-12 mb-8 cursor-pointer" onClick={() => setLocation('/')}>
-        <div className="flex items-baseline">
-          <span className="font-bold text-3xl text-primary tracking-tight">D8</span>
-          <span className="font-bold text-3xl text-foreground tracking-tight">Advisr</span>
-        </div>
-      </div>
-
-      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border">
+    <AuthLayout>
+      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border mt-4">
         <h1 className="text-2xl font-bold text-foreground mb-2 text-center">Welcome back</h1>
         <p className="text-sm text-muted-foreground text-center mb-8">Sign in to your account</p>
 
@@ -141,7 +135,7 @@ export function SignIn() {
           </button>
         </p>
       </div>
-      <LegalLinks className="pb-10" />
-    </div>
+      <LegalLinks className="pb-4" />
+    </AuthLayout>
   );
 }

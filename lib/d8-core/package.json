@@ -7,6 +7,7 @@
     "./account-scope": "./src/accountScope.ts",
     "./auth": "./src/auth.tsx",
     "./auth-redirect": "./src/authRedirect.ts",
+    "./ui/auth-layout": "./src/ui/AuthLayout.tsx",
     "./constants": "./src/constants.ts",
     "./legal": "./src/legal.tsx",
     "./partner-capabilities": "./src/partnerCapabilities.ts",
@@ -19,6 +20,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",
     "@tanstack/react-query": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:"
   },
   "devDependencies": {

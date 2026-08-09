@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { AuthLayout } from '@workspace/d8-core/ui/auth-layout';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -36,29 +37,19 @@ export function PasswordResetRequest() {
   };
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col items-center p-6 relative overflow-y-auto no-scrollbar">
-      <div className="w-full flex items-center justify-between mt-8 mb-8">
-        <button
-          type="button"
-          onClick={() => setLocation('/signin')}
-          className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-foreground"
-          aria-label="Back to sign in"
-        >
-          <ArrowLeft size={19} />
-        </button>
-        <button
-          type="button"
-          onClick={() => setLocation('/')}
-          className="flex items-baseline"
-        >
-          <span className="font-bold text-2xl text-primary tracking-tight">D8</span>
-          <span className="font-bold text-2xl text-foreground tracking-tight">Advisr</span>
-        </button>
-        <div className="w-10" />
-      </div>
-
-      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border">
-        <h1 className="text-2xl font-bold text-foreground mb-2 text-center">Reset password</h1>
+    <AuthLayout>
+      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border mt-4">
+        <div className="flex items-center mb-6">
+          <button
+            type="button"
+            onClick={() => setLocation('/signin')}
+            className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-foreground mr-4"
+            aria-label="Back to sign in"
+          >
+            <ArrowLeft size={19} />
+          </button>
+          <h1 className="text-2xl font-bold text-foreground">Reset password</h1>
+        </div>
         <p className="text-sm text-muted-foreground text-center mb-8">
           Enter your email and we will send a secure reset link.
         </p>
@@ -107,6 +98,6 @@ export function PasswordResetRequest() {
           Back to sign in
         </button>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
