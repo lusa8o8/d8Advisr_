@@ -16,7 +16,10 @@ if (!isLocalSupabaseUrl && !supabaseUrl.startsWith('https://')) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    // OAuth, email confirmation, and recovery codes are exchanged by the
+    // dedicated callback pages. Automatic detection would race those explicit
+    // exchanges and can consume the same PKCE code twice.
+    detectSessionInUrl: false,
     flowType: 'pkce',
     persistSession: true,
     storageKey: 'd8advisr-auth',

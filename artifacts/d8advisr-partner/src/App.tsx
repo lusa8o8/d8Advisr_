@@ -2,7 +2,11 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 import { AuthProvider, useAuth } from '@workspace/d8-core/auth';
-import { authPathWithNext, storeOAuthError } from '@workspace/d8-core/auth-redirect';
+import {
+  authPathWithNext,
+  getSafeNextPathFromUrl,
+  storeOAuthError,
+} from '@workspace/d8-core/auth-redirect';
 import {
   getCurrentAccountContext,
   type AccountContext,
@@ -183,7 +187,7 @@ function PublicOnlyRoute({ children }: { children: ReactNode }) {
 }
 
 function AuthCallback() {
-  const { loading, markPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const { user, loading, markPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [, setLocation] = useLocation();
   const exchangedCodeRef = useRef<string | null>(null);
 
@@ -198,13 +202,15 @@ function AuthCallback() {
 
     if (oauthError) {
       storeOAuthError(oauthError);
-      setLocation('/signin?next=%2F');
+      setLocation(authPathWithNext('/signin', getSafeNextPathFromUrl() ?? '/'));
       return;
     }
 
+    const redirectPath = getSafeNextPathFromUrl() ?? '/';
     const code = params.get('code');
     const isRecovery =
-      params.get('type') === 'recovery'
+      redirectPath === '/password/update'
+      || params.get('type') === 'recovery'
       || hashParams.get('type') === 'recovery'
       || sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'true';
 
@@ -214,7 +220,7 @@ function AuthCallback() {
         if (!active) return;
         if (error) {
           storeOAuthError(error.message);
-          setLocation('/signin?next=%2F');
+          setLocation(authPathWithNext('/signin', redirectPath));
           return;
         }
         if (isRecovery) {
@@ -223,7 +229,7 @@ function AuthCallback() {
           setLocation('/password/update');
         } else {
           clearPasswordRecovery();
-          setLocation('/');
+          setLocation(redirectPath);
         }
       });
       return () => {
@@ -231,11 +237,19 @@ function AuthCallback() {
       };
     }
 
-    if (!loading) setLocation(isRecovery ? '/password/update' : '/');
+    if (!loading) {
+      setLocation(
+        isRecovery
+          ? '/password/update'
+          : user
+            ? redirectPath
+            : authPathWithNext('/signin', redirectPath),
+      );
+    }
     return () => {
       active = false;
     };
-  }, [clearPasswordRecovery, loading, markPasswordRecovery, setLocation]);
+  }, [clearPasswordRecovery, loading, markPasswordRecovery, setLocation, user]);
 
   return <LoadingScreen />;
 }
