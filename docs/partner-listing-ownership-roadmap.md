@@ -295,6 +295,8 @@ separate explicit approval.
 
 Outcome: admins can create unclaimed venues/events or publish as D8Advisr.
 
+Status: fresh discovery complete on 2026-08-11; implementation in progress.
+
 Fresh discovery:
 
 - reread the extracted admin data layer and current admin RLS/RPCs;
