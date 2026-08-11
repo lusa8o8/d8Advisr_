@@ -1,6 +1,6 @@
 # Staging Explicit Table Grants
 
-Status: migration verified — staging application pending
+Status: table grants applied — regions policy correction pending
 
 Date: 2026-08-11
 
@@ -57,3 +57,13 @@ already permitted by D8Advisr's RLS policies.
 - `git diff --check` passes.
 - The staging dry run reports only
   `20260811150000_explicit_client_table_grants.sql` as pending.
+
+## Post-application discovery
+
+- The grants migration applied and migration parity passed.
+- `regions` continued returning `401` with PostgREST error `42501` because the
+  existing admin policy applied to `PUBLIC` and directly queried `profiles`.
+- The correction is a separate forward migration that scopes the admin policy
+  to `authenticated` and reuses the existing security-definer
+  `public.is_admin_user()` helper.
+- Anonymous access to `plans` and `partner_applications` must remain denied.
