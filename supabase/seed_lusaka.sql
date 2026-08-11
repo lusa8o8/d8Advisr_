@@ -1,5 +1,12 @@
 -- D8Advisr — Lusaka venue seed data
--- Run with: supabase db push (after adding to migrations) or via Supabase SQL editor
+-- Run explicitly against the intended environment with:
+-- supabase db push --include-seed
+
+begin;
+
+-- Trusted fixtures need to preserve their reviewed publication state. Normal
+-- application writes continue to use this trigger outside this transaction.
+alter table public.venues disable trigger apply_venue_partner_safety;
 
 -- ─── Lusaka Venues ───────────────────────────────────────────────────────────
 
@@ -254,9 +261,66 @@ insert into public.venues (
   4.7, 52,
   15,
   true, true
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  city = excluded.city,
+  area = excluded.area,
+  category = excluded.category,
+  tier = excluded.tier,
+  price_tier = excluded.price_tier,
+  description = excluded.description,
+  address = excluded.address,
+  lat = excluded.lat,
+  lng = excluded.lng,
+  cover_image = excluded.cover_image,
+  vibes = excluded.vibes,
+  rating = excluded.rating,
+  review_count = excluded.review_count,
+  avg_cost_pp = excluded.avg_cost_pp,
+  is_active = excluded.is_active,
+  is_hidden_gem = excluded.is_hidden_gem,
+  updated_at = now();
+
+update public.venues
+set listing_status = 'live',
+    verification_status = 'verified',
+    reverification_reason = null,
+    last_verified_at = coalesce(last_verified_at, now()),
+    next_verification_due_at = now() + interval '1 year',
+    is_active = true,
+    updated_at = now()
+where slug in (
+  'latitude-15-lusaka',
+  'rhapsodys-lusaka',
+  'sugarbush-cafe-lusaka',
+  'zebra-crossing-lusaka',
+  'mint-lounge-lusaka',
+  'chit-chat-lusaka',
+  'nomads-lusaka',
+  'luangwa-brasserie-lusaka',
+  'chez-ntemba-lusaka',
+  'flavours-of-asia-lusaka',
+  'sunday-lusaka',
+  'intercontinental-sky-lounge-lusaka',
+  'the-fig-tree-lusaka',
+  'mwambas-kapenta-bar-lusaka',
+  'courtyard-at-providence-lusaka'
 );
 
+alter table public.venues enable trigger apply_venue_partner_safety;
+
 -- ─── Lusaka Events ────────────────────────────────────────────────────────────
+
+delete from public.events
+where partner_id is null
+  and title in (
+    'Jazz at Latitude 15°',
+    'Lusaka Night Market',
+    'Sundowner Cinema — Nomads',
+    'Afrobeats Sunday — Chez Ntemba',
+    'Coffee & Canvas Morning'
+  );
 
 insert into public.events (
   title, description, category, vibes, cover_image,
@@ -328,3 +392,5 @@ insert into public.events (
   16, 7,
   false, false, 'Lusaka'
 );
+
+commit;
