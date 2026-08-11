@@ -12,9 +12,9 @@ begin
   into missing_emails
   from (
     values
-      ('lusamalungisha+staging-consumer@gmail.com'),
-      ('lusamalungisha+staging-partner@gmail.com'),
-      ('lusamalungisha+staging-admin@gmail.com')
+      ('stagingconsumer@d8advisr.com'),
+      ('stagingpartner@d8advisr.com'),
+      ('stagingadmin@d8advisr.com')
   ) as expected(email)
   where not exists (
     select 1 from auth.users user_row where user_row.email = expected.email
@@ -27,16 +27,16 @@ end;
 $$;
 
 update public.profiles profile
-set is_admin = (user_row.email = 'lusamalungisha+staging-admin@gmail.com'),
-    is_partner = (user_row.email = 'lusamalungisha+staging-partner@gmail.com'),
+set is_admin = (user_row.email = 'stagingadmin@d8advisr.com'),
+    is_partner = (user_row.email = 'stagingpartner@d8advisr.com'),
     city = 'Lusaka',
     updated_at = now()
 from auth.users user_row
 where profile.id = user_row.id
   and user_row.email in (
-    'lusamalungisha+staging-consumer@gmail.com',
-    'lusamalungisha+staging-partner@gmail.com',
-    'lusamalungisha+staging-admin@gmail.com'
+    'stagingconsumer@d8advisr.com',
+    'stagingpartner@d8advisr.com',
+    'stagingadmin@d8advisr.com'
   );
 
 insert into public.partner_applications (
@@ -53,7 +53,7 @@ select
   now(),
   now()
 from auth.users user_row
-where user_row.email = 'lusamalungisha+staging-partner@gmail.com'
+where user_row.email = 'stagingpartner@d8advisr.com'
 on conflict (user_id) do update set
   name = excluded.name,
   partner_type = excluded.partner_type,
@@ -101,7 +101,7 @@ select
   now(),
   now()
 from auth.users user_row
-where user_row.email = 'lusamalungisha+staging-partner@gmail.com'
+where user_row.email = 'stagingpartner@d8advisr.com'
 on conflict (id) do update set
   partner_id = excluded.partner_id,
   listing_status = excluded.listing_status,

@@ -67,12 +67,12 @@ consumer, partner, and admin client testing without Docker or production data.
 
 ## Prepared identities
 
-The ignored `.env.staging.test.local` reserves three Gmail aliases for the
+The ignored `.env.staging.test.local` reserves three D8Advisr addresses for the
 staging Auth users:
 
-- `lusamalungisha+staging-consumer@gmail.com`
-- `lusamalungisha+staging-partner@gmail.com`
-- `lusamalungisha+staging-admin@gmail.com`
+- `stagingconsumer@d8advisr.com`
+- `stagingpartner@d8advisr.com`
+- `stagingadmin@d8advisr.com`
 
 Passwords are intentionally left as local placeholders for the project owner
 to choose. The smoke runner skips identity checks until all three are set, and
