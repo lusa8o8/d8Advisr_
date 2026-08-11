@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document
+Status: active planning document — Phase 1 proposed
 
 Created: 2026-08-11
 
@@ -462,7 +462,7 @@ Primary references:
 
 ## Immediate Next Step
 
-After this roadmap commit, begin Phase 1 only. Refresh its discovery, write the
-ownership ADR and executable role-matrix cases, verify them against current
-code and migrations, and commit that decision separately before writing any
-schema migration.
+Review ADR 0001. If accepted, begin Phase 2 only: refresh its discovery, record
+the focused extraction mini plan, and refactor the current admin listing data
+layer without changing behavior. Commit that boundary before touching partner
+data operations or writing any schema migration.
