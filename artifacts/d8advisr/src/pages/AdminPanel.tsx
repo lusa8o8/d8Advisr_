@@ -6,18 +6,14 @@ import {
   ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, Hourglass, LogOut
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import {
-  type AdminVenueRow,
   type AdminView,
   type Health,
   type InspectionDraft,
   type NoiseLevel,
-  type PartnerApplicationRow,
   type PartnerApplicationStatus,
   type ReverificationTask,
-  type ReverificationTaskRow,
   type ReverificationTaskStatus,
   type Submission,
   type Tier,
@@ -25,21 +21,30 @@ import {
   type VenueChangeLogRow,
   type VenueInspectionRow,
   type VenueListingReview,
-  type VenueListingReviewRow,
   type VenuePlacementAdminRequest,
-  type VenuePlacementAdminRow,
   actorLabel,
-  adminVenueFromRow,
   formatDate,
   formatDateTime,
-  partnerApplicationToSubmission,
   partnerTypeLabel,
-  reverificationTaskFromRow,
   reviewReasonLabel,
   submissionStatusFromApp,
-  venueListingReviewFromRow,
-  venuePlacementAdminRequestFromRow,
 } from '@/features/admin/adminListingModel';
+import {
+  fetchAdminVenues,
+  fetchLatestVenueInspections,
+  fetchPartnerSubmissions,
+  fetchReverificationTasks,
+  fetchVenueChangeLog,
+  fetchVenueListingReviews,
+  fetchVenuePlacementRequests,
+  insertVenueInspection,
+  markVenueVerified,
+  setPartnerApplicationStatus,
+  setReverificationTaskStatus,
+  setVenueListingStatus,
+  setVenuePlacementStatus,
+  setVenueTier,
+} from '@/features/admin/adminListingData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +84,10 @@ function logAdminIssue(message: string, detail?: unknown) {
   } else {
     console.warn(`[D8 admin] ${message}`, detail);
   }
+}
+
+function adminErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -141,71 +150,51 @@ export function AdminPanel() {
   const loadAdminVenues = async () => {
     setVenuesLoading(true);
     setVenuesError(null);
-
-    const { data, error } = await supabase
-      .from('venues')
-      .select('id,name,category,city,area,address,tier,price_tier,description,cover_image,images,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,created_at,updated_at')
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      setVenues([]);
-      setVenuesError(error.message);
-      logAdminIssue('Could not load admin venues', error.message);
-    } else {
-      const rows = (data ?? []) as AdminVenueRow[];
-      setVenues(rows.map(adminVenueFromRow));
-      if (selectedId && !rows.some(row => row.id === selectedId)) {
+    try {
+      const nextVenues = await fetchAdminVenues();
+      setVenues(nextVenues);
+      if (selectedId && !nextVenues.some(venue => venue.id === selectedId)) {
         setSelectedId(null);
         setView('list');
       }
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setVenues([]);
+      setVenuesError(message);
+      logAdminIssue('Could not load admin venues', message);
     }
-
     setVenuesLoading(false);
   };
 
   const loadSubmissions = async () => {
     setSubmissionsLoading(true);
     setSubmissionsError(null);
-    const { data, error } = await supabase
-      .from('partner_applications')
-      .select('id,name,partner_type,city,contact,status,created_at,updated_at')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      setSubmissionsError(error.message);
-      logAdminIssue('Could not load partner applications', error.message);
-    } else {
-      const rows = (data ?? []) as PartnerApplicationRow[];
-      setSubmissions(rows.map(partnerApplicationToSubmission));
+    try {
+      const rows = await fetchPartnerSubmissions();
+      setSubmissions(rows);
       if (rows.length === 0) {
         logAdminIssue('No partner applications returned for admin submissions');
       }
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setSubmissionsError(message);
+      logAdminIssue('Could not load partner applications', message);
     }
 
-    const { data: placementRows, error: placementErr } = await supabase
-      .from('events')
-      .select('id,title,category,cover_image,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name,city,area)')
-      .eq('venue_page_status', 'requested')
-      .order('created_at', { ascending: false });
-
-    if (placementErr) {
-      setSubmissionsError(placementErr.message);
-      logAdminIssue('Could not load venue page placement requests', placementErr.message);
-    } else {
-      setVenuePlacementRequests(((placementRows ?? []) as VenuePlacementAdminRow[]).map(venuePlacementAdminRequestFromRow));
+    try {
+      setVenuePlacementRequests(await fetchVenuePlacementRequests());
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setSubmissionsError(message);
+      logAdminIssue('Could not load venue page placement requests', message);
     }
 
-    const { data: listingRows, error: listingErr } = await supabase
-      .from('venues')
-      .select('id,name,category,city,area,address,cover_image,images,partner_id,listing_status,verification_status,reverification_reason,created_at,updated_at')
-      .in('listing_status', ['draft', 'submitted', 'under_review', 'needs_update'])
-      .order('updated_at', { ascending: false });
-
-    if (listingErr) {
-      setSubmissionsError(listingErr.message);
-      logAdminIssue('Could not load venue listing reviews', listingErr.message);
-    } else {
-      setVenueListingReviews(((listingRows ?? []) as VenueListingReviewRow[]).map(venueListingReviewFromRow));
+    try {
+      setVenueListingReviews(await fetchVenueListingReviews());
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setSubmissionsError(message);
+      logAdminIssue('Could not load venue listing reviews', message);
     }
 
     setSubmissionsLoading(false);
@@ -214,18 +203,13 @@ export function AdminPanel() {
   const loadReverificationTasks = async () => {
     setReverificationTasksLoading(true);
     setReverificationTasksError(null);
-
-    const { data, error } = await supabase
-      .from('venue_reverification_tasks')
-      .select('id,venue_id,reason,status,triggered_by,created_at,resolved_at,notes,venues(id,name,category,city,area,tier,listing_status,verification_status,cover_image)')
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+      setReverificationTasks(await fetchReverificationTasks());
+    } catch (error) {
+      const message = adminErrorMessage(error);
       setReverificationTasks([]);
-      setReverificationTasksError(error.message);
-      logAdminIssue('Could not load venue reverification tasks', error.message);
-    } else {
-      setReverificationTasks(((data ?? []) as ReverificationTaskRow[]).map(reverificationTaskFromRow));
+      setReverificationTasksError(message);
+      logAdminIssue('Could not load venue reverification tasks', message);
     }
 
     setReverificationTasksLoading(false);
@@ -234,22 +218,13 @@ export function AdminPanel() {
   const loadVenueInspections = async () => {
     setInspectionsLoading(true);
     setInspectionsError(null);
-
-    const { data, error } = await supabase
-      .from('venue_inspections')
-      .select('id,venue_id,inspector_id,atmosphere_score,lighting_score,noise_level,occasion_fit,inspector_notes,inspected_at,created_at,updated_at')
-      .order('inspected_at', { ascending: false });
-
-    if (error) {
+    try {
+      setVenueInspections(await fetchLatestVenueInspections());
+    } catch (error) {
+      const message = adminErrorMessage(error);
       setVenueInspections([]);
-      setInspectionsError(error.message);
-      logAdminIssue('Could not load venue inspections', error.message);
-    } else {
-      const latestByVenue = new Map<string, VenueInspectionRow>();
-      ((data ?? []) as VenueInspectionRow[]).forEach(row => {
-        if (!latestByVenue.has(row.venue_id)) latestByVenue.set(row.venue_id, row);
-      });
-      setVenueInspections(Array.from(latestByVenue.values()));
+      setInspectionsError(message);
+      logAdminIssue('Could not load venue inspections', message);
     }
 
     setInspectionsLoading(false);
@@ -258,20 +233,14 @@ export function AdminPanel() {
   const loadVenueChangeLog = async (venueId: string) => {
     setChangeLogLoading(true);
     setChangeLogError(null);
-
-    const { data, error } = await supabase.rpc('admin_get_venue_change_log', {
-      p_venue_id: venueId,
-    });
-
-    if (error) {
+    try {
+      const rows = await fetchVenueChangeLog(venueId);
+      setVenueChangeLogs(current => ({ ...current, [venueId]: rows }));
+    } catch (error) {
+      const message = adminErrorMessage(error);
       setVenueChangeLogs(current => ({ ...current, [venueId]: [] }));
-      setChangeLogError(error.message);
-      logAdminIssue('Could not load venue change log', { venueId, error: error.message });
-    } else {
-      setVenueChangeLogs(current => ({
-        ...current,
-        [venueId]: (data ?? []) as VenueChangeLogRow[],
-      }));
+      setChangeLogError(message);
+      logAdminIssue('Could not load venue change log', { venueId, error: message });
     }
 
     setChangeLogLoading(false);
@@ -299,15 +268,13 @@ export function AdminPanel() {
       )
     );
 
-    const { error } = await supabase.rpc('admin_update_partner_application_status', {
-      application_id: id,
-      new_status: status,
-    });
-
-    if (error) {
+    try {
+      await setPartnerApplicationStatus(id, status);
+    } catch (error) {
+      const message = adminErrorMessage(error);
       setSubmissions(previous);
-      setSubmissionsError(error.message);
-      logAdminIssue('Could not update partner application status', { id, status, error: error.message });
+      setSubmissionsError(message);
+      logAdminIssue('Could not update partner application status', { id, status, error: message });
     }
   };
 
@@ -315,15 +282,13 @@ export function AdminPanel() {
     const previous = venuePlacementRequests;
     setVenuePlacementRequests(current => current.filter(request => request.eventId !== eventId));
 
-    const { error } = await supabase.rpc('set_event_venue_page_status', {
-      p_event_id: eventId,
-      p_status: status,
-    });
-
-    if (error) {
+    try {
+      await setVenuePlacementStatus(eventId, status);
+    } catch (error) {
+      const message = adminErrorMessage(error);
       setVenuePlacementRequests(previous);
-      setSubmissionsError(error.message);
-      logAdminIssue('Could not update venue page placement request', { eventId, status, error: error.message });
+      setSubmissionsError(message);
+      logAdminIssue('Could not update venue page placement request', { eventId, status, error: message });
     }
   };
 
@@ -335,20 +300,16 @@ export function AdminPanel() {
     const previous = venueListingReviews;
     setVenueListingReviews(current => current.filter(review => review.id !== venueId));
 
-    const { error } = await supabase.rpc('admin_update_venue_listing_status', {
-      venue_id: venueId,
-      new_status: status,
-      reason,
-    });
-
-    if (error) {
-      setVenueListingReviews(previous);
-      setSubmissionsError(error.message);
-      logAdminIssue('Could not update venue listing status', { venueId, status, error: error.message });
-    } else {
+    try {
+      await setVenueListingStatus(venueId, status, reason);
       await loadAdminVenues();
       await loadReverificationTasks();
       if (selectedId) await loadVenueChangeLog(selectedId);
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setVenueListingReviews(previous);
+      setSubmissionsError(message);
+      logAdminIssue('Could not update venue listing status', { venueId, status, error: message });
     }
   };
 
@@ -383,21 +344,17 @@ export function AdminPanel() {
     setAdminActionError(null);
     setAdminActionLoading('tier');
 
-    const { error } = await supabase.rpc('admin_update_venue_tier', {
-      p_venue_id: selectedVenue.id,
-      new_tier: pendingTier,
-      reason: tierReason.trim(),
-    });
-
-    if (error) {
-      setAdminActionError(error.message);
-      logAdminIssue('Could not update venue tier', { venueId: selectedVenue.id, tier: pendingTier, error: error.message });
-    } else {
+    try {
+      await setVenueTier(selectedVenue.id, pendingTier, tierReason.trim());
       setPendingTier(null);
       setTierReason('');
       setShowTierMenu(false);
       await loadAdminVenues();
       await loadVenueChangeLog(selectedVenue.id);
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setAdminActionError(message);
+      logAdminIssue('Could not update venue tier', { venueId: selectedVenue.id, tier: pendingTier, error: message });
     }
 
     setAdminActionLoading(null);
@@ -407,18 +364,15 @@ export function AdminPanel() {
     setAdminActionError(null);
     setAdminActionLoading(`verify:${id}`);
 
-    const { error } = await supabase.rpc('admin_mark_venue_verified', {
-      p_venue_id: id,
-      reason: 'admin_verified',
-    });
-
-    if (error) {
-      setAdminActionError(error.message);
-      logAdminIssue('Could not mark venue verified', { venueId: id, error: error.message });
-    } else {
+    try {
+      await markVenueVerified(id);
       await loadAdminVenues();
       await loadReverificationTasks();
       await loadVenueChangeLog(id);
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setAdminActionError(message);
+      logAdminIssue('Could not mark venue verified', { venueId: id, error: message });
     }
 
     setAdminActionLoading(null);
@@ -433,19 +387,15 @@ export function AdminPanel() {
     setReverificationTasksError(null);
     setAdminActionLoading(`task:${taskId}:${status}`);
 
-    const { error } = await supabase.rpc('admin_update_reverification_task_status', {
-      p_task_id: taskId,
-      new_status: status,
-      note: note ?? null,
-    });
-
-    if (error) {
-      setReverificationTasksError(error.message);
-      logAdminIssue('Could not update reverification task', { taskId, status, error: error.message });
-    } else {
+    try {
+      await setReverificationTaskStatus(taskId, status, note);
       await loadReverificationTasks();
       await loadAdminVenues();
       if (selectedId) await loadVenueChangeLog(selectedId);
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setReverificationTasksError(message);
+      logAdminIssue('Could not update reverification task', { taskId, status, error: message });
     }
 
     setAdminActionLoading(null);
@@ -479,22 +429,16 @@ export function AdminPanel() {
       .map(item => item.trim())
       .filter(Boolean);
 
-    const { error } = await supabase
-      .from('venue_inspections')
-      .insert({
-        venue_id: selectedVenue.id,
-        inspector_id: user?.id ?? null,
-        atmosphere_score: atmosphere,
-        lighting_score: lighting,
-        noise_level: inspectionDraft.noiseLevel,
-        occasion_fit: occasionFit,
-        inspector_notes: notes,
+    try {
+      await insertVenueInspection({
+        venueId: selectedVenue.id,
+        inspectorId: user?.id ?? null,
+        atmosphereScore: atmosphere,
+        lightingScore: lighting,
+        noiseLevel: inspectionDraft.noiseLevel,
+        occasionFit,
+        inspectorNotes: notes,
       });
-
-    if (error) {
-      setInspectionsError(error.message);
-      logAdminIssue('Could not save venue inspection', { venueId: selectedVenue.id, error: error.message });
-    } else {
       setInspectionDraft({
         atmosphereScore: '',
         lightingScore: '',
@@ -503,6 +447,10 @@ export function AdminPanel() {
         inspectorNotes: '',
       });
       await loadVenueInspections();
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setInspectionsError(message);
+      logAdminIssue('Could not save venue inspection', { venueId: selectedVenue.id, error: message });
     }
 
     setAdminActionLoading(null);
