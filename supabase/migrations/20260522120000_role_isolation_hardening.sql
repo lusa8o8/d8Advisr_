@@ -2,7 +2,7 @@
 -- This migration is intentionally reconciliatory: the remote project already
 -- contains some partner/admin columns, but not the intended policy model.
 
-create extension if not exists "uuid-ossp";
+create extension if not exists "uuid-ossp" with schema extensions;
 
 -- The remote project already had this operational column when the original
 -- hardening migration was authored. Declare it here as well so a clean local

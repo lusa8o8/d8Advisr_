@@ -2,7 +2,7 @@
 -- Tables: profiles, venues, events, plans, plan_stops, stash_funds, stash_members
 
 -- ─── Extensions ──────────────────────────────────────────────────────────────
-create extension if not exists "uuid-ossp";
+create extension if not exists "uuid-ossp" with schema extensions;
 
 -- ─── Profiles ────────────────────────────────────────────────────────────────
 create table if not exists public.profiles (
@@ -50,7 +50,7 @@ create trigger on_auth_user_created
 
 -- ─── Venues ──────────────────────────────────────────────────────────────────
 create table if not exists public.venues (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default extensions.uuid_generate_v4(),
   name          text not null,
   slug          text unique,
   city          text not null,              -- 'Lagos' | 'Lusaka'
@@ -86,7 +86,7 @@ create policy "Partners can manage own venues"
 
 -- ─── Events ──────────────────────────────────────────────────────────────────
 create table if not exists public.events (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default extensions.uuid_generate_v4(),
   venue_id      uuid references public.venues(id) on delete cascade,
   title         text not null,
   description   text,
@@ -113,7 +113,7 @@ create policy "Events are publicly viewable"
 
 -- ─── Plans ───────────────────────────────────────────────────────────────────
 create table if not exists public.plans (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default extensions.uuid_generate_v4(),
   owner_id      uuid references public.profiles(id) on delete cascade,
   title         text not null,
   status        text default 'draft',       -- 'draft' | 'upcoming' | 'completed' | 'cancelled'
@@ -136,7 +136,7 @@ create policy "Users can manage own plans"
 
 -- Plan collaborators (for group plans)
 create table if not exists public.plan_members (
-  id        uuid primary key default uuid_generate_v4(),
+  id        uuid primary key default extensions.uuid_generate_v4(),
   plan_id   uuid references public.plans(id) on delete cascade,
   user_id   uuid references public.profiles(id) on delete cascade,
   role      text default 'viewer',          -- 'owner' | 'editor' | 'viewer'
@@ -151,7 +151,7 @@ create policy "Plan members can view their plans"
 
 -- ─── Plan Stops ──────────────────────────────────────────────────────────────
 create table if not exists public.plan_stops (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default extensions.uuid_generate_v4(),
   plan_id     uuid references public.plans(id) on delete cascade,
   venue_id    uuid references public.venues(id),
   position    integer not null,             -- ordering within the plan
@@ -178,7 +178,7 @@ create policy "Plan stops visible to plan owners"
 
 -- ─── Stash Funds ─────────────────────────────────────────────────────────────
 create table if not exists public.stash_funds (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default extensions.uuid_generate_v4(),
   owner_id      uuid references public.profiles(id) on delete cascade,
   name          text not null,
   emoji         text default '💰',
@@ -200,7 +200,7 @@ create policy "Users can manage own stash funds"
 
 -- Group stash members
 create table if not exists public.stash_members (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default extensions.uuid_generate_v4(),
   fund_id       uuid references public.stash_funds(id) on delete cascade,
   user_id       uuid references public.profiles(id) on delete cascade,
   contributed   integer default 0,          -- amount contributed in USD cents
@@ -215,7 +215,7 @@ create policy "Stash members can view their funds"
 
 -- Stash contribution log
 create table if not exists public.stash_transactions (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default extensions.uuid_generate_v4(),
   fund_id     uuid references public.stash_funds(id) on delete cascade,
   user_id     uuid references public.profiles(id),
   amount      integer not null,             -- in USD cents, positive = deposit, negative = withdrawal
@@ -234,7 +234,7 @@ create policy "Users can insert own transactions"
 
 -- ─── Saved / Wishlist ────────────────────────────────────────────────────────
 create table if not exists public.saved_venues (
-  id        uuid primary key default uuid_generate_v4(),
+  id        uuid primary key default extensions.uuid_generate_v4(),
   user_id   uuid references public.profiles(id) on delete cascade,
   venue_id  uuid references public.venues(id) on delete cascade,
   saved_at  timestamptz default now(),

@@ -1,10 +1,10 @@
 -- Security hardening and partner feature schema alignment.
 -- This migration is additive so it can be applied after the original generated schema.
 
-create extension if not exists "uuid-ossp";
+create extension if not exists "uuid-ossp" with schema extensions;
 
 create table if not exists public.partner_applications (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   name text not null,
   partner_type text not null check (partner_type in ('venue', 'organizer', 'both')),
