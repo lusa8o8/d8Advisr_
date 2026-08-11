@@ -39,7 +39,9 @@ if (!clientEnv.VITE_SUPABASE_URL.includes(expectedProject)) {
 
 const users = [
   ['consumer', identities.STAGING_CONSUMER_EMAIL, identities.STAGING_CONSUMER_PASSWORD],
+  ['consumer 2', identities.STAGING_CONSUMER_2_EMAIL, identities.STAGING_CONSUMER_PASSWORD],
   ['partner', identities.STAGING_PARTNER_EMAIL, identities.STAGING_PARTNER_PASSWORD],
+  ['partner 2', identities.STAGING_PARTNER_2_EMAIL, identities.STAGING_PARTNER_PASSWORD],
   ['admin', identities.STAGING_ADMIN_EMAIL, identities.STAGING_ADMIN_PASSWORD],
 ];
 

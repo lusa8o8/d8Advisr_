@@ -67,21 +67,23 @@ consumer, partner, and admin client testing without Docker or production data.
 
 ## Prepared identities
 
-The ignored `.env.staging.test.local` reserves three D8Advisr addresses for the
+The ignored `.env.staging.test.local` reserves five D8Advisr addresses for the
 staging Auth users:
 
 - `stagingconsumer@d8advisr.com`
+- `stagingconsumer1@d8advisr.com`
 - `stagingpartner@d8advisr.com`
+- `stagingpartner1@d8advisr.com`
 - `stagingadmin@d8advisr.com`
 
 Passwords remain only in the ignored local credential file. The smoke runner
-skips identity checks until all three are configured, and
+skips identity checks until all five are configured, and
 `pnpm run test:staging:full` requires them.
 
-`pnpm run staging:identities:create` creates only these three users and refuses
+`pnpm run staging:identities:create` creates only these five users and refuses
 to run if the configured Supabase URL is not the staging project. After email
 confirmation, run `supabase/staging/prepare_test_identities.sql` in the staging
-SQL Editor to establish the role fixtures and dedicated partner test venue.
+SQL Editor to establish the role fixtures and dedicated partner test venues.
 
 ## Client-test preparation verification
 
@@ -99,21 +101,28 @@ SQL Editor to establish the role fixtures and dedicated partner test venue.
 - The identity creator refuses to run while any password is still a
   placeholder and checks the staging project reference before network writes.
 - The SQL preparation file is outside migration and seed configuration, checks
-  that all three Auth emails exist, and changes only those exact fixtures.
+  that all five Auth emails exist, and changes only those exact fixtures.
 - No password, access token, service-role key, or database password is tracked.
 
 ## Identity application record
 
-- The three requested `@d8advisr.com` Auth users are auto-confirmed and
+- The five requested `@d8advisr.com` Auth users are auto-confirmed and
   password authentication succeeds without email routing.
-- The staging-only role SQL applied successfully after verifying all three Auth
+- The staging-only role SQL applied successfully after verifying all five Auth
   emails existed.
-- The partner has one live `both` application and one dedicated live/verified
-  test venue.
-- The admin profile is marked as admin, and the consumer has neither admin nor
-  partner flags.
+- Each partner has one live `both` application. Partner 1 owns a live/verified
+  venue; Partner 2 owns a non-public draft/unverified venue used for isolation.
+- The admin profile is marked as admin, and both consumers have neither admin
+  nor partner flags.
 - The temporary identity seed path was removed from `supabase/config.toml`
   immediately after application; normal seed configuration is restored.
-- The full authenticated smoke suite passes for consumer, partner, and admin.
+- The full authenticated smoke suite passes for both consumers, both partners,
+  and the admin.
 - The account-context RPC returns one table row through PostgREST; the smoke
   runner normalizes that array and validates its route-neutral `scope` field.
+- Symmetric consumer profile and partner application cross-account reads return
+  no rows, and safe no-op cross-account updates affect no rows.
+- The Partner 2 draft venue is visible to its owner and admin, but not to
+  Partner 1, consumers, or anonymous clients.
+- Consumer attempts to update protected profile role columns or invoke an
+  admin-only partner-status RPC are rejected.
