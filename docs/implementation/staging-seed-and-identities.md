@@ -1,6 +1,6 @@
 # Staging Seed and Test Identities
 
-Status: catalog seeded — identity creation pending
+Status: catalog and identity tooling prepared — passwords pending
 
 Date: 2026-08-11
 
@@ -78,6 +78,11 @@ Passwords are intentionally left as local placeholders for the project owner
 to choose. The smoke runner skips identity checks until all three are set, and
 `pnpm run test:staging:full` requires them.
 
+`pnpm run staging:identities:create` creates only these three users and refuses
+to run if the configured Supabase URL is not the staging project. After email
+confirmation, run `supabase/staging/prepare_test_identities.sql` in the staging
+SQL Editor to establish the role fixtures and dedicated partner test venue.
+
 ## Client-test preparation verification
 
 - `node scripts/staging-smoke.mjs` passes public catalog and anonymous-denial
@@ -87,3 +92,12 @@ to choose. The smoke runner skips identity checks until all three are set, and
   contains the production project reference.
 - The identity credential file and both client staging environment files are
   ignored by Git.
+
+## Identity-tooling verification
+
+- Both Node staging scripts pass syntax checking.
+- The identity creator refuses to run while any password is still a
+  placeholder and checks the staging project reference before network writes.
+- The SQL preparation file is outside migration and seed configuration, checks
+  that all three Auth emails exist, and changes only those exact fixtures.
+- No password, access token, service-role key, or database password is tracked.

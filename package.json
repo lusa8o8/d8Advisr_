@@ -12,6 +12,7 @@
     "build:staging": "pnpm --filter @workspace/d8advisr exec vite build --config vite.config.ts --mode staging && pnpm --filter @workspace/d8advisr-partner exec vite build --config vite.config.ts --mode staging",
     "test:staging": "node scripts/staging-smoke.mjs",
     "test:staging:full": "node scripts/staging-smoke.mjs --require-identities",
+    "staging:identities:create": "node scripts/staging-create-identities.mjs --confirm-staging",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
