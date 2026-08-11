@@ -45,6 +45,7 @@ import {
   setVenuePlacementStatus,
   setVenueTier,
 } from '@/features/admin/adminListingData';
+import { AdminListingCreate } from '@/features/admin/AdminListingCreate';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ export function AdminPanel() {
   const [venuesLoading, setVenuesLoading] = useState(false);
   const [venuesError, setVenuesError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health' | 'submissions'>('venues');
+  const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health' | 'submissions' | 'create'>('venues');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [submissionsError, setSubmissionsError] = useState<string | null>(null);
@@ -529,10 +530,25 @@ export function AdminPanel() {
               </span>
             )}
           </button>
+          <button onClick={() => { setNavTab('create'); setView('create'); }}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+              navTab === 'create' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <Plus size={13} /> Create
+          </button>
         </div>
       )}
 
       {/* ── LIST VIEW ───────────────────────────────────────────────────────── */}
+      {view === 'create' && (
+        <AdminListingCreate
+          venues={venues}
+          onVenueCreated={async id => {
+            await loadAdminVenues();
+            setSelectedId(id);
+          }}
+        />
+      )}
+
       {view === 'list' && (
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
 

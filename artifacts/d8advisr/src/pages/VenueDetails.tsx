@@ -15,6 +15,7 @@ import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
 const GMAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID?.trim();
+const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
 
 let loaderConfigured = false;
 function ensureLoaderConfigured() {
@@ -317,6 +318,9 @@ export function VenueDetails() {
   const venueRating = Number(liveVenue?.rating ?? 4.8);
   const venueReviewCount = liveVenue?.review_count ?? 324;
   const venuePrice = formatVenuePrice(liveVenue, (amt) => formatPrice(amt));
+  const venueAttribution = liveVenue?.operator_organization_id === D8_PLATFORM_ORGANIZATION_ID
+    ? 'Operated by D8Advisr'
+    : liveVenue?.source === 'd8_admin' ? 'Listed by D8Advisr' : null;
   const planParams = () => {
     const params = new URLSearchParams({
       venueId,
@@ -439,6 +443,11 @@ export function VenueDetails() {
           </div>
           
           <h1 className="text-[26px] font-bold text-foreground leading-tight mb-3">{venueName}</h1>
+          {venueAttribution && (
+            <p className="mb-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
+              {venueAttribution}
+            </p>
+          )}
           
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium mb-4">
             <div className="flex items-center gap-1 text-foreground">

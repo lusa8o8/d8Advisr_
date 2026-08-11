@@ -53,7 +53,7 @@ export interface AdminVenueRow {
   updated_at: string;
 }
 
-export type AdminView = 'list' | 'detail' | 'tracker' | 'health' | 'submissions';
+export type AdminView = 'list' | 'detail' | 'tracker' | 'health' | 'submissions' | 'create';
 
 export type SubmissionStatus = 'pending' | 'approved' | 'needs_update' | 'rejected';
 export type SubmissionKind = 'venue' | 'event';

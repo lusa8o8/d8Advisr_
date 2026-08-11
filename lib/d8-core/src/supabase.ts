@@ -38,10 +38,10 @@ export type PartnerOrganizationMemberStatus = 'invited' | 'active' | 'suspended'
 export type PartnerOrganizationClaimStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'disputed';
 export type ListingSource = 'd8_admin' | 'partner' | 'import' | 'community';
 
-// Listing reads deliberately exclude created_by, which is private audit data,
-// and the new Phase 3 columns until the migration has been promoted everywhere.
-export const VENUE_CLIENT_SELECT = 'id,name,slug,city,area,category,tier,price_tier,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,created_at,updated_at';
-export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,spots_left,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
+// Listing reads deliberately exclude created_by, which is private audit data.
+// Organization and source are public attribution fields introduced in Phase 3.
+export const VENUE_CLIENT_SELECT = 'id,name,slug,city,area,category,tier,price_tier,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,operator_organization_id,source,created_at,updated_at';
+export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,spots_left,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
 
 export type Database = {
   public: {

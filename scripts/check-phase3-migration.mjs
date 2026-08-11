@@ -67,15 +67,16 @@ for (const forbidden of [
 
 const venueSelect = sharedClient.match(/VENUE_CLIENT_SELECT = '([^']+)'/)?.[1] ?? '';
 const eventSelect = sharedClient.match(/EVENT_CLIENT_SELECT = '([^']+)'/)?.[1] ?? '';
-for (const privateOrPostMigrationColumn of [
-  'created_by',
-  'operator_organization_id',
-  'organizer_organization_id',
-  'source',
-]) {
-  if (venueSelect.split(',').includes(privateOrPostMigrationColumn) || eventSelect.split(',').includes(privateOrPostMigrationColumn)) {
-    throw new Error(`Client listing selects are not migration-order safe: ${privateOrPostMigrationColumn}`);
+if (venueSelect.split(',').includes('created_by') || eventSelect.split(',').includes('created_by')) {
+  throw new Error('Private created_by audit data must not be requested by clients');
+}
+for (const publicAttributionColumn of ['source']) {
+  if (!venueSelect.split(',').includes(publicAttributionColumn) || !eventSelect.split(',').includes(publicAttributionColumn)) {
+    throw new Error(`Client listing selects are missing attribution: ${publicAttributionColumn}`);
   }
+}
+if (!venueSelect.split(',').includes('operator_organization_id') || !eventSelect.split(',').includes('organizer_organization_id')) {
+  throw new Error('Client listing selects are missing organization attribution');
 }
 
 console.log('Phase 3 additive migration contract checks passed.');

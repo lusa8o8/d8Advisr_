@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { EVENT_CLIENT_SELECT, VENUE_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import type { Database } from '@/lib/supabase';
 
-type VenueRow = Omit<Database['public']['Tables']['venues']['Row'], 'created_by' | 'operator_organization_id' | 'source'>;
-type EventRow = Omit<Database['public']['Tables']['events']['Row'], 'created_by' | 'organizer_organization_id' | 'source'>;
+type VenueRow = Omit<Database['public']['Tables']['venues']['Row'], 'created_by'>;
+type EventRow = Omit<Database['public']['Tables']['events']['Row'], 'created_by'>;
 
 function logDataIssue(scope: string, message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;

@@ -10,6 +10,7 @@ import { EVENT_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import { useRegion } from '@/hooks/useRegion';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
+const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
 
 interface EventData {
   id: string;
@@ -70,6 +71,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
   const spotsFilled = Number(row.spots_filled ?? 0);
   const spotsLeft = Number(row.spots_left ?? Math.max(0, spotsTotal - spotsFilled));
   const totalCapacity = spotsTotal > 0 ? spotsTotal : Math.max(spotsLeft, 1);
+  const isD8Organized = row.organizer_organization_id === D8_PLATFORM_ORGANIZATION_ID;
 
   return {
     id: String(row.id),
@@ -101,8 +103,8 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     image: row.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
     spotsLeft,
     totalCapacity,
-    organizer: row.partner_id ? 'D8 Partner' : 'D8 Organizer',
-    organizerVerified: Boolean(row.partner_id),
+    organizer: isD8Organized ? 'D8Advisr' : row.partner_id ? 'D8 Partner' : row.source === 'd8_admin' ? 'D8Advisr listing' : 'Event organiser',
+    organizerVerified: isD8Organized || Boolean(row.partner_id),
     highlights: [
       row.category ?? 'Curated experience',
       locationKind === 'external' ? 'External location' : hasVenueLink ? 'Hosted at a D8 venue' : 'Location pending',
