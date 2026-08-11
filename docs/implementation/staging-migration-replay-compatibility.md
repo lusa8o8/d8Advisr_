@@ -1,6 +1,6 @@
 # Staging Migration Replay Compatibility
 
-Status: compatibility fix complete — staging replay pending
+Status: complete
 
 Date: 2026-08-11
 
@@ -50,3 +50,11 @@ production database.
 - No unqualified `uuid_generate_v4()` calls remain in migration history.
 - All three `uuid-ossp` declarations target the `extensions` schema.
 - `git diff --check` passes.
+
+## Completion record
+
+- Commit: `76d5f18 fix(db): make uuid migrations replayable`.
+- The remaining 24 historical migrations replayed successfully on staging.
+- All 25 local migration versions matched staging after the replay.
+- The CLI's Docker catalog-cache warning was non-blocking and did not affect
+  the remote migration transaction or history.
