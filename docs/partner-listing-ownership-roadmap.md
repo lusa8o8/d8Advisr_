@@ -1,0 +1,468 @@
+# Partner Listing Ownership and Repository Cleanup Roadmap
+
+Status: active planning document
+
+Created: 2026-08-11
+
+Scope: admin-created venues/events, unclaimed listings, partner claims and handover, RLS evolution, and bounded repository cleanup
+
+## Purpose
+
+D8Advisr needs to support three related workflows without creating fake or
+orphaned user accounts:
+
+1. D8 admins create and publish venues or events before a business joins.
+2. D8 publishes first-party events as D8Advisr.
+3. A real venue owner or organizer later claims an existing listing and gains
+   management access without replacing the listing, reviews, history, or IDs.
+
+Repository cleanup is included as a separate workstream because the current
+admin and partner surfaces are already large. Cleanup must not be mixed into a
+database ownership migration unless it is required for that migration.
+
+## Mandatory Working Protocol
+
+Every phase below follows this sequence. A phase does not inherit assumptions
+from an earlier review.
+
+### 1. Fresh discovery
+
+Before changing a file or migration:
+
+- run `git status -sb` and preserve unrelated user changes;
+- read recent commits affecting the phase's paths;
+- open the current implementation files in full where practical;
+- search current call sites, types, policies, triggers, RPCs, grants, and tests;
+- inspect all later migrations that replace an affected policy or function;
+- compare local and linked migration histories for database work;
+- record newly discovered constraints in this document or a phase ADR.
+
+Discovery may be abbreviated only when the exact files and migrations were
+reviewed during the same active phase. Memory or an older conversation summary
+is not sufficient.
+
+### 2. Mini plan
+
+Before implementation, record:
+
+- the bounded outcome;
+- files and database objects in scope;
+- files and objects explicitly out of scope;
+- data migration and rollback strategy;
+- verification commands and acceptance criteria;
+- the intended commit boundary.
+
+### 3. Bounded implementation
+
+- prefer additive and reversible changes;
+- do not combine behavior changes with broad formatting or file moves;
+- never rewrite an already-applied migration;
+- preserve stable venue/event IDs and historical audit data;
+- enforce authorization in PostgreSQL, not only in React guards;
+- do not create placeholder `auth.users` records for businesses.
+
+### 4. Verification
+
+Use the smallest relevant set, increasing with risk:
+
+- TypeScript checks for affected packages;
+- production builds for affected clients;
+- SQL lint/diff and local reset when Docker is available;
+- linked migration comparison before any remote push;
+- role-matrix tests for anonymous, consumer, pending partner, live partner,
+  admin, claimant, and former member;
+- explicit postconditions for ownership transfers and audit history.
+
+### 5. Commit gate
+
+- inspect `git diff --check` and the exact staged diff;
+- stage only files belonging to the phase;
+- commit after each key change with a focused message;
+- leave unrelated user changes uncommitted;
+- do not push or apply a remote database migration without explicit approval.
+
+## Fresh Discovery Baseline
+
+This baseline was collected on 2026-08-11 and must be refreshed when its phase
+starts.
+
+### Repository and deployment
+
+- The repository is a pnpm workspace with four artifact packages:
+  `d8advisr`, `d8advisr-partner`, `api-server`, and `mockup-sandbox`.
+- Consumer/admin and partner are separate Vite applications sharing
+  `lib/d8-core` and one Supabase project.
+- The working tree contained a user-owned deletion at
+  `artifacts/d8advisr-partner/public/images`; it is outside this roadmap's
+  commits.
+- Recent auth work introduced shared `AuthLayout` and removed Google sign-in
+  from the partner UI.
+- Deployment configuration exists at both repository root and package level;
+  this is a drift risk to audit later, not part of the ownership migration.
+
+### Current database state
+
+- The 25 checked-in migrations match the linked Supabase project through
+  `20260725020000_route_neutral_account_context.sql`.
+- `venues.partner_id` references `profiles.id` and is nullable.
+- `events.partner_id` references `profiles.id` and is nullable.
+- Partner RLS and multiple RPCs equate management with
+  `auth.uid() = partner_id` plus an approved capability.
+- Admin RLS can manage venues and events, but the current admin interface reads,
+  reviews, verifies, and changes status; it does not create them.
+- Ownership assumptions also appear in demand analytics, review summaries,
+  partner notifications, venue-event visibility, and protected-column
+  triggers. Updating only the main CRUD policies would be incomplete.
+- Existing listing lifecycle and change-log migrations provide useful audit
+  infrastructure that should be extended rather than replaced.
+
+### Structural hotspots
+
+- `AdminPanel.tsx` is approximately 105 KB and combines types, mapping, queries,
+  mutations, and UI.
+- `usePartner.ts` combines application, venue, event, demand, review, and write
+  operations.
+- `mockup-sandbox` duplicates all 55 consumer UI component filenames.
+- API scaffold packages appear lightly used; the consumer declares
+  `@workspace/api-client-react`, but current application imports must be
+  rechecked before removal.
+- Applied migrations contain legitimate historical redefinitions. They may be
+  documented or baselined for new environments later, but must not be edited in
+  place.
+
+## Provisional Target Model
+
+This is the starting hypothesis for Phase 1, not permission to migrate yet.
+
+### Business identity
+
+Create a business entity independent of authentication, tentatively
+`partner_businesses`:
+
+- `id`
+- `name`
+- `business_type`: venue, organizer, or both
+- `status`: unclaimed, pending, active, suspended, or archived
+- contact and verification metadata
+- timestamps
+
+An internal active business represents D8Advisr for first-party publishing.
+
+### Membership and access
+
+Create `partner_business_memberships`:
+
+- `business_id`
+- `user_id`
+- `role`: primary_owner, owner, manager, or editor
+- `status`: invited, active, suspended, or revoked
+- `granted_by`, `granted_at`, and `revoked_at`
+
+Users retain their existing `auth.users.id`. Handover creates or activates a
+membership; it does not migrate content to another auth user.
+
+### Claims
+
+Create `listing_claims`:
+
+- claimant and target listing/business IDs
+- status: pending, approved, rejected, cancelled, or disputed
+- evidence metadata and private review notes
+- reviewer and decision timestamps
+- uniqueness rules preventing multiple active claims for the same target/user
+
+Claimants never update ownership columns directly. An admin-only transactional
+RPC approves the claim, creates membership, links the listing, and writes audit
+records.
+
+### Listing provenance
+
+Venues and events should distinguish:
+
+- `business_id`: who is represented by or controls the listing;
+- `created_by`: which authenticated user created the row;
+- `source`: d8_admin, partner, import, or community submission;
+- optional publishing attribution for consumer-facing “D8Advisr” content.
+
+`created_by` is immutable historical provenance. A claim changes management
+access, not authorship or the listing ID.
+
+## Delivery Phases
+
+### Phase 0 — Roadmap and baseline
+
+Outcome: establish this protocol and current-state evidence.
+
+Mini plan:
+
+- Scope: repository structure, relevant auth changes, local/remote migrations,
+  current ownership references, and known hotspots.
+- Out of scope: schema, UI, RLS, file moves, dependency removal.
+- Verify: linked migration parity, Markdown review, clean staged scope.
+- Commit: `docs: add partner ownership roadmap`.
+
+Acceptance:
+
+- this file exists and reflects the current repository;
+- no production behavior changes;
+- the existing partner image deletion is not staged.
+
+### Phase 1 — Ownership architecture decision
+
+Outcome: approve the precise schema and access semantics before SQL is written.
+
+Fresh discovery:
+
+- reread current table definitions and every later venue/event policy or RPC;
+- inspect live row shapes and counts using read-only queries;
+- identify duplicate partner applications, null owners, and dangling references;
+- review current admin and partner workflows end to end;
+- review generated/shared database types.
+
+Mini plan:
+
+- write an ADR containing table names, constraints, state transitions, role
+  matrix, claim evidence policy, D8 attribution, and migration strategy;
+- decide whether events belong to a business, a venue, both, or neither;
+- define which fields owners, managers, editors, and admins may change;
+- define account removal, ownership dispute, and transfer behavior.
+
+Implementation: documentation and executable role-matrix test cases only.
+
+Verify: walk every existing and proposed workflow against the role matrix.
+
+Commit: `docs: define listing ownership and claim model`.
+
+### Phase 2 — Focused admin/partner data-layer extraction
+
+Outcome: create safe seams for later features without changing behavior.
+
+Fresh discovery:
+
+- review `AdminPanel.tsx`, `usePartner.ts`, shared Supabase types, and all imports;
+- identify current query keys, mutation refresh behavior, and UI state coupling;
+- run baseline typechecks and builds.
+
+Mini plan:
+
+- extract domain types and row mappers;
+- extract existing admin queries/mutations into focused hooks or services;
+- extract existing partner application/venue/event operations by domain;
+- keep routes, rendering, query shapes, and permissions unchanged.
+
+Verify: consumer, partner, and shared typechecks; both production builds; focused
+tests for pure mappers if introduced.
+
+Commits should be separated by stable boundary, for example:
+
+1. `refactor(admin): extract listing data layer`
+2. `refactor(partner): split partner domain operations`
+
+### Phase 3 — Additive ownership schema foundation
+
+Outcome: introduce businesses, memberships, claims, and provenance without
+cutting over existing partner access.
+
+Fresh discovery:
+
+- repeat migration parity check;
+- reread Phase 1 ADR and all migrations/functions named in its impact list;
+- obtain read-only production counts required for deterministic backfill;
+- verify local Docker availability for `supabase db reset`.
+
+Mini plan:
+
+- add new tables, enums/checks, indexes, grants, audit fields, and helper
+  functions in one new migration;
+- add nullable `business_id`/`created_by`/`source` fields;
+- create the internal D8Advisr business deterministically;
+- do not remove or repurpose `partner_id`;
+- add read-compatible shared TypeScript types.
+
+Rollback: new objects remain unused and can be removed by a forward migration
+before cutover; existing ownership continues through `partner_id`.
+
+Verify: local reset, schema diff, constraint tests, RLS role matrix, package
+typechecks and builds.
+
+Commit: `feat(db): add business ownership foundation`.
+
+Remote migration application requires a separate explicit approval.
+
+### Phase 4 — Admin creation and D8 publishing
+
+Outcome: admins can create unclaimed venues/events or publish as D8Advisr.
+
+Fresh discovery:
+
+- reread the extracted admin data layer and current admin RLS/RPCs;
+- inspect current venue/event editors and validation rules;
+- inspect current consumer queries and publication-status assumptions.
+
+Mini plan:
+
+- add admin-only transactional create RPCs;
+- require explicit source/attribution selection;
+- default unclaimed content to safe review/publication states;
+- add focused admin forms by reusing validated partner editor components where
+  reuse does not leak partner assumptions;
+- record creator and audit events.
+
+Verify: admin can create; non-admin cannot call RPC; public sees only live
+content; unclaimed content has no fake user; D8 attribution renders correctly.
+
+Likely commits:
+
+1. `feat(db): add admin listing creation RPCs`
+2. `feat(admin): create venues and events`
+
+### Phase 5 — Claim submission and approval
+
+Outcome: a real user claims an existing listing and receives approved access.
+
+Fresh discovery:
+
+- reread onboarding, partner application, notifications, admin review, and
+  current email/password session flows;
+- inspect current application uniqueness and capability derivation;
+- confirm evidence storage/privacy requirements.
+
+Mini plan:
+
+- expose “Claim this listing” only for eligible unclaimed listings;
+- create claim submission RPC with duplicate/dispute controls;
+- add claimant status and admin review screens;
+- add admin approval/rejection RPCs with audit and notifications;
+- create business membership on approval without changing listing IDs.
+
+Verify: unauthorized self-assignment fails; duplicate active claims fail;
+approval is atomic; rejected claims grant no access; approved membership works
+on the partner subdomain after sign-in.
+
+Likely commits:
+
+1. `feat(db): add listing claim workflow`
+2. `feat(partner): submit and track listing claims`
+3. `feat(admin): review listing claims`
+
+### Phase 6 — Existing partner backfill and RLS cutover
+
+Outcome: existing partner-owned content uses business memberships instead of
+direct user ownership.
+
+Fresh discovery:
+
+- query production for every partner application, venue, event, notification,
+  review summary, and demand function affected by `partner_id`;
+- identify orphans and ambiguous multi-business users;
+- refresh the exact list of policies, triggers, RPCs, and frontend filters.
+
+Mini plan:
+
+- deterministically create businesses/memberships for existing live partners;
+- attach their venues/events while retaining `partner_id` for compatibility;
+- update helper functions, policies, analytics, notifications, and visibility
+  to use active membership;
+- dual-read during a defined compatibility window;
+- add reconciliation queries proving old and new access sets match.
+
+Rollback: preserve legacy columns and a forward rollback migration until the
+reconciliation window passes.
+
+Verify: old/new access-set equality, full role matrix, orphan report equals
+zero or has reviewed exceptions, both app builds, production smoke checks.
+
+Likely commits:
+
+1. `feat(db): backfill partner businesses and memberships`
+2. `feat(db): enforce membership-based listing access`
+3. `refactor(apps): read business-based ownership`
+
+### Phase 7 — Legacy removal and targeted repository cleanup
+
+Outcome: remove proven-dead ownership paths and reduce structural bloat without
+mixing unrelated product changes.
+
+Fresh discovery:
+
+- verify no runtime, RPC, policy, report, or type reads legacy ownership;
+- re-audit workspace package imports, build scripts, deployment roots, and UI
+  duplication;
+- measure bundle sizes and build times before deletion.
+
+Mini plan candidates, each requiring its own evidence and commit:
+
+- remove legacy `partner_id` only after complete cutover;
+- remove or archive `mockup-sandbox` if it has no deployment or active use;
+- remove unused API scaffold packages/dependencies;
+- choose one authoritative Vercel configuration per deployment path;
+- split remaining oversized pages by feature;
+- centralize only genuinely shared UI/domain code.
+
+Verify each deletion with `rg`, workspace typecheck, affected builds, and
+deployment-config inspection.
+
+Do not combine all cleanup candidates into one commit.
+
+### Phase 8 — Production hardening and operational handoff
+
+Outcome: claims and ownership changes are observable, supportable, and safe.
+
+Fresh discovery:
+
+- review audit coverage, support procedures, dispute states, rate limits,
+  retention, and privacy exposure;
+- inspect production logs and failure paths after real usage.
+
+Mini plan:
+
+- add operational dashboards/queries for pending claims and orphan detection;
+- document claim verification and dispute handling;
+- add rate limiting or abuse controls where evidence requires them;
+- document rollback and emergency access-revocation procedures.
+
+Verify using a release checklist and a staged production rollout.
+
+Commit documentation and observability changes separately from policy changes.
+
+## Required Role Matrix
+
+Every ownership/RLS phase must test at least:
+
+| Actor | Unclaimed draft | Unclaimed live | Claimed own | Claimed other | D8-owned |
+| --- | --- | --- | --- | --- | --- |
+| Anonymous | No | Read | Read if live | Read if live | Read if live |
+| Consumer | No direct edit | Submit claim | No unless member | No | No |
+| Pending partner | No direct edit | Submit/track claim | No publish | No | No |
+| Active editor | No | No | Limited edit | No | No |
+| Active manager | No | No | Manage content | No | No |
+| Active owner | Claim/transfer actions | Manage after approval | Full business management | No | No |
+| Admin | Full audited access | Full audited access | Full audited access | Full audited access | Full audited access |
+
+Exact field permissions and publication rights are finalized in Phase 1.
+
+## Research Basis
+
+The provisional model follows established listing-platform behavior:
+
+- Tripadvisor keeps listings independent of user accounts and requires a
+  representative to claim and verify before management access.
+- Google Business Profile separates profile identity from owners/managers and
+  transfers access without replacing the profile.
+- Yelp supports creating a page first and claiming it later through
+  verification.
+
+Primary references:
+
+- https://www.tripadvisor.com/business/claim-hotel-listing-free
+- https://support.google.com/business/answer/2911778
+- https://support.google.com/business/answer/3403100
+- https://support.google.com/business/answer/3415281/transfer-primary-ownership-of-a-business-profile
+- https://biz.yelp.com/support-center/Yelp_Business_Page/Getting_Started/How-do-I-claim-a-business-page/en-US
+
+## Immediate Next Step
+
+After this roadmap commit, begin Phase 1 only. Refresh its discovery, write the
+ownership ADR and executable role-matrix cases, verify them against current
+code and migrations, and commit that decision separately before writing any
+schema migration.
