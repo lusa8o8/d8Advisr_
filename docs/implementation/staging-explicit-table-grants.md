@@ -1,6 +1,6 @@
 # Staging Explicit Table Grants
 
-Status: table grants applied — regions policy correction pending
+Status: complete
 
 Date: 2026-08-11
 
@@ -67,3 +67,15 @@ already permitted by D8Advisr's RLS policies.
   to `authenticated` and reuses the existing security-definer
   `public.is_admin_user()` helper.
 - Anonymous access to `plans` and `partner_applications` must remain denied.
+
+## Completion record
+
+- `d7c781f fix(db): declare client table grants` added and applied the explicit
+  privilege migration to staging.
+- `06797d5 fix(db): scope regions admin policy` added and applied the regions
+  policy correction to staging.
+- All 27 local migration versions match staging.
+- The final staging API smoke matrix returned:
+  - `200`: `regions`, `venues`, and `events` for anonymous reads;
+  - `401`: `plans` and `partner_applications` for anonymous reads.
+- Production was not linked or modified.
