@@ -1,6 +1,6 @@
 # Staging Seed and Test Identities
 
-Status: catalog and identity tooling prepared — passwords pending
+Status: identities and roles created — email confirmation pending
 
 Date: 2026-08-11
 
@@ -101,3 +101,18 @@ SQL Editor to establish the role fixtures and dedicated partner test venue.
 - The SQL preparation file is outside migration and seed configuration, checks
   that all three Auth emails exist, and changes only those exact fixtures.
 - No password, access token, service-role key, or database password is tracked.
+
+## Identity application record
+
+- The three requested `@d8advisr.com` Auth users were created through the
+  staging signup endpoint; Supabase reports email confirmation is required.
+- The staging-only role SQL applied successfully after verifying all three Auth
+  emails existed.
+- The partner has one live `both` application and one dedicated live/verified
+  test venue.
+- The admin profile is marked as admin, and the consumer has neither admin nor
+  partner flags.
+- The temporary identity seed path was removed from `supabase/config.toml`
+  immediately after application; normal seed configuration is restored.
+- The full authenticated smoke suite remains pending until all three emails are
+  confirmed.
