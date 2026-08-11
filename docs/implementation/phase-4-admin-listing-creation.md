@@ -1,6 +1,6 @@
 # Phase 4 Mini Plan: Admin Listing Creation
 
-Status: discovery complete; implementation in progress
+Status: staging verified; production promotion pending separate approval
 
 Date: 2026-08-11
 
@@ -71,3 +71,24 @@ published immediately.
 3. `test(staging): verify phase 4 admin creation`
 
 Production promotion remains a separate explicit approval gate.
+
+## Completion record
+
+- Applied `20260811170000_admin_listing_creation.sql` to staging project
+  `bntxnjfftikmaqnbskkq` on 2026-08-11. Production was not touched.
+- Added admin-only `admin_create_venue(jsonb)` and
+  `admin_create_event(jsonb)` RPCs with fixed search paths, input validation,
+  explicit attribution, draft-safe defaults, private creator provenance, and
+  atomic audit insertion.
+- Added an admin creation screen for venues and events. It does not import
+  partner identity/capability assumptions and only offers live venues when an
+  event is linked to an existing D8 venue.
+- Added public attribution reads and labels for D8-operated and D8-listed
+  content without exposing `created_by`.
+- Added a staging role-matrix test with `finally` cleanup. It verifies
+  consumer/partner denial, mandatory attribution, unclaimed draft privacy, D8
+  publication visibility, null fake ownership, platform attribution, admin-only
+  audit access, and cascaded cleanup.
+- Phase 3 regression tests, the full authenticated staging isolation suite,
+  consumer type-check/build, linked database lint, and migration parity all
+  pass after Phase 4.

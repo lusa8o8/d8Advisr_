@@ -15,6 +15,7 @@
     "test:phase3:static": "node scripts/check-phase3-migration.mjs",
     "test:staging:phase3": "node scripts/staging-phase3-smoke.mjs",
     "test:phase4:static": "node scripts/check-phase4-migration.mjs",
+    "test:staging:phase4": "node scripts/staging-phase4-smoke.mjs",
     "staging:identities:create": "node scripts/staging-create-identities.mjs --confirm-staging",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",

@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 3 staging verified; Phase 4 discovery next
+Status: active planning document — Phase 4 staging verified; Phase 5 discovery next
 
 Created: 2026-08-11
 
@@ -295,7 +295,8 @@ separate explicit approval.
 
 Outcome: admins can create unclaimed venues/events or publish as D8Advisr.
 
-Status: fresh discovery complete on 2026-08-11; implementation in progress.
+Status: implementation and staging verification complete on 2026-08-11;
+production promotion requires separate explicit approval.
 
 Fresh discovery:
 
@@ -466,8 +467,8 @@ Primary references:
 
 ## Immediate Next Step
 
-Begin fresh Phase 4 discovery against the verified staging schema: reread the
-extracted admin data layer, current listing editors, validation rules, and
-admin RLS/RPCs. Then write a bounded Phase 4 mini plan before implementing
-admin-created unclaimed listings or D8 publishing. Production promotion of the
-Phase 3 migration remains a separate explicit decision.
+Begin fresh Phase 5 discovery against the verified staging schema: reread
+partner onboarding, partner applications, notifications, admin review, and
+email/password session flows; then define evidence privacy and the atomic claim
+approval contract before implementation. Production promotion of the Phase 3
+and Phase 4 migrations remains a separate explicit decision.
