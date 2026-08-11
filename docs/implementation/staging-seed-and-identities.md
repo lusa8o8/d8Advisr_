@@ -1,6 +1,6 @@
 # Staging Seed and Test Identities
 
-Status: identities and roles created — email confirmation pending
+Status: complete — authenticated staging smoke suite passing
 
 Date: 2026-08-11
 
@@ -74,8 +74,8 @@ staging Auth users:
 - `stagingpartner@d8advisr.com`
 - `stagingadmin@d8advisr.com`
 
-Passwords are intentionally left as local placeholders for the project owner
-to choose. The smoke runner skips identity checks until all three are set, and
+Passwords remain only in the ignored local credential file. The smoke runner
+skips identity checks until all three are configured, and
 `pnpm run test:staging:full` requires them.
 
 `pnpm run staging:identities:create` creates only these three users and refuses
@@ -104,8 +104,8 @@ SQL Editor to establish the role fixtures and dedicated partner test venue.
 
 ## Identity application record
 
-- The three requested `@d8advisr.com` Auth users were created through the
-  staging signup endpoint; Supabase reports email confirmation is required.
+- The three requested `@d8advisr.com` Auth users are auto-confirmed and
+  password authentication succeeds without email routing.
 - The staging-only role SQL applied successfully after verifying all three Auth
   emails existed.
 - The partner has one live `both` application and one dedicated live/verified
@@ -114,5 +114,6 @@ SQL Editor to establish the role fixtures and dedicated partner test venue.
   partner flags.
 - The temporary identity seed path was removed from `supabase/config.toml`
   immediately after application; normal seed configuration is restored.
-- The full authenticated smoke suite remains pending until all three emails are
-  confirmed.
+- The full authenticated smoke suite passes for consumer, partner, and admin.
+- The account-context RPC returns one table row through PostgREST; the smoke
+  runner normalizes that array and validates its route-neutral `scope` field.

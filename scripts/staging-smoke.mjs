@@ -87,7 +87,8 @@ async function accountContext(url, apiKey, accessToken) {
     body: {},
   });
   assert(response.ok, `Account context returned HTTP ${response.status}`);
-  return body;
+  assert(Array.isArray(body) && body.length === 1, 'Account context expected exactly one row');
+  return body[0];
 }
 
 async function runIdentityChecks(url, apiKey, credentials) {
@@ -103,8 +104,7 @@ async function runIdentityChecks(url, apiKey, credentials) {
   for (const [role, identity] of Object.entries(credentials)) {
     const accessToken = await passwordSession(url, apiKey, identity.email, identity.password);
     const context = await accountContext(url, apiKey, accessToken);
-    if (role === 'admin') assert(context?.is_admin === true, 'Admin identity is not marked as admin');
-    if (role === 'consumer') assert(context?.is_admin !== true, 'Consumer identity unexpectedly has admin access');
+    assert(context?.scope === role, `${role} identity returned account scope ${context?.scope ?? 'unknown'}`);
     if (role === 'partner') {
       const { response, body } = await apiRequest(url, apiKey, '/rest/v1/partner_applications?select=status,partner_type', {
         accessToken,
