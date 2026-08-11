@@ -7,6 +7,11 @@
     "preinstall": "node -e \"const fs=require('node:fs'); for (const f of ['package-lock.json','yarn.lock']) fs.rmSync(f,{force:true}); if (!(process.env.npm_config_user_agent||'').startsWith('pnpm/')) { console.error('Use pnpm instead'); process.exit(1); }\"",
     "dev:consumer": "pnpm --filter @workspace/d8advisr run dev",
     "dev:partner": "pnpm --filter @workspace/d8advisr-partner run dev",
+    "dev:consumer:staging": "pnpm --filter @workspace/d8advisr exec vite --config vite.config.ts --host 0.0.0.0 --mode staging",
+    "dev:partner:staging": "pnpm --filter @workspace/d8advisr-partner exec vite --config vite.config.ts --host 0.0.0.0 --mode staging",
+    "build:staging": "pnpm --filter @workspace/d8advisr exec vite build --config vite.config.ts --mode staging && pnpm --filter @workspace/d8advisr-partner exec vite build --config vite.config.ts --mode staging",
+    "test:staging": "node scripts/staging-smoke.mjs",
+    "test:staging:full": "node scripts/staging-smoke.mjs --require-identities",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

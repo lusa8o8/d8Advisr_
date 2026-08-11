@@ -1,6 +1,6 @@
 # Staging Seed and Test Identities
 
-Status: repeatable seed verified — staging application pending
+Status: catalog seeded — identity creation pending
 
 Date: 2026-08-11
 
@@ -57,3 +57,33 @@ consumer, partner, and admin client testing without Docker or production data.
 - `git diff --check` passes.
 - `supabase db push --dry-run --include-seed` reports only
   `supabase/seed_lusaka.sql` as the pending seed operation.
+
+## Staging application record
+
+- The seed applied successfully to staging.
+- Anonymous API counts are 15 venues and 5 events.
+- The seed file is now tracked as applied by the CLI; its SQL remains
+  idempotent for clean resets and explicit reruns.
+
+## Prepared identities
+
+The ignored `.env.staging.test.local` reserves three Gmail aliases for the
+staging Auth users:
+
+- `lusamalungisha+staging-consumer@gmail.com`
+- `lusamalungisha+staging-partner@gmail.com`
+- `lusamalungisha+staging-admin@gmail.com`
+
+Passwords are intentionally left as local placeholders for the project owner
+to choose. The smoke runner skips identity checks until all three are set, and
+`pnpm run test:staging:full` requires them.
+
+## Client-test preparation verification
+
+- `node scripts/staging-smoke.mjs` passes public catalog and anonymous-denial
+  checks and safely skips unconfigured identities.
+- Both clients build successfully in explicit Vite staging mode.
+- Both compiled bundles contain the staging project reference and neither
+  contains the production project reference.
+- The identity credential file and both client staging environment files are
+  ignored by Git.
