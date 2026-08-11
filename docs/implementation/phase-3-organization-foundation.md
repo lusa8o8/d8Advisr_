@@ -1,6 +1,6 @@
 # Phase 3 Mini Plan: Organization Ownership Foundation
 
-Status: local foundation complete — staging application pending approval
+Status: staging verified; production promotion pending separate approval
 
 Date: 2026-08-11
 
@@ -79,14 +79,15 @@ them. The legacy columns and policies remain authoritative throughout Phase 3.
 4. Shared, consumer, and partner TypeScript checks pass.
 5. Both production client builds pass.
 6. The existing authenticated staging isolation suite passes unchanged.
-7. After separate approval and staging application, run the Phase 3 SQL
-   postconditions and add organization role-matrix API tests before production.
+7. After separate approval and staging application, run database lint, confirm
+   migration parity, and exercise the organization role matrix through the API
+   before production.
 
 ## Intended commit
 
 `feat(db): add organization ownership foundation`
 
-Remote migration application remains a separate explicit approval gate.
+Production migration application remains a separate explicit approval gate.
 
 ## Local completion record
 
@@ -109,5 +110,20 @@ Remote migration application remains a separate explicit approval gate.
   `20260811160000_organization_ownership_foundation.sql` as pending.
 - Workspace typechecks, both production builds, the static migration contract,
   `git diff --check`, and the unchanged authenticated staging suite pass.
-- PostgreSQL execution and the post-apply role matrix remain pending because
-  Docker is unavailable and no remote application was authorized in this phase.
+- Applied `20260811160000_organization_ownership_foundation.sql` to the linked
+  staging project `bntxnjfftikmaqnbskkq` on 2026-08-11. Production was not
+  touched.
+- Added `scripts/staging-phase3-smoke.mjs`, which refuses to run against a
+  project other than staging and uses the existing ignored staging identities.
+- The post-apply API checks confirm the deterministic D8 organization, empty
+  additive membership/claim tables, no legacy ownership backfill, private
+  provenance columns, false helper results for non-members, and denial of
+  organization, membership, claim, and listing-ownership escalation.
+- The unchanged full staging suite still passes for anonymous, consumer,
+  partner, cross-account, and admin access.
+- `supabase db lint --linked --level warning` reports no schema errors and
+  `supabase migration list` shows local/remote parity through the Phase 3
+  migration.
+- The standalone SQL postcondition file remains available for SQL Editor or a
+  future local PostgreSQL/Docker run; the same material postconditions were
+  exercised through the staging API because Docker is unavailable locally.

@@ -13,6 +13,7 @@
     "test:staging": "node scripts/staging-smoke.mjs",
     "test:staging:full": "node scripts/staging-smoke.mjs --require-identities",
     "test:phase3:static": "node scripts/check-phase3-migration.mjs",
+    "test:staging:phase3": "node scripts/staging-phase3-smoke.mjs",
     "staging:identities:create": "node scripts/staging-create-identities.mjs --confirm-staging",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",

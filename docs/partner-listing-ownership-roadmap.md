@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 3 local foundation complete; staging pending
+Status: active planning document — Phase 3 staging verified; Phase 4 discovery next
 
 Created: 2026-08-11
 
@@ -261,8 +261,8 @@ Commits should be separated by stable boundary, for example:
 Outcome: introduce organizations, memberships, claims, and provenance without
 cutting over existing partner access.
 
-Status: local implementation complete on 2026-08-11; staging application and
-post-apply role verification require explicit approval.
+Status: implementation and staging verification complete on 2026-08-11;
+production promotion requires separate explicit approval.
 
 Fresh discovery:
 
@@ -288,7 +288,8 @@ typechecks and builds.
 
 Commit: `feat(db): add business ownership foundation`.
 
-Remote migration application requires a separate explicit approval.
+The migration is applied to staging only. Production application requires a
+separate explicit approval.
 
 ### Phase 4 — Admin creation and D8 publishing
 
@@ -463,7 +464,8 @@ Primary references:
 
 ## Immediate Next Step
 
-Review and explicitly approve the Phase 3 migration for staging only. After it
-applies, run the read-only SQL postconditions, expand the API role matrix for
-the new organization objects, and verify both clients before considering any
-production promotion or beginning Phase 4.
+Begin fresh Phase 4 discovery against the verified staging schema: reread the
+extracted admin data layer, current listing editors, validation rules, and
+admin RLS/RPCs. Then write a bounded Phase 4 mini plan before implementing
+admin-created unclaimed listings or D8 publishing. Production promotion of the
+Phase 3 migration remains a separate explicit decision.
