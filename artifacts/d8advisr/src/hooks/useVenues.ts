@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { EVENT_CLIENT_SELECT, VENUE_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import type { Database } from '@/lib/supabase';
 
-type VenueRow = Database['public']['Tables']['venues']['Row'];
-type EventRow = Database['public']['Tables']['events']['Row'];
+type VenueRow = Omit<Database['public']['Tables']['venues']['Row'], 'created_by' | 'operator_organization_id' | 'source'>;
+type EventRow = Omit<Database['public']['Tables']['events']['Row'], 'created_by' | 'organizer_organization_id' | 'source'>;
 
 function logDataIssue(scope: string, message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;
@@ -26,7 +26,7 @@ export function useVenues(city?: string) {
     async function loadVenues() {
       const query = supabase
         .from('venues')
-        .select('*')
+        .select(VENUE_CLIENT_SELECT)
         .eq('is_active', true)
         .eq('listing_status', 'live')
         .order('rating', { ascending: false });
@@ -78,7 +78,7 @@ export function useEvents(city?: string, limit = 10) {
     async function loadEvents() {
       const query = supabase
         .from('events')
-        .select('*')
+        .select(EVENT_CLIENT_SELECT)
         .eq('event_status', 'live')
         .gte('starts_at', now)
         .order('is_featured', { ascending: false })
@@ -140,7 +140,7 @@ export function useVenueEvents(venueId?: string, limit = 10) {
       try {
         const { data, error } = await supabase
           .from('events')
-          .select('*')
+          .select(EVENT_CLIENT_SELECT)
           .eq('venue_id', venueId)
           .eq('event_status', 'live')
           .eq('venue_page_status', 'approved')

@@ -31,6 +31,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+export type PartnerOrganizationType = 'venue_operator' | 'event_organizer' | 'both' | 'platform';
+export type PartnerOrganizationStatus = 'unclaimed' | 'pending' | 'active' | 'suspended' | 'archived';
+export type PartnerOrganizationMemberRole = 'primary_owner' | 'owner' | 'manager' | 'editor';
+export type PartnerOrganizationMemberStatus = 'invited' | 'active' | 'suspended' | 'revoked';
+export type PartnerOrganizationClaimStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'disputed';
+export type ListingSource = 'd8_admin' | 'partner' | 'import' | 'community';
+
+// Listing reads deliberately exclude created_by, which is private audit data,
+// and the new Phase 3 columns until the migration has been promoted everywhere.
+export const VENUE_CLIENT_SELECT = 'id,name,slug,city,area,category,tier,price_tier,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,created_at,updated_at';
+export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,spots_left,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
+
 export type Database = {
   public: {
     Tables: {
@@ -79,6 +91,9 @@ export type Database = {
           last_verified_at: string | null;
           next_verification_due_at: string | null;
           partner_id: string | null;
+          operator_organization_id: string | null;
+          created_by: string | null;
+          source: ListingSource | null;
           created_at: string;
           updated_at: string;
         };
@@ -88,6 +103,9 @@ export type Database = {
           id: string;
           venue_id: string | null;
           partner_id: string | null;
+          organizer_organization_id: string | null;
+          created_by: string | null;
+          source: ListingSource | null;
           title: string;
           description: string | null;
           category: string | null;
@@ -127,11 +145,83 @@ export type Database = {
           city: string;
           contact: string;
           status: 'pending' | 'live' | 'needs_update' | 'rejected';
+          organization_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['partner_applications']['Row'], 'id' | 'created_at' | 'updated_at'> & { id?: string };
         Update: Partial<Database['public']['Tables']['partner_applications']['Row']>;
+      };
+      partner_organizations: {
+        Row: {
+          id: string;
+          name: string;
+          organization_type: PartnerOrganizationType;
+          status: PartnerOrganizationStatus;
+          contact: string | null;
+          city: string | null;
+          created_by: string | null;
+          verified_at: string | null;
+          verified_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['partner_organizations']['Row']> & {
+          id?: string;
+          name: string;
+          organization_type: PartnerOrganizationType;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['partner_organizations']['Row']>;
+      };
+      partner_organization_memberships: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          role: PartnerOrganizationMemberRole;
+          status: PartnerOrganizationMemberStatus;
+          granted_by: string | null;
+          granted_at: string | null;
+          revoked_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['partner_organization_memberships']['Row']> & {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role: PartnerOrganizationMemberRole;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['partner_organization_memberships']['Row']>;
+      };
+      partner_organization_claims: {
+        Row: {
+          id: string;
+          organization_id: string;
+          claimant_user_id: string;
+          source_venue_id: string | null;
+          requested_role: 'primary_owner' | 'manager';
+          status: PartnerOrganizationClaimStatus;
+          evidence: Record<string, unknown>;
+          review_notes: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['partner_organization_claims']['Row']> & {
+          id?: string;
+          organization_id: string;
+          claimant_user_id: string;
+          status?: 'pending';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['partner_organization_claims']['Row']>;
       };
       partner_notifications: {
         Row: {

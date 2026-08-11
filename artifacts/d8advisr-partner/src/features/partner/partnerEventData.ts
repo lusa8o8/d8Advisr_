@@ -1,4 +1,4 @@
-import { supabase } from '@workspace/d8-core/supabase';
+import { EVENT_CLIENT_SELECT, supabase } from '@workspace/d8-core/supabase';
 import { canManageEvents, type PartnerType } from '@workspace/d8-core/partner-capabilities';
 import type { PartnerEvent, PartnerVenueOption } from '@workspace/d8-core/types';
 import type { PartnerApplicationRow } from './partnerModels';
@@ -73,7 +73,7 @@ function buildNextStartsAt(eventData: PartnerEventInput) {
 export async function fetchPartnerEvents(userId: string): Promise<PartnerEvent[]> {
   const { data, error } = await supabase
     .from('events')
-    .select('*')
+    .select(EVENT_CLIENT_SELECT)
     .eq('partner_id', userId)
     .order('created_at', { ascending: false });
   throwIfError(error);

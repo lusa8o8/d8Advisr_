@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 2 complete
+Status: active planning document — Phase 3 local foundation complete; staging pending
 
 Created: 2026-08-11
 
@@ -258,8 +258,11 @@ Commits should be separated by stable boundary, for example:
 
 ### Phase 3 — Additive ownership schema foundation
 
-Outcome: introduce businesses, memberships, claims, and provenance without
+Outcome: introduce organizations, memberships, claims, and provenance without
 cutting over existing partner access.
+
+Status: local implementation complete on 2026-08-11; staging application and
+post-apply role verification require explicit approval.
 
 Fresh discovery:
 
@@ -460,7 +463,7 @@ Primary references:
 
 ## Immediate Next Step
 
-Begin Phase 3 discovery only: refresh migration parity, reread the accepted ADR
-and every impacted policy/function, inspect staging data postconditions, and
-record the additive schema mini plan before writing a migration. Applying any
-new migration remotely still requires separate explicit approval.
+Review and explicitly approve the Phase 3 migration for staging only. After it
+applies, run the read-only SQL postconditions, expand the API role matrix for
+the new organization objects, and verify both clients before considering any
+production promotion or beginning Phase 4.

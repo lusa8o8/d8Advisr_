@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { useDemandSignals } from '@/hooks/useDemandSignals';
-import { supabase } from '@/lib/supabase';
+import { EVENT_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import { useRegion } from '@/hooks/useRegion';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
@@ -301,7 +301,7 @@ export function EventDetail() {
       setLiveEventError(null);
       const { data, error } = await supabase
         .from('events')
-        .select('*, venues(id,name,address,area,city,rating,review_count)')
+        .select(`${EVENT_CLIENT_SELECT},venues(id,name,address,area,city,rating,review_count)`)
         .eq('id', eventId)
         .eq('event_status', 'live')
         .maybeSingle();

@@ -8,7 +8,7 @@ import {
 import { cn } from "@/components/SharedUI";
 import { useDemandSignals } from "@/hooks/useDemandSignals";
 import { useVenueEvents } from "@/hooks/useVenues";
-import { supabase } from "@/lib/supabase";
+import { VENUE_CLIENT_SELECT, supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/supabase";
 import { useRegion } from "@/hooks/useRegion";
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
@@ -284,7 +284,7 @@ export function VenueDetails() {
 
       const { data, error } = await supabase
         .from('venues')
-        .select('*')
+        .select(VENUE_CLIENT_SELECT)
         .eq('id', venueId)
         .eq('is_active', true)
         .eq('listing_status', 'live')
