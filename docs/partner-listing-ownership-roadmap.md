@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 1 proposed
+Status: active planning document — Phase 2 complete
 
 Created: 2026-08-11
 
@@ -130,29 +130,25 @@ starts.
   documented or baselined for new environments later, but must not be edited in
   place.
 
-## Provisional Target Model
+## Accepted Target Model
 
-This is the starting hypothesis for Phase 1, not permission to migrate yet.
-
-### Business identity
-
-Create a business entity independent of authentication, tentatively
-`partner_businesses`:
+ADR 0001 accepts an organization entity independent of authentication:
+`partner_organizations`:
 
 - `id`
 - `name`
-- `business_type`: venue, organizer, or both
+- `organization_type`: venue operator, event organizer, both, or platform
 - `status`: unclaimed, pending, active, suspended, or archived
 - contact and verification metadata
 - timestamps
 
-An internal active business represents D8Advisr for first-party publishing.
+An internal active organization represents D8Advisr for first-party publishing.
 
 ### Membership and access
 
-Create `partner_business_memberships`:
+Create `partner_organization_memberships`:
 
-- `business_id`
+- `organization_id`
 - `user_id`
 - `role`: primary_owner, owner, manager, or editor
 - `status`: invited, active, suspended, or revoked
@@ -163,9 +159,9 @@ membership; it does not migrate content to another auth user.
 
 ### Claims
 
-Create `listing_claims`:
+Create `partner_organization_claims`:
 
-- claimant and target listing/business IDs
+- claimant and target organization IDs, with an optional source listing
 - status: pending, approved, rejected, cancelled, or disputed
 - evidence metadata and private review notes
 - reviewer and decision timestamps
@@ -234,6 +230,8 @@ Verify: walk every existing and proposed workflow against the role matrix.
 Commit: `docs: define listing ownership and claim model`.
 
 ### Phase 2 — Focused admin/partner data-layer extraction
+
+Status: complete on 2026-08-11.
 
 Outcome: create safe seams for later features without changing behavior.
 
@@ -462,7 +460,7 @@ Primary references:
 
 ## Immediate Next Step
 
-Review ADR 0001. If accepted, begin Phase 2 only: refresh its discovery, record
-the focused extraction mini plan, and refactor the current admin listing data
-layer without changing behavior. Commit that boundary before touching partner
-data operations or writing any schema migration.
+Begin Phase 3 discovery only: refresh migration parity, reread the accepted ADR
+and every impacted policy/function, inspect staging data postconditions, and
+record the additive schema mini plan before writing a migration. Applying any
+new migration remotely still requires separate explicit approval.

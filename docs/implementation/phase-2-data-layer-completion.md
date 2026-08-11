@@ -1,6 +1,6 @@
 # Phase 2 Mini Plan: Admin and Partner Data-Layer Completion
 
-Status: in progress
+Status: complete
 
 Date: 2026-08-11
 
@@ -41,7 +41,8 @@ Commit: `refactor(admin): extract listing data operations`
 
 ### Partner boundary
 
-- Add modules for partner models, applications, venues, events, and insights.
+- Add modules for partner models, applications, venues, events, demand
+  analytics, and reviews.
 - Keep React state and orchestration in `usePartner.ts`.
 - Preserve the `usePartner()` return contract and all page call sites.
 - Preserve current legacy `partner_id` behavior until the Phase 3 additive
@@ -71,3 +72,19 @@ Commit: `refactor(partner): split partner domain operations`
 
 Each slice is a source-only refactor with no persisted-state change. Reverting
 its focused commit restores the former component/hook implementation.
+
+## Completion record
+
+- `AdminPanel.tsx` no longer imports Supabase; all existing admin reads, RPCs,
+  and inspection writes are isolated in `adminListingData.ts`.
+- `usePartner.ts` decreased from 658 to 140 lines and now contains only React
+  state, refresh orchestration, optimistic state, and its unchanged public API.
+- Partner application, venue, event, demand, and review database operations are
+  separated under `features/partner` with their row mapping in `partnerModels`.
+- Existing `partner_id` filters, selected columns, RPC names and parameters,
+  write payloads, capability checks, and refresh ordering remain in place.
+- Consumer and partner TypeScript checks pass.
+- Both consumer and partner production builds pass; existing bundle-size,
+  sourcemap, and stale Browserslist warnings remain non-blocking.
+- The full authenticated staging role-isolation suite passes for both
+  consumers, both partners, admin, protected fields, and cross-account reads.

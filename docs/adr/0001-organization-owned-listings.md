@@ -1,6 +1,6 @@
 # ADR 0001: Organization-Owned Listings and Claims
 
-Status: proposed for review
+Status: accepted
 
 Date: 2026-08-11
 
