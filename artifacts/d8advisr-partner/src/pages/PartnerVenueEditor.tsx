@@ -4,6 +4,8 @@ import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
 import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
+import { useAuth } from '@workspace/d8-core/auth';
+import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
@@ -42,6 +44,7 @@ const MAX_PHOTOS = 6;
 
 export function PartnerVenueEditor() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { profile, venueListing, saveVenue } = usePartner();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -60,9 +63,30 @@ export function PartnerVenueEditor() {
   const [desc, setDesc]             = useState('');
   const [hours, setHours]           = useState<DayHours[]>(DEFAULT_HOURS);
   const [photos, setPhotos]         = useState<MediaFile[]>([]);
+  const draftKey = `d8:partner-venue:${user?.id ?? 'anonymous'}`;
+  const hydratedDraftRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
+    if (!profile || hydratedDraftRef.current === draftKey) return;
+    const recovered = readSessionDraft<{
+      venueName: string; venueType: string; address: string; area: string;
+      phone: string; website: string; desc: string; hours: DayHours[];
+      photos: Array<Pick<MediaFile, 'id' | 'url' | 'name'>>;
+    }>(draftKey);
+    if (recovered) {
+      setVenueName(recovered.venueName);
+      setVenueType(recovered.venueType);
+      setAddress(recovered.address);
+      setArea(recovered.area);
+      setPhone(recovered.phone);
+      setWebsite(recovered.website);
+      setDesc(recovered.desc);
+      setHours(recovered.hours);
+      setPhotos(recovered.photos);
+      hydratedDraftRef.current = draftKey;
+      return;
+    }
+    {
       setVenueName(venueListing?.name ?? profile.name);
       setVenueType(venueListing?.category ?? '');
       setAddress(venueListing?.address ?? '');
@@ -87,7 +111,16 @@ export function PartnerVenueEditor() {
         name: index === 0 ? 'Cover photo' : `Venue photo ${index + 1}`,
       })));
     }
-  }, [profile, venueListing]);
+    hydratedDraftRef.current = draftKey;
+  }, [draftKey, profile, venueListing]);
+
+  useEffect(() => {
+    if (hydratedDraftRef.current !== draftKey) return;
+    writeSessionDraft(draftKey, {
+      venueName, venueType, address, area, phone, website, desc, hours,
+      photos: photos.filter(photo => !photo.file).map(({ id, url, name }) => ({ id, url, name })),
+    });
+  }, [address, area, desc, draftKey, hours, phone, photos, venueName, venueType, website]);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -152,6 +185,7 @@ export function PartnerVenueEditor() {
         coverImage: imageUrls[0] ?? null,
         images: imageUrls,
       });
+      clearSessionDraft(draftKey);
       setSaved(true);
       setTimeout(() => setLocation('/dashboard'), 1200);
     } catch (e) {

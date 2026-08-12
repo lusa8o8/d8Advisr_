@@ -81,6 +81,15 @@ const HEALTH_LABEL: Record<Health, string> = {
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
 const NOISE_LEVELS: NoiseLevel[] = ['quiet', 'moderate', 'lively', 'loud'];
+type AdminNavTab = 'venues' | 'tracker' | 'health' | 'submissions' | 'create';
+
+function adminSectionFromLocation(location: string): { tab: AdminNavTab; view: AdminView } {
+  const section = new URL(location, window.location.origin).searchParams.get('section') as AdminNavTab | null;
+  if (section === 'tracker' || section === 'health' || section === 'submissions' || section === 'create') {
+    return { tab: section, view: section };
+  }
+  return { tab: 'venues', view: 'list' };
+}
 
 function logAdminIssue(message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;
@@ -98,14 +107,15 @@ function adminErrorMessage(error: unknown) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AdminPanel() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { signOut, user } = useAuth();
-  const [view, setView]       = useState<AdminView>('list');
+  const initialSection = adminSectionFromLocation(location);
+  const [view, setView]       = useState<AdminView>(initialSection.view);
   const [venues, setVenues]   = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(false);
   const [venuesError, setVenuesError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [navTab, setNavTab]   = useState<'venues' | 'tracker' | 'health' | 'submissions' | 'create'>('venues');
+  const [navTab, setNavTab]   = useState<AdminNavTab>(initialSection.tab);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [submissionsError, setSubmissionsError] = useState<string | null>(null);
@@ -145,6 +155,19 @@ export function AdminPanel() {
   });
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
+
+  const openAdminSection = (tab: AdminNavTab, nextView: AdminView) => {
+    setNavTab(tab);
+    setView(nextView);
+    setLocation(`/admin?section=${tab}`);
+  };
+
+  useEffect(() => {
+    if (view === 'detail') return;
+    const section = adminSectionFromLocation(location);
+    setNavTab(section.tab);
+    setView(section.view);
+  }, [location]);
   const canEditSelectedDraft = Boolean(
     selectedVenue
     && selectedVenue.source === 'd8_admin'
@@ -524,12 +547,12 @@ export function AdminPanel() {
       {/* NAV TABS — only on list/tracker */}
       {view !== 'detail' && (
         <div className="bg-[#141414] px-5 pb-4 flex gap-1 shrink-0 overflow-x-auto no-scrollbar">
-          <button onClick={() => { setNavTab('venues'); setView('list'); }}
+          <button onClick={() => openAdminSection('venues', 'list')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'venues' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <ClipboardList size={13} /> Venues ({venues.length})
           </button>
-          <button onClick={() => { setNavTab('tracker'); setView('tracker'); }}
+          <button onClick={() => openAdminSection('tracker', 'tracker')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
               navTab === 'tracker' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Clock size={13} /> Inspections
@@ -539,12 +562,12 @@ export function AdminPanel() {
               </span>
             )}
           </button>
-          <button onClick={() => { setNavTab('health'); setView('health'); }}
+          <button onClick={() => openAdminSection('health', 'health')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'health' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Activity size={13} /> Health
           </button>
-          <button onClick={() => { setNavTab('submissions'); setView('submissions'); }}
+          <button onClick={() => openAdminSection('submissions', 'submissions')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
               navTab === 'submissions' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Plus size={13} /> Submissions
@@ -554,7 +577,7 @@ export function AdminPanel() {
               </span>
             )}
           </button>
-          <button onClick={() => { setNavTab('create'); setView('create'); }}
+          <button onClick={() => openAdminSection('create', 'create')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'create' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Plus size={13} /> Create

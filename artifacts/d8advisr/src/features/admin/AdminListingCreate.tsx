@@ -3,6 +3,8 @@ import { CalendarPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { Venue } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { AdminListingMediaEditor } from './AdminListingMediaEditor';
+import { useAuth } from '@/context/AuthContext';
+import { useSessionDraft } from '@workspace/d8-core/use-session-draft';
 import {
   createAdminEvent,
   createAdminVenue,
@@ -50,20 +52,22 @@ export function VibePicker({ value, options, onChange }: {
 }
 
 export function AdminListingCreate({ venues, onVenueCreated }: Props) {
-  const [kind, setKind] = useState<ListingKind>('venue');
-  const [attribution, setAttribution] = useState<AdminListingAttribution>('unclaimed');
-  const [publicationStatus, setPublicationStatus] = useState<AdminPublicationStatus>('draft');
+  const { user } = useAuth();
+  const draftPrefix = `d8:admin-listing:${user?.id ?? 'anonymous'}`;
+  const [kind, setKind, clearKind] = useSessionDraft<ListingKind>(`${draftPrefix}:kind`, 'venue');
+  const [attribution, setAttribution, clearAttribution] = useSessionDraft<AdminListingAttribution>(`${draftPrefix}:attribution`, 'unclaimed');
+  const [publicationStatus, setPublicationStatus, clearPublication] = useSessionDraft<AdminPublicationStatus>(`${draftPrefix}:publication`, 'draft');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const submissionInFlight = useRef(false);
   const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
-  const [venue, setVenue] = useState({
+  const [venue, setVenue, clearVenue] = useSessionDraft(`${draftPrefix}:venue`, {
     name: '', city: 'Lusaka', category: '', area: '', address: '', description: '',
     tier: 'Verified' as 'Verified' | 'D8 Approved' | 'Hidden Gem',
     priceTier: '', averageCost: '', coverImage: '', images: [] as string[], vibes: '',
   });
-  const [event, setEvent] = useState({
+  const [event, setEvent, clearEvent] = useSessionDraft(`${draftPrefix}:event`, {
     title: '', city: 'Lusaka', category: '', description: '', startsAt: '', endsAt: '',
     locationKind: 'undisclosed' as EventLocation, venueId: '',
     externalLocationName: '', externalLocationAddress: '', price: '', currency: 'K',
@@ -118,10 +122,15 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
       }
       requestKeys.current[kind] = null;
       if (kind === 'venue') {
+        clearVenue();
         setVenue(current => ({ ...current, name: '', category: '', area: '', address: '', description: '', priceTier: '', averageCost: '', coverImage: '', images: [], vibes: '' }));
       } else {
+        clearEvent();
         setEvent(current => ({ ...current, title: '', category: '', description: '', startsAt: '', endsAt: '', venueId: '', externalLocationName: '', externalLocationAddress: '', price: '', capacity: '', coverImage: '', images: [], vibes: '' }));
       }
+      clearKind();
+      clearAttribution();
+      clearPublication();
       setSuccess(`${kind === 'venue' ? 'Venue' : 'Event'} created · ${id.slice(0, 8)}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create the listing.');

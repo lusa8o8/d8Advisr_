@@ -5,6 +5,7 @@ import { cn } from "@/components/SharedUI";
 import { useAuth } from "@/context/AuthContext";
 import { useRegion } from "@/hooks/useRegion";
 import { supabase } from "@/lib/supabase";
+import { useSessionDraft } from '@workspace/d8-core/use-session-draft';
 
 const PLAN_TYPES = [
   {
@@ -53,19 +54,20 @@ export function InitialPreferences() {
   const { user } = useAuth();
   const { regions, formatPrice } = useRegion();
   const [, setLocation] = useLocation();
-  const [step, setStep] = useState(1);
+  const draftKey = `d8:consumer-onboarding:${user?.id ?? 'anonymous'}`;
+  const [step, setStep, clearStep] = useSessionDraft(`${draftKey}:step`, 1);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Step 1 — plan type
-  const [planTypes, setPlanTypes] = useState<string[]>([]);
+  const [planTypes, setPlanTypes, clearPlanTypes] = useSessionDraft<string[]>(`${draftKey}:plan-types`, []);
 
   // Step 2 — vibes + budget
-  const [vibes, setVibes]   = useState<string[]>([]);
-  const [budget, setBudget] = useState(150);
+  const [vibes, setVibes, clearVibes] = useSessionDraft<string[]>(`${draftKey}:vibes`, []);
+  const [budget, setBudget, clearBudget] = useSessionDraft(`${draftKey}:budget`, 150);
 
   // Step 3 — city
-  const [city, setCity] = useState("");
+  const [city, setCity, clearCity] = useSessionDraft(`${draftKey}:city`, "");
 
   const TOTAL_STEPS = 4;
 
@@ -117,6 +119,11 @@ export function InitialPreferences() {
       return;
     }
 
+    clearStep();
+    clearPlanTypes();
+    clearVibes();
+    clearBudget();
+    clearCity();
     setLocation('/home');
   };
 

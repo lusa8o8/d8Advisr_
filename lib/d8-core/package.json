@@ -15,7 +15,8 @@
     "./types": "./src/types.ts",
     "./use-admin-status": "./src/useAdminStatus.ts",
     "./use-profile": "./src/useProfile.ts",
-    "./use-region": "./src/useRegion.ts"
+    "./use-region": "./src/useRegion.ts",
+    "./use-session-draft": "./src/useSessionDraft.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",

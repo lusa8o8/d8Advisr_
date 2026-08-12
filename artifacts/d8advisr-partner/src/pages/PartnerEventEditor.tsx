@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
 import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
+import { useAuth } from '@workspace/d8-core/auth';
+import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
 type LocationChoice = 'owned_venue' | 'existing_venue' | 'external' | 'undisclosed';
@@ -44,11 +46,14 @@ export function PartnerEventEditor() {
   const params = useParams<{ id?: string }>();
   const editId = params?.id;
   const { profile, saveEvent, events, venueOptions } = usePartner();
+  const { user } = useAuth();
   const { regions } = useRegion();
   const { categories } = useListingReferences('event', profile?.city);
   const currencySymbol = regions.find(r => r.id === profile?.city)?.currency_symbol || 'K';
 
   const existing = editId ? events.find(e => e.id === editId) : null;
+  const draftKey = `d8:partner-event:${user?.id ?? 'anonymous'}:${editId ?? 'new'}`;
+  const hydratedDraftRef = useRef<string | null>(null);
 
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -85,7 +90,46 @@ export function PartnerEventEditor() {
   const video  = media.find(m => m.type === 'video');
 
   useEffect(() => {
-    if (!existing) return;
+    if (!profile || (editId && !existing) || hydratedDraftRef.current === draftKey) return;
+    const recovered = readSessionDraft<{
+      name: string; category: string; frequency: Frequency; weekday: string; date: string; time: string;
+      price: string; isFree: boolean; hasCapacity: boolean; capacity: string; desc: string; emoji: string;
+      locationChoice: LocationChoice; venueId: string; externalLocationName: string; externalLocationAddress: string;
+      images: string[];
+    }>(draftKey);
+    if (recovered) {
+      setName(recovered.name); setCategory(recovered.category); setFrequency(recovered.frequency);
+      setWeekday(recovered.weekday); setDate(recovered.date); setTime(recovered.time); setPrice(recovered.price);
+      setIsFree(recovered.isFree); setHasCapacity(recovered.hasCapacity); setCapacity(recovered.capacity);
+      setDesc(recovered.desc); setEmoji(recovered.emoji); setLocationChoice(recovered.locationChoice);
+      setVenueId(recovered.venueId); setExternalLocationName(recovered.externalLocationName);
+      setExternalLocationAddress(recovered.externalLocationAddress);
+      setMedia(recovered.images.map((url, index) => ({ id: `recovered-${index}-${url}`, url, type: 'image', name: index === 0 ? 'Cover image' : `Event image ${index + 1}` })));
+      hydratedDraftRef.current = draftKey;
+      return;
+    }
+    if (!existing) {
+      hydratedDraftRef.current = draftKey;
+      return;
+    }
+    setName(existing.name);
+    setCategory(existing.category);
+    setFrequency(existing.frequency as Frequency);
+    setPrice(existing.isFree ? '' : existing.price);
+    setIsFree(existing.isFree ?? false);
+    setHasCapacity(existing.spotsTotal > 0);
+    setCapacity(existing.spotsTotal > 0 ? String(existing.spotsTotal) : '');
+    setEmoji(existing.emoji);
+    setLocationChoice(
+      existing.locationKind === 'd8_venue'
+        ? 'existing_venue'
+        : existing.locationKind === 'external'
+          ? 'external'
+          : 'undisclosed'
+    );
+    setVenueId(existing.venueId ?? '');
+    setExternalLocationName(existing.externalLocationName ?? '');
+    setExternalLocationAddress(existing.externalLocationAddress ?? '');
     const imageUrls = [
       existing.coverImage,
       ...(existing.images ?? []),
@@ -96,7 +140,17 @@ export function PartnerEventEditor() {
       type: 'image',
       name: index === 0 ? 'Cover image' : `Event image ${index + 1}`,
     })));
-  }, [existing]);
+    hydratedDraftRef.current = draftKey;
+  }, [draftKey, editId, existing, profile]);
+
+  useEffect(() => {
+    if (hydratedDraftRef.current !== draftKey) return;
+    writeSessionDraft(draftKey, {
+      name, category, frequency, weekday, date, time, price, isFree, hasCapacity, capacity, desc, emoji,
+      locationChoice, venueId, externalLocationName, externalLocationAddress,
+      images: media.filter(item => item.type === 'image' && !item.file).map(item => item.url),
+    });
+  }, [capacity, category, date, desc, draftKey, emoji, externalLocationAddress, externalLocationName, frequency, hasCapacity, isFree, locationChoice, media, name, price, time, venueId, weekday]);
 
   const handleImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -184,6 +238,7 @@ export function PartnerEventEditor() {
         coverImage: imageUrls[0] ?? null,
         images: imageUrls,
       }, editId);
+      clearSessionDraft(draftKey);
       setSaved(true);
       setTimeout(() => setLocation('/dashboard'), 1200);
     } catch (e) {
