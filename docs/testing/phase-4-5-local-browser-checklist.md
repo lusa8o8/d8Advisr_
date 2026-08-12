@@ -16,15 +16,36 @@ workflow in the real clients before any production migration proposal.
 
 ## Admin listing creation and draft editing
 
+Browser evidence, 2026-08-12:
+
+- Draft creation, Submissions placement, approval, consumer visibility, live
+  correction, and initial cover upload passed.
+- Repeated post-success clicks created four separate venues because the client
+  cleared its idempotency key after each success while retaining the form.
+  The client now clears the form, disables the completed submission, and
+  requires an explicit **Create another** action.
+- Draft/live editing now uses the shared six-image gallery editor. Upload,
+  reorder cover, add multiple images, soft unlink, and URL fallback require a
+  browser retest.
+- Real venue detail pages now use saved gallery images and vibes, approved venue
+  events, real rating/count state, and named price levels. Fabricated contact
+  and review content is hidden for real database venues.
+
 - [ ] Create a draft venue and confirm country/currency are derived from region.
 - [ ] Confirm category is selected from the shared venue catalog.
 - [ ] Select a reviewed area, then confirm manual area fallback remains usable.
 - [ ] Confirm price level is a finite ordinal choice rather than free text.
 - [ ] Select finite vibes and confirm arbitrary new vibe text cannot be entered.
-- [ ] Upload a valid cover image and confirm its preview and saved public URL.
+- [x] Upload a valid cover image and confirm its preview and saved public URL.
 - [ ] Confirm invalid file types and oversized files show a useful error.
 - [ ] Edit the saved draft and confirm canonical values and media reload.
+- [ ] Submit once and confirm the completed form clears and cannot be resubmitted
+  until **Create another** is selected.
 - [ ] Submit/approve it and confirm the consumer sees one listing, not duplicates.
+- [ ] Add multiple images, make a different image the cover, and soft-unlink an
+  image in both draft and live revision flows.
+- [ ] Confirm the consumer venue gallery matches the saved image order and no
+  demo gallery/contact/review content appears for the real venue.
 
 ## Admin live revision
 

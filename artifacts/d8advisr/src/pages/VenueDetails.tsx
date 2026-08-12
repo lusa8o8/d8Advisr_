@@ -237,7 +237,8 @@ function categoryEmoji(category: string): string {
 
 function formatVenuePrice(venue: VenueRow | null, formatPriceFn: (amt: number) => string): string {
   if (venue?.avg_cost_pp) return `Est. ${formatPriceFn(venue.avg_cost_pp)}/pp`;
-  return venue?.price_tier ? venue.price_tier : 'Price varies';
+  const labels: Record<string, string> = { '$': 'Budget', '$$': 'Moderate', '$$$': 'Premium', '$$$$': 'Luxury' };
+  return venue?.price_tier ? labels[venue.price_tier] ?? venue.price_tier : 'Price varies';
 }
 
 export function VenueDetails() {
@@ -321,6 +322,12 @@ export function VenueDetails() {
   const venueAttribution = liveVenue?.operator_organization_id === D8_PLATFORM_ORGANIZATION_ID
     ? 'Operated by D8Advisr'
     : liveVenue?.source === 'd8_admin' ? 'Listed by D8Advisr' : null;
+  const venueImages = hasLiveVenueId
+    ? Array.from(new Set([liveVenue?.cover_image, ...(liveVenue?.images ?? [])].filter((image): image is string => Boolean(image))))
+    : VENUE_IMAGES;
+  const displayedImages = venueImages.length ? venueImages : [VENUE_IMAGES[0]];
+  const displayedVibes = hasLiveVenueId ? liveVenue?.vibes ?? [] : ['Romantic', 'Outdoor', 'Full Bar'];
+  const hasReviews = hasLiveVenueId ? venueReviewCount > 0 && liveVenue?.rating !== null : true;
   const planParams = () => {
     const params = new URLSearchParams({
       venueId,
@@ -337,18 +344,20 @@ export function VenueDetails() {
   };
 
   const prevImg = () => setImgIdx(i => Math.max(0, i - 1));
-  const nextImg = () => setImgIdx(i => Math.min(VENUE_IMAGES.length - 1, i + 1));
+  const nextImg = () => setImgIdx(i => Math.min(displayedImages.length - 1, i + 1));
+
+  useEffect(() => setImgIdx(0), [liveVenue?.id, liveVenue?.cover_image, liveVenue?.images]);
 
   return (
     <div className="flex-1 min-h-0 bg-card flex flex-col relative overflow-y-auto no-scrollbar pb-24">
 
       {/* ── IMAGE SLIDESHOW ─────────────────────────────────────────────────── */}
       <div className="h-72 relative overflow-hidden rounded-b-[40px] shadow-md shrink-0">
-        {VENUE_IMAGES.map((src, i) => (
+        {displayedImages.map((src, i) => (
           <img
             key={i}
             src={src}
-            alt={`Lumina ${i + 1}`}
+            alt={`${venueName} ${i + 1}`}
             className={cn(
               "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
               i === imgIdx ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -370,7 +379,7 @@ export function VenueDetails() {
           onClick={() => setLightboxOpen(true)}
           className="absolute top-14 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1.5 rounded-full z-10 flex items-center gap-1.5 hover:bg-black/60 transition-colors"
         >
-          <Images size={11} /> {imgIdx + 1} / {VENUE_IMAGES.length}
+          <Images size={11} /> {imgIdx + 1} / {displayedImages.length}
         </button>
 
         {/* Share */}
@@ -389,7 +398,7 @@ export function VenueDetails() {
         )}
 
         {/* Right arrow */}
-        {imgIdx < VENUE_IMAGES.length - 1 && (
+        {imgIdx < displayedImages.length - 1 && (
           <button
             onClick={nextImg}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
@@ -408,7 +417,7 @@ export function VenueDetails() {
 
         {/* Dot indicators */}
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-          {VENUE_IMAGES.map((_, i) => (
+          {displayedImages.map((_, i) => (
             <button
               key={i}
               onClick={() => setImgIdx(i)}
@@ -450,11 +459,11 @@ export function VenueDetails() {
           )}
           
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium mb-4">
-            <div className="flex items-center gap-1 text-foreground">
+            {hasReviews ? <div className="flex items-center gap-1 text-foreground">
               <Star size={16} className="fill-[#FF9500] text-[#FF9500]" />
               <span className="font-bold">{venueRating.toFixed(1)}</span>
               <span className="text-gray-400 font-normal">({venueReviewCount} reviews)</span>
-            </div>
+            </div> : <span className="text-gray-400">No reviews yet</span>}
           </div>
 
           <div className="flex items-center gap-2 text-sm text-foreground bg-background p-3 rounded-xl">
@@ -465,7 +474,7 @@ export function VenueDetails() {
 
         {/* Tabs */}
         <div className="flex border-b border-border mb-6">
-          {['Overview', 'Events', 'Reviews', 'Location'].map(tab => (
+          {['Overview', 'Events', 'Reviews', 'Location'].filter(tab => tab !== 'Reviews' || !hasLiveVenueId).map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab as 'Overview' | 'Events' | 'Reviews' | 'Location')}
@@ -492,7 +501,9 @@ export function VenueDetails() {
               {venueDescription}
             </p>
 
-            <h3 className="font-bold text-foreground text-lg mb-4">Highlights</h3>
+            {hasLiveVenueId ? (
+              displayedVibes.length > 0 ? <><h3 className="font-bold text-foreground text-lg mb-4">Highlights</h3><div className="mb-8 flex flex-wrap gap-2">{displayedVibes.map(vibe => <span key={vibe} className="rounded-full border border-border bg-background px-3 py-2 text-sm font-medium text-foreground">{vibe}</span>)}</div></> : null
+            ) : <><h3 className="font-bold text-foreground text-lg mb-4">Highlights</h3>
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#FFF0F1] flex items-center justify-center text-primary">❤️</div>
@@ -510,7 +521,7 @@ export function VenueDetails() {
                 <div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-foreground"><Clock size={16} /></div>
                 <span className="text-sm font-medium text-foreground">Until 11 PM</span>
               </div>
-            </div>
+            </div></>}
 
             {/* Upcoming at this venue — preview */}
             <div className="mb-8">
@@ -519,7 +530,7 @@ export function VenueDetails() {
                 <button onClick={() => setActiveTab('Events')} className="text-sm font-bold text-primary">See all</button>
               </div>
               <div
-                className="bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+                className={cn("bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform", hasLiveVenueId && "hidden")}
                 onClick={() => setLocation('/event/e1')}
               >
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-2xl shadow-sm shrink-0">🎷</div>
@@ -534,9 +545,15 @@ export function VenueDetails() {
                 </div>
                 <span className="text-xs font-bold text-[#FF9500] bg-orange-50 border border-orange-200 px-2.5 py-1.5 rounded-xl">8 left</span>
               </div>
+              {hasLiveVenueId && (displayedVenueEvents.length > 0 ? (
+                <button onClick={() => setLocation(`/event/${displayedVenueEvents[0].id}`)} className="w-full rounded-2xl border border-border bg-card p-4 text-left">
+                  <p className="font-bold text-foreground">{displayedVenueEvents[0].name}</p>
+                  <p className="mt-1 text-[12px] text-muted-foreground">{displayedVenueEvents[0].recurrenceLabel ?? displayedVenueEvents[0].date} · {displayedVenueEvents[0].time}</p>
+                </button>
+              ) : <div className="rounded-2xl border border-dashed border-border p-4 text-[12px] text-muted-foreground">No upcoming events at this venue.</div>)}
             </div>
             
-            <div className="flex flex-col gap-3 border-t border-border pt-6">
+            {!hasLiveVenueId && <div className="flex flex-col gap-3 border-t border-border pt-6">
                <button className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-background transition-colors">
                   <div className="flex items-center gap-3 text-foreground font-medium text-sm">
                     <Phone size={16} className="text-muted-foreground" />
@@ -549,7 +566,7 @@ export function VenueDetails() {
                     luminarestaurant.com
                   </div>
                </button>
-            </div>
+            </div>}
           </div>
         )}
 
@@ -934,13 +951,13 @@ export function VenueDetails() {
             <p className="text-white/80 text-[13px] font-semibold">
               {venueName}
             </p>
-            <span className="text-white/50 text-[13px] font-medium">{imgIdx + 1} / {VENUE_IMAGES.length}</span>
+            <span className="text-white/50 text-[13px] font-medium">{imgIdx + 1} / {displayedImages.length}</span>
           </div>
 
           {/* Image */}
           <div className="flex-1 flex items-center justify-center relative px-2" onClick={e => e.stopPropagation()}>
             <img
-              src={VENUE_IMAGES[imgIdx]}
+              src={displayedImages[imgIdx]}
               alt="Venue"
               className="max-w-full max-h-full object-contain rounded-2xl"
             />
@@ -952,7 +969,7 @@ export function VenueDetails() {
                 <ChevronLeft size={22} />
               </button>
             )}
-            {imgIdx < VENUE_IMAGES.length - 1 && (
+            {imgIdx < displayedImages.length - 1 && (
               <button
                 onClick={nextImg}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
@@ -964,7 +981,7 @@ export function VenueDetails() {
 
           {/* Dot indicators */}
           <div className="flex justify-center gap-2 pb-12 pt-5 shrink-0" onClick={e => e.stopPropagation()}>
-            {VENUE_IMAGES.map((_, i) => (
+            {displayedImages.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setImgIdx(i)}

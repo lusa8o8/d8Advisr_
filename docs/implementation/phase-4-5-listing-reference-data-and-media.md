@@ -169,6 +169,11 @@ object URLs/paths.
 - Shared listing media uses uploader-scoped storage paths, validated images,
   public reads, and database metadata. Consumers and cross-user uploads are
   rejected.
+- Browser discovery extended admin media from cover-only creation to a bounded
+  six-image gallery across creation, draft correction, and reviewed live edits.
+  Removing an image soft-unlinks it from the listing while retaining the object
+  for audit/recovery. Real venue detail pages render saved galleries and hide
+  unsupported demo content.
 - Partner edits to live descriptions and opening hours apply immediately.
   Name, category, address, area, cover image, and gallery changes remain private
   until an admin approves them. Approval and rejection are audited.

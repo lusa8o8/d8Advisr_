@@ -572,7 +572,7 @@ export function MapView() {
                 <span className="font-bold text-foreground">{selectedVenue.rating?.toFixed(1) ?? '—'}</span>
                 <span>({selectedVenue.reviewCount ?? 0})</span>
                 <span className="mx-1">•</span>
-                <span className="font-bold text-primary">{selectedVenue.priceTier || '—'}</span>
+                <span className="font-bold text-primary">{({ '$': 'Budget', '$$': 'Moderate', '$$$': 'Premium', '$$$$': 'Luxury' } as Record<string, string>)[selectedVenue.priceTier ?? ''] ?? 'Price varies'}</span>
               </div>
               <p className="truncate text-xs text-gray-500">
                 {selectedVenue.category || 'Venue'} • {selectedVenue.area || activeRegion.name}

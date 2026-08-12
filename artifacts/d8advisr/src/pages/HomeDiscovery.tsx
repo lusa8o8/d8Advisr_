@@ -79,7 +79,7 @@ export function HomeDiscovery() {
     rating: Number(v.rating ?? 0),
     reviews: v.review_count,
     distance: v.area ?? v.city,
-    price: v.price_tier ?? '$',
+    price: ({ '$': 'Budget', '$$': 'Moderate', '$$$': 'Premium', '$$$$': 'Luxury' } as Record<string, string>)[v.price_tier ?? ''] ?? 'Price varies',
     desc: v.description ?? '',
     icon: categoryEmoji(v.category),
     eventBadge: null as string | null,
