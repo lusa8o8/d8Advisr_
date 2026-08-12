@@ -36,7 +36,7 @@ const marker = `live-revision-${Date.now()}`;
 const fixtureIds = [];
 let revisionOne = null; let revisionTwo = null; let failure = null;
 const rpc = (name, accessToken, body) => request(url, apiKey, `/rest/v1/rpc/${name}`, { method: 'POST', accessToken, body });
-const venueRead = (id, accessToken) => request(url, apiKey, `/rest/v1/venues?select=id,name,city,category,area,address,description,price_tier,avg_cost_pp,cover_image,vibes,source,partner_id,operator_organization_id,listing_status,is_active,verification_status,last_verified_at,next_verification_due_at,tier,updated_at&id=eq.${id}`, { accessToken });
+const venueRead = (id, accessToken) => request(url, apiKey, `/rest/v1/venues?select=id,name,city,category,area,address,description,price_tier,avg_cost_pp,cover_image,images,vibes,source,partner_id,operator_organization_id,listing_status,is_active,verification_status,last_verified_at,next_verification_due_at,tier,updated_at&id=eq.${id}`, { accessToken });
 
 try {
   const create = await rpc('admin_create_venue', admin.accessToken, { p_payload: {
@@ -50,7 +50,9 @@ try {
   const beforeResult = await venueRead(venueId, admin.accessToken); const before = beforeResult.body[0];
 
   const submissionBody = { p_venue_id: venueId, p_expected_updated_at: before.updated_at, p_payload: {
-    name: `Pending ${marker}`, area: 'Pending area', description: 'Immediate description', avg_cost_pp: 250, vibes: ['Romantic', 'Relaxing'],
+    name: `Pending ${marker}`, area: 'Pending area', description: 'Immediate description', avg_cost_pp: 250,
+    images: ['https://example.com/pending-cover.jpg', 'https://example.com/pending-gallery.jpg'],
+    cover_image: 'https://example.com/pending-cover.jpg', vibes: ['Romantic', 'Relaxing'],
   } };
   for (const [label, actor] of [['consumer', consumer], ['partner', partner]]) {
     const denied = await rpc('admin_submit_live_venue_revision', actor.accessToken, submissionBody);
@@ -68,11 +70,12 @@ try {
   assert(submitted.response.ok && submitted.body?.revision_id, `Mixed revision submission failed: HTTP ${submitted.response.status}`);
   revisionOne = submitted.body.revision_id;
   assert(submitted.body.immediate_fields?.join('|') === 'description', 'Description was not classified immediate');
-  assert(new Set(submitted.body.pending_fields).size === 4, 'High-risk pending field count is incorrect');
+  assert(new Set(submitted.body.pending_fields).size === 6, 'High-risk pending field count is incorrect');
 
   const publicPending = await venueRead(venueId, undefined); const pendingVenue = publicPending.body[0];
   assert(pendingVenue.description === 'Immediate description', 'Low-risk description did not apply immediately');
   assert(pendingVenue.name === before.name && pendingVenue.area === before.area && pendingVenue.avg_cost_pp === before.avg_cost_pp, 'High-risk values changed before review');
+  assert(JSON.stringify(pendingVenue.images) === JSON.stringify(before.images), 'Gallery changed before review');
   assert(pendingVenue.verification_status === 'verified' && pendingVenue.listing_status === 'live' && pendingVenue.is_active === true, 'Pending proposal changed public trust/visibility state');
 
   const revisionRead = await request(url, apiKey, `/rest/v1/venue_live_revisions?select=id,status,previous_values,proposed_values,submitted_by&id=eq.${revisionOne}`, { accessToken: admin.accessToken });
@@ -104,7 +107,9 @@ try {
   console.log('PASS rejection leaves public high-risk values unchanged and dismisses review task');
 
   const submittedTwo = await rpc('admin_submit_live_venue_revision', admin.accessToken, { p_venue_id: venueId, p_expected_updated_at: afterReject.updated_at, p_payload: {
-    name: `Approved ${marker}`, area: 'Approved area', avg_cost_pp: 300, vibes: ['Cultural'],
+    name: `Approved ${marker}`, area: 'Approved area', avg_cost_pp: 300,
+    images: ['https://example.com/approved-cover.jpg', 'https://example.com/approved-gallery.jpg'],
+    cover_image: 'https://example.com/approved-cover.jpg', vibes: ['Cultural'],
   } });
   assert(submittedTwo.response.ok && submittedTwo.body?.revision_id, 'Second high-risk revision submission failed');
   revisionTwo = submittedTwo.body.revision_id;
@@ -112,13 +117,14 @@ try {
   assert(approve.response.ok && approve.body?.status === 'approved', `Revision approval failed: HTTP ${approve.response.status}`);
   const afterApprovalResult = await venueRead(venueId, admin.accessToken); const afterApproval = afterApprovalResult.body[0];
   assert(afterApproval.name === `Approved ${marker}` && afterApproval.area === 'Approved area' && afterApproval.avg_cost_pp === 300 && afterApproval.vibes?.join('|') === 'Cultural', 'Approved high-risk values were not applied atomically');
+  assert(afterApproval.cover_image === 'https://example.com/approved-cover.jpg' && afterApproval.images?.length === 2, 'Approved gallery was not applied atomically');
   assert(afterApproval.description === 'Immediate description' && afterApproval.listing_status === 'live' && afterApproval.is_active === true && afterApproval.verification_status === 'verified', 'Approval damaged low-risk/public state');
   assert(afterApproval.last_verified_at !== before.last_verified_at && afterApproval.next_verification_due_at, 'Approval did not refresh verification timestamps');
   const approvedTask = await request(url, apiKey, `/rest/v1/venue_reverification_tasks?select=status&live_revision_id=eq.${revisionTwo}`, { accessToken: admin.accessToken });
   assert(approvedTask.body?.[0]?.status === 'resolved', 'Approved revision task was not resolved');
   const audit = await request(url, apiKey, `/rest/v1/venue_change_log?select=field_name,risk_level,applied_immediately,reverification_reason,changed_by&venue_id=eq.${venueId}`, { accessToken: admin.accessToken });
   const approvalAudit = audit.body.filter(row => row.reverification_reason === 'admin_live_revision_approved');
-  assert(approvalAudit.length === 4 && approvalAudit.every(row => row.risk_level === 'high' && row.applied_immediately && row.changed_by === admin.userId), 'Approved per-field audit rows are incomplete');
+  assert(approvalAudit.length === 6 && approvalAudit.every(row => row.risk_level === 'high' && row.applied_immediately && row.changed_by === admin.userId), 'Approved per-field audit rows are incomplete');
   assert(audit.body.some(row => row.field_name === 'description' && row.risk_level === 'low' && row.reverification_reason === 'admin_live_edit'), 'Immediate description audit is missing');
   console.log('PASS approval atomically applies high-risk proposal, resolves task, refreshes verification, and audits fields');
 

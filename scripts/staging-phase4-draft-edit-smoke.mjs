@@ -102,20 +102,23 @@ try {
     area: 'Kabulonga',
     description: 'Corrected before approval',
     avg_cost_pp: 275,
+    images: ['https://example.com/cover.jpg', 'https://example.com/gallery.jpg'],
+    cover_image: 'https://example.com/cover.jpg',
     vibes: ['Romantic', 'Relaxing'],
   }, original.updated_at);
   assert(edited.response.ok && edited.body?.id === venueId, `Eligible draft edit failed: HTTP ${edited.response.status}`);
   assert(edited.body.name === `Corrected ${marker}` && edited.body.area === 'Kabulonga', 'Draft edit values were not applied');
   assert(edited.body.avg_cost_pp === 275 && edited.body.vibes?.join('|') === 'Romantic|Relaxing', 'Draft cost/vibes were not applied');
+  assert(edited.body.cover_image === 'https://example.com/cover.jpg' && edited.body.images?.length === 2, 'Draft gallery was not applied');
   assert(edited.body.source === original.source && edited.body.partner_id === original.partner_id, 'Draft edit changed provenance/ownership');
   assert(edited.body.listing_status === 'draft' && edited.body.is_active === false && edited.body.verification_status === 'unverified', 'Draft edit changed publication/verification state');
   assert(edited.body.tier === original.tier, 'Draft edit changed tier');
   console.log('PASS eligible admin draft fields update while protected state is preserved');
 
   const audit = await request(url, apiKey, `/rest/v1/venue_change_log?select=field_name,changed_by,reverification_reason,created_reverification&venue_id=eq.${venueId}&reverification_reason=eq.admin_draft_correction`, { accessToken: admin.accessToken });
-  assert(audit.response.ok && audit.body.length === 5, `Expected 5 draft correction audit rows, got ${audit.body?.length}`);
+  assert(audit.response.ok && audit.body.length === 7, `Expected 7 draft correction audit rows, got ${audit.body?.length}`);
   assert(audit.body.every(row => row.changed_by === admin.userId && row.reverification_reason === 'admin_draft_correction' && row.created_reverification === false), 'Draft audit actor/reason is incorrect');
-  assert(new Set(audit.body.map(row => row.field_name)).size === 5, 'Draft audit contains duplicate fields');
+  assert(new Set(audit.body.map(row => row.field_name)).size === 7, 'Draft audit contains duplicate fields');
   console.log('PASS each changed field has an atomic admin audit row');
 
   const stale = await editVenue(url, apiKey, admin.accessToken, venueId, { description: 'Stale overwrite' }, original.updated_at);

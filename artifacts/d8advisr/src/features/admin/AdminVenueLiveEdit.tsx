@@ -4,6 +4,7 @@ import { reviewAdminLiveVenueRevision, submitAdminLiveVenueRevision } from './ad
 import type { Venue, VenueLiveRevision } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
+import { AdminListingMediaEditor } from './AdminListingMediaEditor';
 
 interface Props {
   venue: Venue;
@@ -15,13 +16,15 @@ interface Props {
 const inputClass = 'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-[13px] text-gray-900 outline-none focus:border-[#FF5A5F] focus:ring-1 focus:ring-[#FF5A5F]';
 const tags = (value: string) => value.split(',').map(item => item.trim()).filter(Boolean);
 const displayValue = (value: unknown) => Array.isArray(value) ? value.join(', ') : value === null || value === undefined || value === '' ? 'Not provided' : String(value);
-const fieldLabel = (field: string) => ({ price_tier: 'Price tier', avg_cost_pp: 'Average cost / person', cover_image: 'Cover image', name: 'Name', city: 'City', category: 'Category', area: 'Area', address: 'Address', vibes: 'Vibes' }[field] ?? field.replaceAll('_', ' '));
+const fieldLabel = (field: string) => ({ price_tier: 'Price tier', avg_cost_pp: 'Average cost / person', cover_image: 'Cover image', images: 'Gallery images', name: 'Name', city: 'City', category: 'Category', area: 'Area', address: 'Address', vibes: 'Vibes' }[field] ?? field.replaceAll('_', ' '));
 
 function initialDraft(venue: Venue) {
   return {
     name: venue.name, city: venue.city, category: venue.category, area: venue.area ?? '',
     address: venue.address ?? '', description: venue.description ?? '', priceTier: venue.priceTier ?? '',
-    averageCost: venue.averageCostPerPerson?.toString() ?? '', coverImage: venue.coverImage ?? '', vibes: venue.vibes.join(', '),
+    averageCost: venue.averageCostPerPerson?.toString() ?? '', coverImage: venue.coverImage ?? '',
+    images: venue.photos,
+    vibes: venue.vibes.join(', '),
   };
 }
 
@@ -44,7 +47,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
         name: draft.name, city: draft.city, category: draft.category, area: draft.area,
         address: draft.address, description: draft.description, priceTier: draft.priceTier,
         averageCostPerPerson: draft.averageCost ? Number(draft.averageCost) : undefined,
-        coverImage: draft.coverImage, vibes: tags(draft.vibes),
+        coverImage: draft.coverImage, images: draft.images, vibes: tags(draft.vibes),
       });
       await onChanged();
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not submit the live venue edit.'); }
@@ -89,7 +92,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
       <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Address · review</span><input maxLength={500} className={inputClass} value={draft.address} onChange={e => setDraft(v => ({ ...v, address: e.target.value }))} /></label>
       <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-green-600">Description · applies immediately</span><textarea maxLength={5000} className={`${inputClass} min-h-24 resize-y`} value={draft.description} onChange={e => setDraft(v => ({ ...v, description: e.target.value }))} /></label>
       <div className="mt-3 grid gap-3 sm:grid-cols-2"><label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Price level · review</span><select className={inputClass} value={draft.priceTier} onChange={e => setDraft(v => ({ ...v, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></label><label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Average cost · review</span><input min="0" step="1" type="number" className={inputClass} value={draft.averageCost} onChange={e => setDraft(v => ({ ...v, averageCost: e.target.value }))} /></label></div>
-      <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Cover image URL · review (temporary)</span><input type="url" maxLength={2000} className={inputClass} value={draft.coverImage} onChange={e => setDraft(v => ({ ...v, coverImage: e.target.value }))} /></label>
+      <div className="mt-3"><span className="mb-2 block text-[10px] font-bold uppercase text-amber-600">Venue images · review</span><AdminListingMediaEditor review images={draft.images} onChange={images => setDraft(v => ({ ...v, images, coverImage: images[0] ?? '' }))} /></div>
       <label className="mt-3 block"><span className="mb-2 block text-[10px] font-bold uppercase text-amber-600">Vibes · review</span><VibePicker value={draft.vibes} options={references.vibes} onChange={vibes => setDraft(v => ({ ...v, vibes }))} /></label>
       {error && <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">{error}</div>}
       <button disabled={saving} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#141414] px-4 py-3 text-[13px] font-black text-white disabled:opacity-60"><Save size={15} />{saving ? 'Submitting changes...' : 'Apply safe changes & submit review'}</button>

@@ -17,6 +17,7 @@ export interface AdminVenueCreationInput {
   priceTier?: string;
   averageCostPerPerson?: number;
   coverImage?: string;
+  images?: string[];
   vibes?: string[];
 }
 
@@ -40,6 +41,7 @@ export interface AdminEventCreationInput {
   isFree?: boolean;
   isFeatured?: boolean;
   coverImage?: string;
+  images?: string[];
   vibes?: string[];
   emoji?: string;
 }
@@ -64,6 +66,7 @@ export async function createAdminVenue(input: AdminVenueCreationInput): Promise<
       price_tier: input.priceTier?.trim() || null,
       avg_cost_pp: input.averageCostPerPerson ?? null,
       cover_image: input.coverImage?.trim() || null,
+      images: input.images ?? [],
       vibes: input.vibes ?? [],
     },
   });
@@ -94,6 +97,7 @@ export async function createAdminEvent(input: AdminEventCreationInput): Promise<
       is_free: Boolean(input.isFree),
       is_featured: Boolean(input.isFeatured),
       cover_image: input.coverImage?.trim() || null,
+      images: input.images ?? [],
       vibes: input.vibes ?? [],
       emoji: input.emoji?.trim() || '📅',
       frequency: 'one-off',

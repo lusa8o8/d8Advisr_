@@ -1,8 +1,8 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CalendarPlus, CheckCircle2, ImagePlus, ShieldCheck } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { Venue } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
-import { uploadListingImage } from '@/lib/supabase';
+import { AdminListingMediaEditor } from './AdminListingMediaEditor';
 import {
   createAdminEvent,
   createAdminVenue,
@@ -56,19 +56,18 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const mediaInputRef = useRef<HTMLInputElement>(null);
   const submissionInFlight = useRef(false);
   const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
   const [venue, setVenue] = useState({
     name: '', city: 'Lusaka', category: '', area: '', address: '', description: '',
     tier: 'Verified' as 'Verified' | 'D8 Approved' | 'Hidden Gem',
-    priceTier: '', averageCost: '', coverImage: '', vibes: '',
+    priceTier: '', averageCost: '', coverImage: '', images: [] as string[], vibes: '',
   });
   const [event, setEvent] = useState({
     title: '', city: 'Lusaka', category: '', description: '', startsAt: '', endsAt: '',
     locationKind: 'undisclosed' as EventLocation, venueId: '',
     externalLocationName: '', externalLocationAddress: '', price: '', currency: 'K',
+    images: [] as string[],
     capacity: '', isFree: false, isFeatured: false, coverImage: '', vibes: '', emoji: '📅',
   });
   const { regions } = useRegion();
@@ -77,21 +76,6 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const references = useListingReferences(kind, selectedRegion?.id);
 
   const liveVenues = venues.filter(item => item.isActive && item.listingStatus === 'live');
-
-  const uploadCover = async (file?: File) => {
-    if (!file) return;
-    setUploading(true); setError(null);
-    try {
-      const url = await uploadListingImage(file, kind === 'venue' ? 'venues' : 'events');
-      if (kind === 'venue') setVenue(current => ({ ...current, coverImage: url }));
-      else setEvent(current => ({ ...current, coverImage: url }));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not upload the image.');
-    } finally {
-      setUploading(false);
-      if (mediaInputRef.current) mediaInputRef.current.value = '';
-    }
-  };
 
   const submit = async (formEvent: FormEvent) => {
     formEvent.preventDefault();
@@ -112,7 +96,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           attribution, publicationStatus, area: venue.area, address: venue.address,
           description: venue.description, tier: venue.tier, priceTier: venue.priceTier,
           averageCostPerPerson: venue.averageCost ? Number(venue.averageCost) : undefined,
-          coverImage: venue.coverImage, vibes: tags(venue.vibes),
+          coverImage: venue.coverImage, images: venue.images, vibes: tags(venue.vibes),
         });
         await onVenueCreated(id);
       } else {
@@ -128,11 +112,16 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           externalLocationAddress: event.externalLocationAddress,
           pricePerPerson: event.price ? Number(event.price) : undefined,
           currency: event.currency, capacity: event.capacity ? Number(event.capacity) : undefined,
-          isFree: event.isFree, isFeatured: event.isFeatured, coverImage: event.coverImage,
+          isFree: event.isFree, isFeatured: event.isFeatured, coverImage: event.coverImage, images: event.images,
           vibes: tags(event.vibes), emoji: event.emoji,
         });
       }
       requestKeys.current[kind] = null;
+      if (kind === 'venue') {
+        setVenue(current => ({ ...current, name: '', category: '', area: '', address: '', description: '', priceTier: '', averageCost: '', coverImage: '', images: [], vibes: '' }));
+      } else {
+        setEvent(current => ({ ...current, title: '', category: '', description: '', startsAt: '', endsAt: '', venueId: '', externalLocationName: '', externalLocationAddress: '', price: '', capacity: '', coverImage: '', images: [], vibes: '' }));
+      }
       setSuccess(`${kind === 'venue' ? 'Venue' : 'Event'} created · ${id.slice(0, 8)}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create the listing.');
@@ -145,7 +134,6 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 no-scrollbar">
       <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4">
-        <input ref={mediaInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event => void uploadCover(event.target.files?.[0])} />
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-start gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF0F1] text-[#FF5A5F]"><CalendarPlus size={19} /></div>
@@ -194,7 +182,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
                 <Field label="Price level"><select className={inputClass} value={venue.priceTier} onChange={e => setVenue(v => ({ ...v, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></Field>
                 <Field label="Average cost"><input min="0" type="number" className={inputClass} value={venue.averageCost} onChange={e => setVenue(v => ({ ...v, averageCost: e.target.value }))} /></Field>
               </div>
-              <Field label="Cover image"><div className="space-y-2">{venue.coverImage && <img src={venue.coverImage} alt="Venue cover preview" className="h-36 w-full rounded-xl object-cover" />}<button type="button" disabled={uploading} onClick={() => mediaInputRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-3 text-[12px] font-bold text-gray-600 disabled:opacity-50"><ImagePlus size={16} />{uploading ? 'Uploading...' : venue.coverImage ? 'Replace uploaded cover' : 'Upload cover image'}</button><input type="url" aria-label="Legacy venue cover URL fallback" placeholder="Temporary URL fallback" className={inputClass} value={venue.coverImage} onChange={e => setVenue(v => ({ ...v, coverImage: e.target.value }))} /></div></Field>
+              <Field label="Venue images"><AdminListingMediaEditor images={venue.images} onChange={images => setVenue(v => ({ ...v, images, coverImage: images[0] ?? '' }))} /></Field>
               <Field label="Vibes"><VibePicker value={venue.vibes} options={references.vibes} onChange={vibes => setVenue(v => ({ ...v, vibes }))} /></Field>
             </>
           ) : (
@@ -217,15 +205,15 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
                 <Field label="Capacity"><input min="0" type="number" className={inputClass} value={event.capacity} onChange={e => setEvent(v => ({ ...v, capacity: e.target.value }))} /></Field>
               </div>
               <div className="flex gap-5 text-[12px] font-semibold"><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFree} onChange={e => setEvent(v => ({ ...v, isFree: e.target.checked, price: e.target.checked ? '' : v.price }))} />Free</label><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFeatured} onChange={e => setEvent(v => ({ ...v, isFeatured: e.target.checked }))} />Featured</label></div>
-              <Field label="Cover image"><div className="space-y-2">{event.coverImage && <img src={event.coverImage} alt="Event cover preview" className="h-36 w-full rounded-xl object-cover" />}<button type="button" disabled={uploading} onClick={() => mediaInputRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-3 text-[12px] font-bold text-gray-600 disabled:opacity-50"><ImagePlus size={16} />{uploading ? 'Uploading...' : event.coverImage ? 'Replace uploaded cover' : 'Upload cover image'}</button><input type="url" aria-label="Legacy event cover URL fallback" placeholder="Temporary URL fallback" className={inputClass} value={event.coverImage} onChange={e => setEvent(v => ({ ...v, coverImage: e.target.value }))} /></div></Field>
+              <Field label="Event images"><AdminListingMediaEditor scope="events" images={event.images} onChange={images => setEvent(v => ({ ...v, images, coverImage: images[0] ?? '' }))} /></Field>
               <Field label="Vibes"><VibePicker value={event.vibes} options={references.vibes} onChange={vibes => setEvent(v => ({ ...v, vibes }))} /></Field>
             </>
           )}
         </section>
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">{error}</div>}
-        {success && <div className="flex items-center gap-2 rounded-xl border border-green-100 bg-green-50 p-3 text-[12px] font-semibold text-green-700"><CheckCircle2 size={16} />{success}</div>}
-        <button disabled={saving} className="w-full rounded-xl bg-[#FF5A5F] px-4 py-3.5 text-[13px] font-black text-white disabled:opacity-60">
+        {success && <div className="flex items-center justify-between gap-2 rounded-xl border border-green-100 bg-green-50 p-3 text-[12px] font-semibold text-green-700"><span className="flex items-center gap-2"><CheckCircle2 size={16} />{success}</span><button type="button" className="rounded-lg bg-white px-2.5 py-1.5 text-[10px] font-black text-green-700" onClick={() => setSuccess(null)}>Create another</button></div>}
+        <button disabled={saving || Boolean(success)} className="w-full rounded-xl bg-[#FF5A5F] px-4 py-3.5 text-[13px] font-black text-white disabled:opacity-60">
           {saving ? 'Creating…' : kind === 'venue' ? 'Create venue draft' : publicationStatus === 'live' ? 'Create and publish event' : 'Create event draft'}
         </button>
       </form>

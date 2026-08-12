@@ -147,6 +147,7 @@ export interface AdminDraftVenueUpdateInput {
   priceTier?: string;
   averageCostPerPerson?: number;
   coverImage?: string;
+  images: string[];
   vibes: string[];
 }
 
@@ -168,6 +169,7 @@ export async function updateAdminDraftVenue(
       price_tier: input.priceTier?.trim() || null,
       avg_cost_pp: input.averageCostPerPerson ?? null,
       cover_image: input.coverImage?.trim() || null,
+      images: input.images,
       vibes: input.vibes,
     },
   });
@@ -189,6 +191,7 @@ export async function submitAdminLiveVenueRevision(
       area: input.area?.trim() || null, address: input.address?.trim() || null,
       description: input.description?.trim() || null, price_tier: input.priceTier?.trim() || null,
       avg_cost_pp: input.averageCostPerPerson ?? null, cover_image: input.coverImage?.trim() || null,
+      images: input.images,
       vibes: input.vibes,
     },
   });

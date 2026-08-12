@@ -4,6 +4,7 @@ import { updateAdminDraftVenue } from './adminListingData';
 import type { Venue } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
+import { AdminListingMediaEditor } from './AdminListingMediaEditor';
 
 interface Props {
   venue: Venue;
@@ -28,6 +29,7 @@ function initialDraft(venue: Venue) {
     priceTier: venue.priceTier ?? '',
     averageCost: venue.averageCostPerPerson?.toString() ?? '',
     coverImage: venue.coverImage ?? '',
+    images: venue.photos,
     vibes: venue.vibes.join(', '),
   };
 }
@@ -59,6 +61,7 @@ export function AdminVenueDraftEdit({ venue, onCancel, onSaved }: Props) {
         priceTier: draft.priceTier,
         averageCostPerPerson: draft.averageCost ? Number(draft.averageCost) : undefined,
         coverImage: draft.coverImage,
+        images: draft.images,
         vibes: tags(draft.vibes),
       });
       await onSaved();
@@ -91,7 +94,7 @@ export function AdminVenueDraftEdit({ venue, onCancel, onSaved }: Props) {
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Price level</span><select className={inputClass} value={draft.priceTier} onChange={e => setDraft(current => ({ ...current, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Average cost / person</span><input min="0" step="1" type="number" className={inputClass} value={draft.averageCost} onChange={e => setDraft(current => ({ ...current, averageCost: e.target.value }))} /></label>
       </div>
-      <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Cover image URL (temporary)</span><input type="url" maxLength={2000} className={inputClass} value={draft.coverImage} onChange={e => setDraft(current => ({ ...current, coverImage: e.target.value }))} /></label>
+      <div className="mt-3"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Venue images</span><AdminListingMediaEditor images={draft.images} onChange={images => setDraft(current => ({ ...current, images, coverImage: images[0] ?? '' }))} /></div>
       <label className="mt-3 block"><span className="mb-2 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Vibes</span><VibePicker value={draft.vibes} options={references.vibes} onChange={vibes => setDraft(current => ({ ...current, vibes }))} /></label>
 
       {error && <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">{error}</div>}
