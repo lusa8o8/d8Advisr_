@@ -14,12 +14,8 @@ const TIME_INPUT = 'flex-1 px-3 py-2.5 rounded-xl border border-gray-200 bg-whit
 const FIELD_HELPER = 'text-[11px] text-gray-400 font-medium mt-1.5 leading-relaxed';
 const REVIEW_HELPER = 'text-[11px] text-amber-600 font-semibold mt-1.5 leading-relaxed';
 
-const VENUE_TYPES = [
-  'Restaurant', 'Bar & Lounge', 'Rooftop', 'Event Hall', 'Park & Outdoor',
-  'Hotel', 'Café', 'Club / Nightlife', 'Sports Facility', 'Other',
-];
-
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+type AreaMode = 'catalog' | 'manual' | 'unset';
 
 interface DayHours {
   open: boolean;
@@ -54,22 +50,28 @@ export function PartnerVenueEditor() {
   const [venueType, setVenueType]   = useState('');
   const [address, setAddress]       = useState('');
   const [area, setArea]             = useState('');
+  const [areaMode, setAreaMode]     = useState<AreaMode>('unset');
   const { regions } = useRegion();
   const cityId                      = profile?.city ?? '';
   const cityName                    = regions.find(r => r.id === cityId)?.name ?? cityId;
-  const { categories, areas }       = useListingReferences('venue', cityId);
+  const { categories, vibes: vibeOptions, areas, isLoading: referencesLoading } = useListingReferences('venue', cityId);
+  const selectedRegion             = regions.find(r => r.id === cityId);
   const [phone, setPhone]           = useState(profile?.contact ?? '');
   const [website, setWebsite]       = useState('');
+  const [priceTier, setPriceTier]   = useState('');
+  const [averageCost, setAverageCost] = useState('');
+  const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [desc, setDesc]             = useState('');
   const [hours, setHours]           = useState<DayHours[]>(DEFAULT_HOURS);
   const [photos, setPhotos]         = useState<MediaFile[]>([]);
-  const draftKey = `d8:partner-venue:${user?.id ?? 'anonymous'}`;
+  const draftKey = `d8:partner-venue:${user?.id ?? 'anonymous'}:v2`;
   const hydratedDraftRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!profile || hydratedDraftRef.current === draftKey) return;
+    if (!profile || referencesLoading || hydratedDraftRef.current === draftKey) return;
     const recovered = readSessionDraft<{
       venueName: string; venueType: string; address: string; area: string;
+      areaMode: AreaMode; priceTier: string; averageCost: string; selectedVibes: string[];
       phone: string; website: string; desc: string; hours: DayHours[];
       photos: Array<Pick<MediaFile, 'id' | 'url' | 'name'>>;
     }>(draftKey);
@@ -78,6 +80,10 @@ export function PartnerVenueEditor() {
       setVenueType(recovered.venueType);
       setAddress(recovered.address);
       setArea(recovered.area);
+      setAreaMode(recovered.areaMode);
+      setPriceTier(recovered.priceTier);
+      setAverageCost(recovered.averageCost);
+      setSelectedVibes(recovered.selectedVibes);
       setPhone(recovered.phone);
       setWebsite(recovered.website);
       setDesc(recovered.desc);
@@ -91,8 +97,17 @@ export function PartnerVenueEditor() {
       setVenueType(venueListing?.category ?? '');
       setAddress(venueListing?.address ?? '');
       setArea(venueListing?.area ?? '');
+      setAreaMode(
+        venueListing?.area
+          ? areas.some(option => option.name === venueListing.area) ? 'catalog' : 'manual'
+          : 'unset'
+      );
+      setPriceTier(venueListing?.priceTier ?? '');
+      setAverageCost(venueListing?.averageCostPerPerson?.toString() ?? '');
+      setSelectedVibes(venueListing?.vibes ?? []);
       setDesc(venueListing?.description ?? '');
-      setPhone(profile.contact);
+      setPhone(venueListing?.contactPhone ?? '');
+      setWebsite(venueListing?.websiteUrl ?? '');
       if (venueListing?.openHours) {
         setHours(DAYS.map(day => {
           const value = venueListing.openHours?.[day];
@@ -112,15 +127,16 @@ export function PartnerVenueEditor() {
       })));
     }
     hydratedDraftRef.current = draftKey;
-  }, [draftKey, profile, venueListing]);
+  }, [areas, draftKey, profile, referencesLoading, venueListing]);
 
   useEffect(() => {
     if (hydratedDraftRef.current !== draftKey) return;
     writeSessionDraft(draftKey, {
-      venueName, venueType, address, area, phone, website, desc, hours,
+      venueName, venueType, address, area, areaMode, priceTier, averageCost,
+      selectedVibes, phone, website, desc, hours,
       photos: photos.filter(photo => !photo.file).map(({ id, url, name }) => ({ id, url, name })),
     });
-  }, [address, area, desc, draftKey, hours, phone, photos, venueName, venueType, website]);
+  }, [address, area, areaMode, averageCost, desc, draftKey, hours, phone, photos, priceTier, selectedVibes, venueName, venueType, website]);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -159,11 +175,25 @@ export function PartnerVenueEditor() {
 
   const canSave = Boolean(venueName.trim() && venueType && address.trim() && !venueListing?.hasPendingRevision);
 
+  const toggleVibe = (label: string) => {
+    setSelectedVibes(current => current.includes(label)
+      ? current.filter(item => item !== label)
+      : [...current, label]);
+  };
+
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
     setSaveError(null);
     try {
+      let normalizedWebsite: string | undefined;
+      if (website.trim()) {
+        const parsedWebsite = new URL(website.trim());
+        if (!['http:', 'https:'].includes(parsedWebsite.protocol)) {
+          throw new Error('Website must use http:// or https://');
+        }
+        normalizedWebsite = parsedWebsite.toString();
+      }
       const openHours: Record<string, string> = {};
       DAYS.forEach((day, idx) => {
         openHours[day] = hours[idx].open ? `${hours[idx].from}–${hours[idx].to}` : 'Closed';
@@ -179,8 +209,11 @@ export function PartnerVenueEditor() {
         description: desc || undefined,
         address: address.trim(),
         area: area.trim() || undefined,
+        priceTier: priceTier || undefined,
+        averageCostPerPerson: averageCost ? Number(averageCost) : undefined,
+        vibes: selectedVibes,
         phone: phone.trim() || undefined,
-        website: website.trim() || undefined,
+        website: normalizedWebsite,
         openHours,
         coverImage: imageUrls[0] ?? null,
         images: imageUrls,
@@ -248,7 +281,7 @@ export function PartnerVenueEditor() {
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
           <p className="text-[12px] font-black text-amber-700">How listing edits work</p>
           <p className="text-[12px] text-amber-700/80 font-medium leading-relaxed mt-1">
-            Contact, website, hours, and description are low-risk updates. Name, category, address, area, and photos may require D8 review before public discovery changes.
+            Description and hours can update immediately. Name, category, location, pricing, vibes, contact, website, and photos require D8 review before public discovery changes.
           </p>
         </div>
 
@@ -269,24 +302,16 @@ export function PartnerVenueEditor() {
 
           <div>
             <label className={LABEL}>Type *</label>
-            <div className="flex flex-wrap gap-2">
+            <select
+              value={venueType}
+              onChange={e => setVenueType(e.target.value)}
+              className={cn(INPUT, 'bg-white')}
+            >
+              <option value="">Choose venue type</option>
               {categories.map(option => (
-                <button
-                  type={'button'}
-                  key={option.id}
-                  onClick={() => setVenueType(option.label)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-bold transition-all active:scale-95',
-                    venueType === option.label
-                      ? 'bg-primary border-primary text-white'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                  )}
-                >
-                  {venueType === option.label && <Check size={11} strokeWidth={3} />}
-                  {option.label}
-                </button>
+                <option key={option.id} value={option.label}>{option.label}</option>
               ))}
-            </div>
+            </select>
             <p className={REVIEW_HELPER}>Category changes can affect search quality, so D8 may recheck them.</p>
           </div>
 
@@ -300,6 +325,61 @@ export function PartnerVenueEditor() {
               className={cn(INPUT, 'resize-none')}
             />
             <p className={FIELD_HELPER}>Low-risk update. Keep it factual and specific.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={LABEL}>Price level</label>
+              <select value={priceTier} onChange={e => setPriceTier(e.target.value)} className={cn(INPUT, 'bg-white')}>
+                <option value="">Not set</option>
+                <option value="$">1 - Budget</option>
+                <option value="$$">2 - Moderate</option>
+                <option value="$$$">3 - Premium</option>
+                <option value="$$$$">4 - Luxury</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL}>Average cost / person</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-gray-400">
+                  {selectedRegion?.currency_symbol ?? ''}
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={averageCost}
+                  onChange={e => setAverageCost(e.target.value)}
+                  className={cn(INPUT, 'pl-10')}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className={LABEL}>Vibes</label>
+            <div className="flex flex-wrap gap-2">
+              {vibeOptions.map(option => {
+                const active = selectedVibes.includes(option.label);
+                return (
+                  <button
+                    type="button"
+                    key={option.id}
+                    onClick={() => toggleVibe(option.label)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold transition-all',
+                      active
+                        ? 'border-primary bg-primary text-white'
+                        : 'border-gray-200 bg-white text-gray-600'
+                    )}
+                  >
+                    {active && <Check size={11} strokeWidth={3} />}
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className={REVIEW_HELPER}>Choose only reviewed vibes that genuinely describe the venue.</p>
           </div>
         </div>
 
@@ -373,17 +453,35 @@ export function PartnerVenueEditor() {
           </div>
           <div>
             <label className={LABEL}>Area / neighbourhood</label>
-            <input
-              list={'partner-region-areas'}
-              value={area}
-              onChange={e => setArea(e.target.value)}
-              placeholder="e.g. Longacres, Woodlands, Victoria Island"
-              className={INPUT}
-            />
-            <datalist id={'partner-region-areas'}>
-              {areas.map(option => <option key={option.id} value={option.name} />)}
-            </datalist>
-            <p className={REVIEW_HELPER}>Choose a reviewed area when available. Typed fallbacks are marked manual and may require review.</p>
+            <select
+              value={areaMode === 'manual' ? '__manual__' : area}
+              onChange={e => {
+                if (e.target.value === '__manual__') {
+                  setAreaMode('manual');
+                  setArea('');
+                } else if (e.target.value) {
+                  setAreaMode('catalog');
+                  setArea(e.target.value);
+                } else {
+                  setAreaMode('unset');
+                  setArea('');
+                }
+              }}
+              className={cn(INPUT, 'bg-white')}
+            >
+              <option value="">Choose area</option>
+              {areas.map(option => <option key={option.id} value={option.name}>{option.name}</option>)}
+              <option value="__manual__">Area not listed</option>
+            </select>
+            {areaMode === 'manual' && (
+              <input
+                value={area}
+                onChange={e => setArea(e.target.value)}
+                placeholder="Enter the neighbourhood or local area"
+                className={cn(INPUT, 'mt-2')}
+              />
+            )}
+            <p className={REVIEW_HELPER}>Reviewed areas are preferred. Manual areas are clearly marked for D8 review.</p>
           </div>
           <div>
             <label className={LABEL}>Region</label>
@@ -450,22 +548,24 @@ export function PartnerVenueEditor() {
           <div>
             <label className={LABEL}>WhatsApp / phone</label>
             <input
+              type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="+260 or +234"
               className={INPUT}
             />
-            <p className={FIELD_HELPER}>Low-risk update used for partner contact and venue enquiries.</p>
+            <p className={REVIEW_HELPER}>Contact changes require review because they redirect customer enquiries.</p>
           </div>
           <div>
             <label className={LABEL}>Website</label>
             <input
+              type="url"
               value={website}
               onChange={e => setWebsite(e.target.value)}
               placeholder="https://"
               className={INPUT}
             />
-            <p className={FIELD_HELPER}>Low-risk update. Use the official venue or booking link.</p>
+            <p className={REVIEW_HELPER}>Website changes require review. Use the official venue or booking link.</p>
           </div>
         </div>
 

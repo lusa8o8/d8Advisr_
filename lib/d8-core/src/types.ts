@@ -48,7 +48,12 @@ export interface PartnerVenueListing {
   description: string | null;
   address: string | null;
   area: string | null;
+  priceTier: string | null;
+  averageCostPerPerson: number | null;
+  vibes: string[];
   openHours: Record<string, string> | null;
+  contactPhone: string | null;
+  websiteUrl: string | null;
   coverImage: string | null;
   images: string[];
   updatedAt: string;

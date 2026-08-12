@@ -10,6 +10,9 @@ export interface PartnerVenueInput {
   description?: string;
   address: string;
   area?: string;
+  priceTier?: string;
+  averageCostPerPerson?: number;
+  vibes: string[];
   phone?: string;
   website?: string;
   openHours: Record<string, string>;
@@ -24,7 +27,7 @@ function throwIfError(error: { message: string } | null) {
 export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListing | null> {
   const { data, error } = await supabase
     .from('venues')
-    .select('id,name,category,description,address,area,open_hours,cover_image,images,listing_status,verification_status,reverification_reason,is_active,updated_at')
+    .select('id,name,category,description,address,area,price_tier,avg_cost_pp,vibes,open_hours,contact_phone,website_url,cover_image,images,listing_status,verification_status,reverification_reason,is_active,updated_at')
     .eq('partner_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -44,7 +47,10 @@ export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListi
     id: data.id, name: data.name, status: data.listing_status,
     verificationStatus: data.verification_status, reverificationReason: data.reverification_reason,
     isActive: data.is_active, category: data.category, description: data.description,
-    address: data.address, area: data.area, openHours: data.open_hours as Record<string, string> | null,
+    address: data.address, area: data.area, priceTier: data.price_tier,
+    averageCostPerPerson: data.avg_cost_pp, vibes: data.vibes ?? [],
+    openHours: data.open_hours as Record<string, string> | null,
+    contactPhone: data.contact_phone, websiteUrl: data.website_url,
     coverImage: data.cover_image, images: data.images ?? [],
     updatedAt: data.updated_at,
     hasPendingRevision: Boolean(pendingRevision),
@@ -111,11 +117,17 @@ export async function savePartnerVenue(
     .maybeSingle();
   throwIfError(lookupError);
 
-  const common = {
+  const editable = {
     name: venueData.name, category: venueData.category, description: venueData.description ?? null,
-    address: venueData.address, area: venueData.area ?? null, city, open_hours: venueData.openHours,
-    vibes: [], cover_image: venueData.coverImage ?? venueData.images?.[0] ?? null,
-    images: venueData.images ?? [], review_count: 0, updated_at: new Date().toISOString(),
+    address: venueData.address, area: venueData.area ?? null,
+    price_tier: venueData.priceTier ?? null,
+    avg_cost_pp: venueData.averageCostPerPerson ?? null,
+    vibes: venueData.vibes,
+    contact_phone: venueData.phone ?? null,
+    website_url: venueData.website ?? null,
+    open_hours: venueData.openHours,
+    cover_image: venueData.coverImage ?? venueData.images?.[0] ?? null,
+    images: venueData.images ?? [],
   };
 
   if (existing) {
@@ -123,18 +135,21 @@ export async function savePartnerVenue(
       const { error } = await supabase.rpc('partner_submit_live_venue_revision', {
         p_venue_id: existing.id,
         p_expected_updated_at: existing.updated_at,
-        p_payload: common,
+        p_payload: editable,
       });
       throwIfError(error);
       return;
     }
-    const { error } = await supabase.from('venues').update(common).eq('id', existing.id);
+    const { error } = await supabase.from('venues').update({
+      ...editable,
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id);
     throwIfError(error);
     return;
   }
 
   const { error } = await supabase.from('venues').insert({
-    ...common, partner_id: userId, created_at: new Date().toISOString(),
+    ...editable, city, partner_id: userId, review_count: 0, created_at: new Date().toISOString(),
   });
   throwIfError(error);
 }
