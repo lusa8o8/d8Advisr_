@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
-import { useRegion } from '@workspace/d8-core/use-region';
+import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
@@ -54,6 +54,7 @@ export function PartnerVenueEditor() {
   const { regions } = useRegion();
   const cityId                      = profile?.city ?? '';
   const cityName                    = regions.find(r => r.id === cityId)?.name ?? cityId;
+  const { categories, areas }       = useListingReferences('venue', cityId);
   const [phone, setPhone]           = useState(profile?.contact ?? '');
   const [website, setWebsite]       = useState('');
   const [desc, setDesc]             = useState('');
@@ -226,19 +227,20 @@ export function PartnerVenueEditor() {
           <div>
             <label className={LABEL}>Type *</label>
             <div className="flex flex-wrap gap-2">
-              {VENUE_TYPES.map(t => (
+              {categories.map(option => (
                 <button
-                  key={t}
-                  onClick={() => setVenueType(t)}
+                  type={'button'}
+                  key={option.id}
+                  onClick={() => setVenueType(option.label)}
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-bold transition-all active:scale-95',
-                    venueType === t
+                    venueType === option.label
                       ? 'bg-primary border-primary text-white'
                       : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
                   )}
                 >
-                  {venueType === t && <Check size={11} strokeWidth={3} />}
-                  {t}
+                  {venueType === option.label && <Check size={11} strokeWidth={3} />}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -329,12 +331,16 @@ export function PartnerVenueEditor() {
           <div>
             <label className={LABEL}>Area / neighbourhood</label>
             <input
+              list={'partner-region-areas'}
               value={area}
               onChange={e => setArea(e.target.value)}
               placeholder="e.g. Longacres, Woodlands, Victoria Island"
               className={INPUT}
             />
-            <p className={REVIEW_HELPER}>Area changes can affect discovery and may require review.</p>
+            <datalist id={'partner-region-areas'}>
+              {areas.map(option => <option key={option.id} value={option.name} />)}
+            </datalist>
+            <p className={REVIEW_HELPER}>Choose a reviewed area when available. Typed fallbacks are marked manual and may require review.</p>
           </div>
           <div>
             <label className={LABEL}>Region</label>

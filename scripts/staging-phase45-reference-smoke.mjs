@@ -92,3 +92,49 @@ assert(events.response.ok && events.body.length > 0, 'Consumer canonical event r
 assert(events.body.every(row => row.region_id === 'lusaka' && row.category_id && row.currency === 'ZMW'),
   'A live event has inconsistent canonical region/category/currency');
 console.log(`PASS canonical consumer event backfill: ${events.body.length} live rows`);
+
+let fixtureId = null;
+try {
+  const created = await request('/rest/v1/rpc/admin_create_venue', admin, {
+    method: 'POST',
+    body: { p_payload: {
+      request_key: crypto.randomUUID(),
+      name: `Phase 4.5 references ${Date.now()}`,
+      city: 'Lusaka',
+      category: 'Restaurant',
+      area: 'Kabulonga',
+      price_tier: '$$',
+      vibes: ['DJ', 'Romantic'],
+      attribution: 'unclaimed',
+      publication_status: 'draft',
+    } },
+  });
+  assert(created.response.ok && typeof created.body === 'string',
+    `Reference fixture creation failed: HTTP ${created.response.status}`);
+  fixtureId = created.body;
+  const row = await request(
+    `/rest/v1/venues?select=region_id,area_id,area_source,category_id,price_level&id=eq.${fixtureId}`,
+    admin,
+  );
+  assert(row.response.ok && row.body?.[0]?.region_id === 'lusaka', 'Legacy region did not canonicalize');
+  assert(row.body[0].area_id === 'lusaka-kabulonga' && row.body[0].area_source === 'catalog',
+    'Legacy area did not canonicalize');
+  assert(row.body[0].category_id === 'restaurant' && row.body[0].price_level === 2,
+    'Legacy category/price did not canonicalize');
+  const relations = await request(
+    `/rest/v1/venue_vibes?select=vibe_id&venue_id=eq.${fixtureId}&order=vibe_id`,
+    admin,
+  );
+  assert(relations.response.ok && relations.body.map(item => item.vibe_id).join('|') === 'dj|romantic',
+    'Legacy vibes did not normalize');
+  const invalid = await request(`/rest/v1/venues?id=eq.${fixtureId}`, admin, {
+    method: 'PATCH', body: { category_id: 'does-not-exist' },
+  });
+  assert(!invalid.response.ok, 'Unknown canonical category was accepted');
+  console.log('PASS legacy writes dual-write canonical keys and unknown IDs are rejected');
+} finally {
+  if (fixtureId) {
+    const cleanup = await request(`/rest/v1/venues?id=eq.${fixtureId}`, admin, { method: 'DELETE' });
+    assert(cleanup.response.ok, 'Reference fixture cleanup failed');
+  }
+}

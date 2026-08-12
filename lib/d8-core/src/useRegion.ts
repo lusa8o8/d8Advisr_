@@ -5,6 +5,9 @@ import type { Database } from './supabase';
 import { useProfile } from './useProfile';
 
 export type Region = Database['public']['Tables']['regions']['Row'];
+export type RegionArea = Database['public']['Tables']['region_areas']['Row'];
+export type ListingCategory = Database['public']['Tables']['listing_categories']['Row'];
+export type ListingVibe = Database['public']['Tables']['listing_vibes']['Row'];
 
 export function useRegion() {
   const { profile } = useProfile();
@@ -80,5 +83,48 @@ export function useRegion() {
     formatPrice,
     isLoading,
     error
+  };
+}
+
+export function useListingReferences(listingKind: 'venue' | 'event', regionId?: string) {
+  const categoriesQuery = useQuery({
+    queryKey: ['listing-categories', listingKind],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('listing_categories')
+        .select('id,label,applies_to,is_active,sort_order')
+        .eq('is_active', true).contains('applies_to', [listingKind]).order('sort_order');
+      if (error) throw error;
+      return data as ListingCategory[];
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+  const vibesQuery = useQuery({
+    queryKey: ['listing-vibes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('listing_vibes')
+        .select('id,label,is_active,sort_order').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data as ListingVibe[];
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+  const areasQuery = useQuery({
+    queryKey: ['region-areas', regionId],
+    enabled: Boolean(regionId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('region_areas')
+        .select('id,region_id,slug,name,aliases,source,is_active,sort_order')
+        .eq('region_id', regionId!).eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data as RegionArea[];
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+  return {
+    categories: categoriesQuery.data ?? [],
+    vibes: vibesQuery.data ?? [],
+    areas: areasQuery.data ?? [],
+    isLoading: categoriesQuery.isLoading || vibesQuery.isLoading || areasQuery.isLoading,
+    error: categoriesQuery.error || vibesQuery.error || areasQuery.error,
   };
 }

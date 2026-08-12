@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { CalendarPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { Venue } from './adminListingModel';
+import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import {
   createAdminEvent,
   createAdminVenue,
@@ -31,6 +32,22 @@ function tags(value: string) {
   return value.split(',').map(item => item.trim()).filter(Boolean);
 }
 
+export function VibePicker({ value, options, onChange }: {
+  value: string;
+  options: Array<{ id: string; label: string }>;
+  onChange: (value: string) => void;
+}) {
+  const selected = tags(value);
+  return <div className="flex flex-wrap gap-2">{options.map(option => {
+    const active = selected.includes(option.label);
+    return <button key={option.id} type="button" onClick={() => onChange(
+      (active ? selected.filter(item => item !== option.label) : [...selected, option.label]).join(', ')
+    )} className={`rounded-full border px-3 py-1.5 text-[11px] font-bold ${active ? 'border-[#FF5A5F] bg-[#FFF0F1] text-[#FF5A5F]' : 'border-gray-200 text-gray-600'}`}>
+      {option.label}
+    </button>;
+  })}</div>;
+}
+
 export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const [kind, setKind] = useState<ListingKind>('venue');
   const [attribution, setAttribution] = useState<AdminListingAttribution>('unclaimed');
@@ -51,6 +68,10 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
     externalLocationName: '', externalLocationAddress: '', price: '', currency: 'K',
     capacity: '', isFree: false, isFeatured: false, coverImage: '', vibes: '', emoji: '📅',
   });
+  const { regions } = useRegion();
+  const selectedCity = kind === 'venue' ? venue.city : event.city;
+  const selectedRegion = regions.find(item => item.name === selectedCity || item.id === selectedCity);
+  const references = useListingReferences(kind, selectedRegion?.id);
 
   const liveVenues = venues.filter(item => item.isActive && item.listingStatus === 'live');
 
@@ -143,26 +164,26 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Venue name"><input required className={inputClass} value={venue.name} onChange={e => setVenue(v => ({ ...v, name: e.target.value }))} /></Field>
-                <Field label="City"><input required className={inputClass} value={venue.city} onChange={e => setVenue(v => ({ ...v, city: e.target.value }))} /></Field>
-                <Field label="Category"><input required className={inputClass} placeholder="Restaurant, activity…" value={venue.category} onChange={e => setVenue(v => ({ ...v, category: e.target.value }))} /></Field>
-                <Field label="Area"><input className={inputClass} value={venue.area} onChange={e => setVenue(v => ({ ...v, area: e.target.value }))} /></Field>
+                <Field label="Region"><select required className={inputClass} value={venue.city} onChange={e => setVenue(v => ({ ...v, city: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
+                <Field label="Category"><select required className={inputClass} value={venue.category} onChange={e => setVenue(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
+                <Field label="Area"><><input list="admin-region-areas" className={inputClass} value={venue.area} onChange={e => setVenue(v => ({ ...v, area: e.target.value }))} /><datalist id="admin-region-areas">{references.areas.map(item => <option key={item.id} value={item.name} />)}</datalist><span className="mt-1 block text-[10px] text-gray-400">Choose a reviewed area or type a manual fallback.</span></></Field>
               </div>
               <Field label="Address"><input className={inputClass} value={venue.address} onChange={e => setVenue(v => ({ ...v, address: e.target.value }))} /></Field>
               <Field label="Description"><textarea className={`${inputClass} min-h-24`} value={venue.description} onChange={e => setVenue(v => ({ ...v, description: e.target.value }))} /></Field>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Tier"><select className={inputClass} value={venue.tier} onChange={e => setVenue(v => ({ ...v, tier: e.target.value as typeof venue.tier }))}><option>Verified</option><option>D8 Approved</option><option>Hidden Gem</option></select></Field>
-                <Field label="Price tier"><input className={inputClass} placeholder="K, KK…" value={venue.priceTier} onChange={e => setVenue(v => ({ ...v, priceTier: e.target.value }))} /></Field>
+                <Field label="Price level"><select className={inputClass} value={venue.priceTier} onChange={e => setVenue(v => ({ ...v, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></Field>
                 <Field label="Average cost"><input min="0" type="number" className={inputClass} value={venue.averageCost} onChange={e => setVenue(v => ({ ...v, averageCost: e.target.value }))} /></Field>
               </div>
               <Field label="Cover image URL"><input type="url" className={inputClass} value={venue.coverImage} onChange={e => setVenue(v => ({ ...v, coverImage: e.target.value }))} /></Field>
-              <Field label="Vibes (comma separated)"><input className={inputClass} value={venue.vibes} onChange={e => setVenue(v => ({ ...v, vibes: e.target.value }))} /></Field>
+              <Field label="Vibes"><VibePicker value={venue.vibes} options={references.vibes} onChange={vibes => setVenue(v => ({ ...v, vibes }))} /></Field>
             </>
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Event title"><input required className={inputClass} value={event.title} onChange={e => setEvent(v => ({ ...v, title: e.target.value }))} /></Field>
-                <Field label="City"><input required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))} /></Field>
-                <Field label="Category"><input className={inputClass} value={event.category} onChange={e => setEvent(v => ({ ...v, category: e.target.value }))} /></Field>
+                <Field label="Region"><select required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
+                <Field label="Category"><select required className={inputClass} value={event.category} onChange={e => setEvent(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
                 <Field label="Emoji"><input className={inputClass} value={event.emoji} onChange={e => setEvent(v => ({ ...v, emoji: e.target.value }))} /></Field>
                 <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value }))} /></Field>
                 <Field label="Ends"><input type="datetime-local" className={inputClass} value={event.endsAt} onChange={e => setEvent(v => ({ ...v, endsAt: e.target.value }))} /></Field>
@@ -173,12 +194,12 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
               {event.locationKind === 'external' && <div className="grid gap-3 sm:grid-cols-2"><Field label="Location name"><input required className={inputClass} value={event.externalLocationName} onChange={e => setEvent(v => ({ ...v, externalLocationName: e.target.value }))} /></Field><Field label="Location address"><input className={inputClass} value={event.externalLocationAddress} onChange={e => setEvent(v => ({ ...v, externalLocationAddress: e.target.value }))} /></Field></div>}
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Price / person"><input min="0" disabled={event.isFree} type="number" className={inputClass} value={event.price} onChange={e => setEvent(v => ({ ...v, price: e.target.value }))} /></Field>
-                <Field label="Currency"><input className={inputClass} value={event.currency} onChange={e => setEvent(v => ({ ...v, currency: e.target.value }))} /></Field>
+                <Field label="Currency"><div className={`${inputClass} bg-gray-50 text-gray-600`}>{selectedRegion?.currency_code ?? 'Choose region'}</div></Field>
                 <Field label="Capacity"><input min="0" type="number" className={inputClass} value={event.capacity} onChange={e => setEvent(v => ({ ...v, capacity: e.target.value }))} /></Field>
               </div>
               <div className="flex gap-5 text-[12px] font-semibold"><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFree} onChange={e => setEvent(v => ({ ...v, isFree: e.target.checked, price: e.target.checked ? '' : v.price }))} />Free</label><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFeatured} onChange={e => setEvent(v => ({ ...v, isFeatured: e.target.checked }))} />Featured</label></div>
               <Field label="Cover image URL"><input type="url" className={inputClass} value={event.coverImage} onChange={e => setEvent(v => ({ ...v, coverImage: e.target.value }))} /></Field>
-              <Field label="Vibes (comma separated)"><input className={inputClass} value={event.vibes} onChange={e => setEvent(v => ({ ...v, vibes: e.target.value }))} /></Field>
+              <Field label="Vibes"><VibePicker value={event.vibes} options={references.vibes} onChange={vibes => setEvent(v => ({ ...v, vibes }))} /></Field>
             </>
           )}
         </section>

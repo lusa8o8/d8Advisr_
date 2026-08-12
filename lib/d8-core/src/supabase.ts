@@ -40,8 +40,8 @@ export type ListingSource = 'd8_admin' | 'partner' | 'import' | 'community';
 
 // Listing reads deliberately exclude created_by, which is private audit data.
 // Organization and source are public attribution fields introduced in Phase 3.
-export const VENUE_CLIENT_SELECT = 'id,name,slug,city,area,category,tier,price_tier,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,operator_organization_id,source,created_at,updated_at';
-export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,spots_left,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
+export const VENUE_CLIENT_SELECT = 'id,name,slug,city,region_id,area,area_id,area_source,category,category_id,tier,price_tier,price_level,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,operator_organization_id,source,created_at,updated_at';
+export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,organizer_organization_id,source,title,description,category,category_id,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,spots_left,is_free,is_featured,city,region_id,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
 
 export type Database = {
   public: {
@@ -68,10 +68,15 @@ export type Database = {
           name: string;
           slug: string | null;
           city: string;
+          region_id: string | null;
           area: string | null;
+          area_id: string | null;
+          area_source: 'catalog' | 'manual' | 'legacy' | 'provider' | null;
           category: string;
+          category_id: string | null;
           tier: string;
           price_tier: string | null;
+          price_level: number | null;
           description: string | null;
           address: string | null;
           lat: number | null;
@@ -109,6 +114,7 @@ export type Database = {
           title: string;
           description: string | null;
           category: string | null;
+          category_id: string | null;
           vibes: string[];
           cover_image: string | null;
           images: string[];
@@ -121,6 +127,7 @@ export type Database = {
           is_free: boolean;
           is_featured: boolean;
           city: string;
+          region_id: string | null;
           event_location_kind: 'd8_venue' | 'external' | 'undisclosed';
           external_location_name: string | null;
           external_location_address: string | null;
@@ -325,6 +332,27 @@ export type Database = {
         };
         Insert: Omit<Database['public']['Tables']['regions']['Row'], 'created_at'> & { created_at?: string };
         Update: Partial<Database['public']['Tables']['regions']['Row']>;
+      };
+      region_areas: {
+        Row: {
+          id: string; region_id: string; slug: string; name: string;
+          aliases: string[]; source: 'd8_reviewed' | 'provider' | 'import';
+          is_active: boolean; sort_order: number; created_by: string | null;
+          created_at: string; updated_at: string;
+        };
+      };
+      listing_categories: {
+        Row: {
+          id: string; label: string; applies_to: Array<'venue' | 'event'>;
+          is_active: boolean; sort_order: number; created_by: string | null;
+          created_at: string; updated_at: string;
+        };
+      };
+      listing_vibes: {
+        Row: {
+          id: string; label: string; is_active: boolean; sort_order: number;
+          created_by: string | null; created_at: string; updated_at: string;
+        };
       };
       stash_funds: {
         Row: {

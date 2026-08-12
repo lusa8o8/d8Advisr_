@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'wouter';
 import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
-import { useRegion } from '@workspace/d8-core/use-region';
+import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
@@ -45,6 +45,7 @@ export function PartnerEventEditor() {
   const editId = params?.id;
   const { profile, saveEvent, events, venueOptions } = usePartner();
   const { regions } = useRegion();
+  const { categories } = useListingReferences('event', profile?.city);
   const currencySymbol = regions.find(r => r.id === profile?.city)?.currency_symbol || 'K';
 
   const existing = editId ? events.find(e => e.id === editId) : null;
@@ -260,7 +261,7 @@ export function PartnerEventEditor() {
             <label className={LABEL}>Category *</label>
             <select value={category} onChange={e => setCategory(e.target.value)} className={cn(INPUT, 'bg-white')}>
               <option value="">Select category</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {categories.map(option => <option key={option.id} value={option.label}>{option.label}</option>)}
             </select>
           </div>
           <div>

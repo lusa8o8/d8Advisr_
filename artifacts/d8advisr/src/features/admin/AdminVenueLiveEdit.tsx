@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { CheckCircle2, Save, ShieldCheck, X, XCircle } from 'lucide-react';
 import { reviewAdminLiveVenueRevision, submitAdminLiveVenueRevision } from './adminListingData';
 import type { Venue, VenueLiveRevision } from './adminListingModel';
+import { useListingReferences, useRegion } from '@/hooks/useRegion';
+import { VibePicker } from './AdminListingCreate';
 
 interface Props {
   venue: Venue;
@@ -29,6 +31,9 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
   const [reviewing, setReviewing] = useState<'approved' | 'rejected' | null>(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { regions } = useRegion();
+  const selectedRegion = regions.find(item => item.name === draft.city || item.id === draft.city);
+  const references = useListingReferences('venue', selectedRegion?.id);
 
   useEffect(() => setDraft(initialDraft(venue)), [venue]);
 
@@ -77,15 +82,15 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
       <div className="mb-4 flex items-start justify-between gap-3"><div><h3 className="text-[14px] font-black text-gray-900">Edit live venue</h3><p className="mt-1 text-[11px] text-gray-500">Description applies now. Other changes remain private until separately approved.</p></div><button type="button" onClick={onCancel} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-500" aria-label="Cancel live venue editing"><X size={15} /></button></div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Name · review</span><input required maxLength={160} className={inputClass} value={draft.name} onChange={e => setDraft(v => ({ ...v, name: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">City · review</span><input required maxLength={120} className={inputClass} value={draft.city} onChange={e => setDraft(v => ({ ...v, city: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Category · review</span><input required maxLength={120} className={inputClass} value={draft.category} onChange={e => setDraft(v => ({ ...v, category: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Area · review</span><input maxLength={160} className={inputClass} value={draft.area} onChange={e => setDraft(v => ({ ...v, area: e.target.value }))} /></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Region · review</span><select required className={inputClass} value={draft.city} onChange={e => setDraft(v => ({ ...v, city: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Category · review</span><select required className={inputClass} value={draft.category} onChange={e => setDraft(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Area · review</span><input list="live-region-areas" maxLength={160} className={inputClass} value={draft.area} onChange={e => setDraft(v => ({ ...v, area: e.target.value }))} /><datalist id="live-region-areas">{references.areas.map(item => <option key={item.id} value={item.name} />)}</datalist></label>
       </div>
       <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Address · review</span><input maxLength={500} className={inputClass} value={draft.address} onChange={e => setDraft(v => ({ ...v, address: e.target.value }))} /></label>
       <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-green-600">Description · applies immediately</span><textarea maxLength={5000} className={`${inputClass} min-h-24 resize-y`} value={draft.description} onChange={e => setDraft(v => ({ ...v, description: e.target.value }))} /></label>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2"><label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Price tier · review</span><input maxLength={40} className={inputClass} value={draft.priceTier} onChange={e => setDraft(v => ({ ...v, priceTier: e.target.value }))} /></label><label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Average cost · review</span><input min="0" step="1" type="number" className={inputClass} value={draft.averageCost} onChange={e => setDraft(v => ({ ...v, averageCost: e.target.value }))} /></label></div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2"><label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Price level · review</span><select className={inputClass} value={draft.priceTier} onChange={e => setDraft(v => ({ ...v, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></label><label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Average cost · review</span><input min="0" step="1" type="number" className={inputClass} value={draft.averageCost} onChange={e => setDraft(v => ({ ...v, averageCost: e.target.value }))} /></label></div>
       <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Cover image URL · review (temporary)</span><input type="url" maxLength={2000} className={inputClass} value={draft.coverImage} onChange={e => setDraft(v => ({ ...v, coverImage: e.target.value }))} /></label>
-      <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Vibes · review</span><input className={inputClass} value={draft.vibes} onChange={e => setDraft(v => ({ ...v, vibes: e.target.value }))} /></label>
+      <label className="mt-3 block"><span className="mb-2 block text-[10px] font-bold uppercase text-amber-600">Vibes · review</span><VibePicker value={draft.vibes} options={references.vibes} onChange={vibes => setDraft(v => ({ ...v, vibes }))} /></label>
       {error && <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">{error}</div>}
       <button disabled={saving} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#141414] px-4 py-3 text-[13px] font-black text-white disabled:opacity-60"><Save size={15} />{saving ? 'Submitting changes...' : 'Apply safe changes & submit review'}</button>
     </form>
