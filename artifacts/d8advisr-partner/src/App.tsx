@@ -111,7 +111,7 @@ function PartnerEntryGuard({ children }: { children: ReactNode }) {
     if (context?.scope === 'partner' && context.partnerStatus === 'live') {
       setLocation('/dashboard');
     }
-  }, [authLoading, context, isPasswordRecovery, location, scopeLoading, setLocation, user]);
+  }, [authLoading, context, isPasswordRecovery, location, scopeLoading, setLocation, user?.id]);
 
   if (authLoading || scopeLoading) return <LoadingScreen />;
   if (error) {
@@ -152,7 +152,7 @@ function PartnerGuard({
       return;
     }
     if (!allowed) setLocation('/');
-  }, [allowed, authLoading, context?.scope, isPasswordRecovery, location, scopeLoading, setLocation, user]);
+  }, [allowed, authLoading, context?.scope, isPasswordRecovery, location, scopeLoading, setLocation, user?.id]);
 
   if (authLoading || scopeLoading) return <LoadingScreen />;
   if (error) {
@@ -176,7 +176,7 @@ function PublicOnlyRoute({ children }: { children: ReactNode }) {
     } else {
       setLocation('/');
     }
-  }, [authLoading, context, scopeLoading, setLocation, user]);
+  }, [authLoading, context, scopeLoading, setLocation, user?.id]);
 
   if (authLoading || (user && scopeLoading)) return <LoadingScreen />;
   if (error) {

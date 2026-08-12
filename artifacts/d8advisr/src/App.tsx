@@ -133,7 +133,7 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
     });
 
     return () => { active = false; };
-  }, [isPasswordRecovery, loading, location, setLocation, user]);
+  }, [isPasswordRecovery, loading, setLocation, user?.id]);
 
   if (loading || checkingScope) return <LoadingScreen />;
   if (scopeError) {
@@ -188,7 +188,7 @@ function AdminGuard({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [user, isPasswordRecovery, loading, location, setLocation]);
+  }, [user?.id, isPasswordRecovery, loading, setLocation]);
 
   if (loading || checking) return <LoadingScreen />;
   if (scopeError) {
@@ -314,7 +314,7 @@ function PublicOnlyRoute({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [user, loading, setLocation]);
+  }, [user?.id, loading, setLocation]);
 
   if (loading || checkingScope) return <LoadingScreen />;
 

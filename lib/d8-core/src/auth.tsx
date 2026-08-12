@@ -139,7 +139,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setUser(session.user);
+      // Visibility recovery and token refresh can emit a fresh User object for
+      // the same authenticated identity. Preserve object identity so route
+      // guards do not mistake a token refresh for an account change and
+      // unmount protected forms.
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        setUser(current => current?.id === session.user.id ? current : session.user);
+      } else {
+        setUser(session.user);
+      }
       setLoading(false);
     });
 
