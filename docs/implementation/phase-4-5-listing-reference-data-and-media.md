@@ -1,6 +1,6 @@
 # Phase 4.5 Mini Plan: Listing Reference Data and Media
 
-Status: planned after Phase 4 draft-edit closure and before listing claims
+Status: discovery complete; implementation in progress after Phase 4 browser closure
 
 Date: 2026-08-12
 
@@ -27,6 +27,72 @@ work make the data harder to migrate.
   Supabase Storage. The admin form still asks for pasted URLs.
 - Venue coordinates are ordinary latitude/longitude columns. No current
   requirement needs geometric containment or spatial joins.
+- Production public RLS exposes 16 live Lusaka venues and six live events.
+  Staging admin scope exposes 20 venues and five events. Production was queried
+  read-only; no production mutation or privileged connection was used.
+- Anonymous production reads of `regions` currently fail because the select
+  policy calls profile-dependent logic without the required anonymous table
+  privilege. Phase 4.5 must make live-region discovery genuinely public without
+  granting anonymous access to `profiles`.
+
+## Reviewed inventory and mappings
+
+The migration preserves every legacy display value while adding stable keys.
+Rows that cannot be mapped deterministically remain readable and are reported;
+they are never guessed into a taxonomy.
+
+### Regions and areas
+
+- `Lusaka`, `lusaka`, and the stable key `lusaka` map to region `lusaka`.
+- `Lagos`, `lagos`, and the stable key `lagos` map to region `lagos`.
+- The initial Lusaka area catalog contains the production values Chilenje,
+  Haile Selassie, Ibex Hill, Jesmondine, Kabulonga, Leopards Hill, Longacres,
+  Mass Media, Matero, Northmead, Olympia, Ridgeway, Thornpark / Great East Road
+  Area, and Woodlands.
+- The staging-only `manda hill` value is retained as manual fallback text. The
+  city-name-as-area value `Lusaka` is also retained as a fallback rather than
+  being misrepresented as a reviewed neighbourhood.
+- Lagos receives no invented area seed. Admins can add reviewed areas as local
+  coverage becomes available.
+
+### Categories
+
+Stable general-purpose categories and deterministic legacy mappings are:
+
+| Stable key | Legacy values |
+| --- | --- |
+| `restaurant` | Restaurant, Fine Dining, Garden Restaurant |
+| `restaurant-bar` | Restaurant & Bar, Local Bar & Grill |
+| `cafe-brunch` | Café & Brunch, Brunch & Day Club |
+| `event-space` | Café & Events Space |
+| `bar-lounge` | Cocktail Bar & Lounge, Rooftop Bar |
+| `live-music` | Live Music Venue, Live Music |
+| `sports-fitness` | Sports Facility |
+| `activity-experience` | Activity, activity |
+| `cinema` | Cinema |
+| `market-food` | Market & Street Food |
+| `nightlife` | Nightlife |
+| `social-mixer` | Social & Mixer |
+
+`Test Venue` is an intentional staging-only exception and remains unmapped.
+New admin and partner submissions must choose a valid stable category.
+
+### Price levels and vibes
+
+- Legacy `$`, `$$`, `$$$`, and `$$$$` map to ordinal levels 1 through 4.
+- Staging-only `K` is an exception because a currency symbol is not a price
+  level. It remains in legacy text until corrected through the editor.
+- Vibes are normalized case-insensitively and mapped to stable slugs. Exact
+  semantic duplicates are consolidated (`Affordable`/`Budget`,
+  `Chill`/`Relaxed`, `Art`/`Creative`, and `Cultural`/`Culture`). Distinct
+  signals such as Romantic, Date Night, Anniversary, and Intimate stay distinct
+  because they can carry different relevance weights later.
+- Staging lowercase `outdoor` maps to `outdoor`; `loud` remains an explicit
+  unmapped exception rather than silently becoming `lively`.
+
+The exception query is part of the static/staging test harness. Required
+canonical columns remain nullable during compatibility; database mutation
+contracts reject unknown values for new writes.
 
 ## Canonical geography model
 
@@ -90,6 +156,25 @@ object URLs/paths.
 7. Enforce constraints only after reconciliation shows no unmapped required
    values.
 
+## Implementation slices and commit boundaries
+
+1. `docs(phase4.5): record listing value inventory and mappings`
+2. `feat(db): add listing reference catalogs` — additive catalogs, canonical
+   columns, deterministic backfill, public reads, admin management, and static
+   plus staging migration checks.
+3. `feat(listings): use shared reference selectors` — one shared query/model,
+   dual-write mutation contracts, and admin/partner controls.
+4. `feat(media): add shared listing uploads` — shared bucket, uploader-scoped
+   object paths, metadata, and role isolation tests.
+5. `feat(partner): review high-risk live venue revisions` — partner live edits
+   stop changing public high-risk fields before approval.
+6. `test(phase4.5): cover local listing workflows` — full role matrix, both
+   builds, and a browser checklist before any production migration proposal.
+
+Staging receives each migration after its static check passes. Production stays
+read-only throughout Phase 4.5 and requires a separate explicit migration
+approval after local and staging closure.
+
 ## Verification gates
 
 - Unknown region/category/vibe IDs are rejected by the database.
@@ -107,4 +192,3 @@ object URLs/paths.
 Before this phase, add a bounded audited editor for non-live venues where
 `source = 'd8_admin'`. It may correct creation fields before approval, but must
 not become a general live-listing editor or grant partner/claim permissions.
-
