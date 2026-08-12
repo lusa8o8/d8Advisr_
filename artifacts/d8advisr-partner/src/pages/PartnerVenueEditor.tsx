@@ -17,6 +17,10 @@ const REVIEW_HELPER = 'text-[11px] text-amber-600 font-semibold mt-1.5 leading-r
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 type AreaMode = 'catalog' | 'manual' | 'unset';
 
+function normalizedRegionValue(value?: string | null) {
+  return value?.split(',')[0]?.trim().toLocaleLowerCase() ?? '';
+}
+
 interface DayHours {
   open: boolean;
   from: string;
@@ -52,10 +56,14 @@ export function PartnerVenueEditor() {
   const [area, setArea]             = useState('');
   const [areaMode, setAreaMode]     = useState<AreaMode>('unset');
   const { regions } = useRegion();
-  const cityId                      = profile?.city ?? '';
-  const cityName                    = regions.find(r => r.id === cityId)?.name ?? cityId;
+  const profileRegionValue          = normalizedRegionValue(profile?.city);
+  const selectedRegion             = regions.find(region =>
+    normalizedRegionValue(region.id) === profileRegionValue
+    || normalizedRegionValue(region.name) === profileRegionValue
+  );
+  const cityId                      = selectedRegion?.id ?? '';
+  const cityName                    = selectedRegion?.name ?? profile?.city ?? '';
   const { categories, vibes: vibeOptions, areas, isLoading: referencesLoading } = useListingReferences('venue', cityId);
-  const selectedRegion             = regions.find(r => r.id === cityId);
   const [phone, setPhone]           = useState(profile?.contact ?? '');
   const [website, setWebsite]       = useState('');
   const [priceTier, setPriceTier]   = useState('');
@@ -484,10 +492,14 @@ export function PartnerVenueEditor() {
             <p className={REVIEW_HELPER}>Reviewed areas are preferred. Manual areas are clearly marked for D8 review.</p>
           </div>
           <div>
-            <label className={LABEL}>Region</label>
+            <label className={LABEL}>Account region</label>
             <div className="px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-100 text-[14px] text-gray-800 font-medium capitalize">
               {cityName || 'Set in your profile'}
             </div>
+            <p className={FIELD_HELPER}>This comes from your approved partner account and determines areas and currency.</p>
+            {profile?.city && !selectedRegion && regions.length > 0 && (
+              <p className={REVIEW_HELPER}>This account region is not recognized. Ask D8 Admin to correct the partner application before saving.</p>
+            )}
           </div>
         </div>
 

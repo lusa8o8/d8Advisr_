@@ -4,6 +4,8 @@ Use the local partner staging server and the staging partner venue account.
 
 - [ ] Venue type is a dropdown populated from the shared venue catalog.
 - [ ] Area is a dropdown of reviewed areas.
+- [ ] Account region shows the approved partner region and its reviewed areas
+  load even when the stored application uses a display name such as Lusaka.
 - [ ] Choosing "Area not listed" reveals a manual area input.
 - [ ] Street address remains a normal factual text input.
 - [ ] Price level offers only Not set and levels 1 through 4.

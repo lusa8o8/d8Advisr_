@@ -61,6 +61,8 @@ for (const value of [
   'vibeOptions.map',
   'vibes: selectedVibes',
   'priceTier: priceTier || undefined',
+  'const cityId                      = selectedRegion?.id',
+  'normalizedRegionValue(region.name) === profileRegionValue',
 ]) {
   if (!partnerEditor.includes(value)) {
     throw new Error(`Missing controlled partner venue field: ${value}`);
