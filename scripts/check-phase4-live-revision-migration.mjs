@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const migration = await readFile(resolve(import.meta.dirname, '../supabase/migrations/20260812120000_admin_live_venue_revisions.sql'), 'utf8');
+const taskProtection = await readFile(resolve(import.meta.dirname, '../supabase/migrations/20260812121000_protect_pending_live_revision_tasks.sql'), 'utf8');
 const requireText = (value) => { if (!migration.includes(value)) throw new Error(`Missing live-revision contract: ${value}`); };
 
 for (const value of [
@@ -35,3 +36,12 @@ for (const forbidden of ['name =', 'city =', 'category =', 'area =', 'address ='
 }
 
 console.log('Phase 4 admin live venue revision migration contract checks passed.');
+
+for (const value of [
+  'function public.protect_pending_live_revision_task()',
+  "revision.status = 'pending'",
+  'before update or delete on public.venue_reverification_tasks',
+  'Pending live revision must be approved or rejected through revision review',
+]) {
+  if (!taskProtection.includes(value)) throw new Error(`Missing live-revision task protection: ${value}`);
+}

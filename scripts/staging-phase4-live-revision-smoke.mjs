@@ -84,6 +84,12 @@ try {
   assert(taskOne.response.ok && taskOne.body?.[0]?.status === 'open' && taskOne.body[0].reason === 'admin_live_revision', 'Pending revision task is incorrect');
   console.log('PASS low-risk edit is public while high-risk proposal remains private and queued');
 
+  const genericTaskResolution = await rpc('admin_update_reverification_task_status', admin.accessToken, { p_task_id: taskOne.body[0].id, new_status: 'in_progress', note: 'Should be blocked' });
+  assert(!genericTaskResolution.response.ok && genericTaskResolution.body?.code === 'P0001', 'Generic task action bypassed pending revision review');
+  const genericVerification = await rpc('admin_mark_venue_verified', admin.accessToken, { p_venue_id: venueId, reason: 'Should be blocked' });
+  assert(!genericVerification.response.ok && genericVerification.body?.code === 'P0001', 'Mark verified bypassed pending revision review');
+  console.log('PASS generic task and verification actions cannot bypass pending revision review');
+
   const duplicate = await rpc('admin_submit_live_venue_revision', admin.accessToken, { p_venue_id: venueId, p_expected_updated_at: pendingVenue.updated_at, p_payload: { name: `Second ${marker}` } });
   assert(!duplicate.response.ok && duplicate.body?.code === '23505', 'Second pending high-risk revision was not rejected');
 
