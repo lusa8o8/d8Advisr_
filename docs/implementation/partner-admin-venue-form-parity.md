@@ -1,6 +1,6 @@
 # Partner and Admin Venue Form Parity
 
-Status: discovery complete; implementation not started
+Status: partner venue parity implemented and verified on staging; admin detail expansion remains
 
 Date: 2026-08-12
 
@@ -141,3 +141,18 @@ Commit boundary: test(listings): verify admin partner venue parity
 - No removal of the manual area fallback.
 - No changes to claims or ownership handover.
 - No production migration until staging and browser gates pass.
+
+## Implemented Partner Slice
+
+- Venue type now uses the same shared category dropdown model as admin.
+- Area now uses reviewed options with an explicit "Area not listed" fallback.
+- Shared vibe chips, controlled price level, and regional-currency average cost
+  are persisted through partner draft and live revision workflows.
+- Venue phone and website now persist instead of being silently discarded.
+- Phone, website, price, vibes, location, category, and media remain private
+  until an admin approves live-listing changes.
+- Unsafe website URLs are rejected both on venue rows and pending revisions.
+- Description and opening hours remain immediate low-risk updates.
+
+Admin opening-hours and contact controls remain the next parity slice; they are
+not required for the corrected partner form to persist truthful listing data.
