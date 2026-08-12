@@ -13,12 +13,15 @@ import {
   type VenueInspectionRow,
   type VenueListingReview,
   type VenueListingReviewRow,
+  type VenueLiveRevision,
+  type VenueLiveRevisionRow,
   type VenuePlacementAdminRequest,
   type VenuePlacementAdminRow,
   adminVenueFromRow,
   partnerApplicationToSubmission,
   reverificationTaskFromRow,
   venueListingReviewFromRow,
+  venueLiveRevisionFromRow,
   venuePlacementAdminRequestFromRow,
 } from './adminListingModel';
 
@@ -67,7 +70,7 @@ export async function fetchVenueListingReviews(): Promise<VenueListingReview[]> 
 export async function fetchReverificationTasks(): Promise<ReverificationTask[]> {
   const { data, error } = await supabase
     .from('venue_reverification_tasks')
-    .select('id,venue_id,reason,status,triggered_by,created_at,resolved_at,notes,venues(id,name,category,city,area,tier,listing_status,verification_status,cover_image)')
+    .select('id,venue_id,reason,status,triggered_by,created_at,resolved_at,notes,live_revision_id,venues(id,name,category,city,area,tier,listing_status,verification_status,cover_image)')
     .order('created_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as ReverificationTaskRow[]).map(reverificationTaskFromRow);
@@ -93,6 +96,16 @@ export async function fetchVenueChangeLog(venueId: string): Promise<VenueChangeL
   });
   throwIfError(error);
   return (data ?? []) as VenueChangeLogRow[];
+}
+
+export async function fetchPendingVenueLiveRevisions(): Promise<VenueLiveRevision[]> {
+  const { data, error } = await supabase
+    .from('venue_live_revisions')
+    .select('id,venue_id,status,previous_values,proposed_values,submitted_by,reviewed_by,review_note,created_at,updated_at')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  throwIfError(error);
+  return ((data ?? []) as VenueLiveRevisionRow[]).map(venueLiveRevisionFromRow);
 }
 
 export async function setPartnerApplicationStatus(id: string, status: PartnerApplicationStatus) {
@@ -159,6 +172,42 @@ export async function updateAdminDraftVenue(
     },
   });
   throwIfError(error);
+}
+
+export interface AdminLiveVenueUpdateInput extends AdminDraftVenueUpdateInput {}
+
+export async function submitAdminLiveVenueRevision(
+  venueId: string,
+  expectedUpdatedAt: string,
+  input: AdminLiveVenueUpdateInput,
+) {
+  const { data, error } = await supabase.rpc('admin_submit_live_venue_revision', {
+    p_venue_id: venueId,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_payload: {
+      name: input.name.trim(), city: input.city.trim(), category: input.category.trim(),
+      area: input.area?.trim() || null, address: input.address?.trim() || null,
+      description: input.description?.trim() || null, price_tier: input.priceTier?.trim() || null,
+      avg_cost_pp: input.averageCostPerPerson ?? null, cover_image: input.coverImage?.trim() || null,
+      vibes: input.vibes,
+    },
+  });
+  throwIfError(error);
+  return data as { venue_id: string; revision_id: string | null; immediate_fields: string[]; pending_fields: string[]; updated_at: string };
+}
+
+export async function reviewAdminLiveVenueRevision(
+  revisionId: string,
+  decision: 'approved' | 'rejected',
+  note?: string,
+) {
+  const { data, error } = await supabase.rpc('admin_review_live_venue_revision', {
+    p_revision_id: revisionId,
+    p_decision: decision,
+    p_note: note?.trim() || null,
+  });
+  throwIfError(error);
+  return data as { revision_id: string; venue_id: string; status: typeof decision; updated_at: string };
 }
 
 export async function setVenueTier(venueId: string, tier: Tier, reason: string) {

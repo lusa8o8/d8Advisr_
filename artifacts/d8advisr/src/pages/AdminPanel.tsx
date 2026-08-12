@@ -20,6 +20,7 @@ import {
   type Venue,
   type VenueChangeLogRow,
   type VenueInspectionRow,
+  type VenueLiveRevision,
   type VenueListingReview,
   type VenuePlacementAdminRequest,
   actorLabel,
@@ -36,6 +37,7 @@ import {
   fetchReverificationTasks,
   fetchVenueChangeLog,
   fetchVenueListingReviews,
+  fetchPendingVenueLiveRevisions,
   fetchVenuePlacementRequests,
   insertVenueInspection,
   markVenueVerified,
@@ -47,6 +49,7 @@ import {
 } from '@/features/admin/adminListingData';
 import { AdminListingCreate } from '@/features/admin/AdminListingCreate';
 import { AdminVenueDraftEdit } from '@/features/admin/AdminVenueDraftEdit';
+import { AdminVenueLiveEdit } from '@/features/admin/AdminVenueLiveEdit';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -115,6 +118,7 @@ export function AdminPanel() {
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [inspectionsError, setInspectionsError] = useState<string | null>(null);
   const [venueChangeLogs, setVenueChangeLogs] = useState<Record<string, VenueChangeLogRow[]>>({});
+  const [liveVenueRevisions, setLiveVenueRevisions] = useState<VenueLiveRevision[]>([]);
   const [changeLogLoading, setChangeLogLoading] = useState(false);
   const [changeLogError, setChangeLogError] = useState<string | null>(null);
 
@@ -131,6 +135,7 @@ export function AdminPanel() {
   const [adminActionError, setAdminActionError] = useState<string | null>(null);
   const [adminActionLoading, setAdminActionLoading] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState(false);
+  const [editingLive, setEditingLive] = useState(false);
   const [inspectionDraft, setInspectionDraft] = useState<InspectionDraft>({
     atmosphereScore: '',
     lightingScore: '',
@@ -147,6 +152,8 @@ export function AdminPanel() {
     && !selectedVenue.isActive
     && ['draft', 'submitted', 'under_review', 'needs_update'].includes(selectedVenue.listingStatus)
   );
+  const canEditSelectedLive = Boolean(selectedVenue && selectedVenue.source === 'd8_admin' && selectedVenue.partnerId === null && selectedVenue.isActive && selectedVenue.listingStatus === 'live');
+  const selectedPendingLiveRevision = selectedVenue ? liveVenueRevisions.find(revision => revision.venueId === selectedVenue.id) ?? null : null;
   const selectedInspection = selectedVenue
     ? venueInspections.find(inspection => inspection.venue_id === selectedVenue.id) ?? null
     : null;
@@ -256,11 +263,17 @@ export function AdminPanel() {
     setChangeLogLoading(false);
   };
 
+  const loadLiveVenueRevisions = async () => {
+    try { setLiveVenueRevisions(await fetchPendingVenueLiveRevisions()); }
+    catch (error) { logAdminIssue('Could not load live venue revisions', adminErrorMessage(error)); }
+  };
+
   useEffect(() => {
     void loadAdminVenues();
     void loadSubmissions();
     void loadReverificationTasks();
     void loadVenueInspections();
+    void loadLiveVenueRevisions();
   }, []);
 
   const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus) => {
@@ -339,6 +352,7 @@ export function AdminPanel() {
     setView('detail');
     setActiveSection('listing');
     setEditingDraft(false);
+    setEditingLive(false);
     setInspectionDraft({
       atmosphereScore: '',
       lightingScore: '',
@@ -662,6 +676,9 @@ export function AdminPanel() {
             {canEditSelectedDraft && !editingDraft && (
               <button onClick={() => setEditingDraft(true)} className="mt-3 flex items-center gap-1.5 rounded-xl border border-[#FF5A5F]/20 bg-[#FFF0F1] px-3 py-2 text-[12px] font-bold text-[#FF5A5F]"><Pencil size={13} /> Edit draft</button>
             )}
+            {canEditSelectedLive && !editingLive && !selectedPendingLiveRevision && (
+              <button onClick={() => setEditingLive(true)} className="mt-3 flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-[12px] font-bold text-blue-600"><Pencil size={13} /> Edit live listing</button>
+            )}
           </div>
 
           {canEditSelectedDraft && editingDraft && (
@@ -672,6 +689,21 @@ export function AdminPanel() {
                 await loadAdminVenues();
                 await loadVenueChangeLog(selectedVenue.id);
                 setEditingDraft(false);
+              }}
+            />
+          )}
+
+          {canEditSelectedLive && (editingLive || selectedPendingLiveRevision) && (
+            <AdminVenueLiveEdit
+              venue={selectedVenue}
+              pendingRevision={selectedPendingLiveRevision}
+              onCancel={() => setEditingLive(false)}
+              onChanged={async () => {
+                await loadAdminVenues();
+                await loadLiveVenueRevisions();
+                await loadReverificationTasks();
+                await loadVenueChangeLog(selectedVenue.id);
+                setEditingLive(false);
               }}
             />
           )}
@@ -1003,19 +1035,26 @@ export function AdminPanel() {
                   </div>
                 )}
 
-                <button
-                  onClick={() => void markVerified(selectedVenue.id)}
-                  disabled={adminActionLoading === `verify:${selectedVenue.id}`}
-                  className={cn(
-                    "w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-[13px] border transition-transform",
-                    adminActionLoading === `verify:${selectedVenue.id}`
-                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                      : "bg-[#E8FFF0] text-[#00C851] border-[#00C851]/20 active:scale-[0.98]"
-                  )}
-                >
-                  <RotateCcw size={14} />
-                  {adminActionLoading === `verify:${selectedVenue.id}` ? 'Saving...' : 'Mark venue verified'}
-                </button>
+                {selectedPendingLiveRevision ? (
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-[12px] text-amber-700">
+                    <p className="font-bold">Pending live revision</p>
+                    <p className="mt-1">Approve or reject the proposal above before using general verification actions.</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => void markVerified(selectedVenue.id)}
+                    disabled={adminActionLoading === `verify:${selectedVenue.id}`}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-[13px] border transition-transform",
+                      adminActionLoading === `verify:${selectedVenue.id}`
+                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-[#E8FFF0] text-[#00C851] border-[#00C851]/20 active:scale-[0.98]"
+                    )}
+                  >
+                    <RotateCcw size={14} />
+                    {adminActionLoading === `verify:${selectedVenue.id}` ? 'Saving...' : 'Mark venue verified'}
+                  </button>
+                )}
 
                 <div className="bg-white rounded-2xl border border-gray-200 p-4 text-[13px] text-gray-500">
                   <div className="flex items-center justify-between mb-3">
@@ -1147,7 +1186,12 @@ export function AdminPanel() {
               </p>
             )}
 
-            {resolved ? (
+            {task.liveRevisionId && !resolved ? (
+              <button onClick={() => openDetail(task.venueId)}
+                className="w-full py-2.5 rounded-xl bg-amber-500 text-white font-bold text-[12px] active:scale-95 transition-transform">
+                Review pending proposal
+              </button>
+            ) : resolved ? (
               <button onClick={() => openDetail(task.venueId)}
                 className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[12px] active:scale-95 transition-transform">
                 View Venue

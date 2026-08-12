@@ -182,6 +182,7 @@ export interface ReverificationTaskRow {
   created_at: string;
   resolved_at: string | null;
   notes: string | null;
+  live_revision_id: string | null;
   venues?: ReverificationVenueRow | ReverificationVenueRow[] | null;
 }
 
@@ -202,6 +203,7 @@ export interface ReverificationTask {
   createdAt: string;
   resolvedAt: string | null;
   notes: string | null;
+  liveRevisionId: string | null;
 }
 
 export type NoiseLevel = 'quiet' | 'moderate' | 'lively' | 'loud';
@@ -243,6 +245,47 @@ export interface VenueChangeLogRow {
   created_reverification: boolean;
   reverification_reason: string | null;
   created_at: string;
+}
+
+export interface VenueLiveRevision {
+  id: string;
+  venueId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  previousValues: Record<string, unknown>;
+  proposedValues: Record<string, unknown>;
+  submittedBy: string | null;
+  reviewedBy: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VenueLiveRevisionRow {
+  id: string;
+  venue_id: string;
+  status: VenueLiveRevision['status'];
+  previous_values: Record<string, unknown>;
+  proposed_values: Record<string, unknown>;
+  submitted_by: string | null;
+  reviewed_by: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function venueLiveRevisionFromRow(row: VenueLiveRevisionRow): VenueLiveRevision {
+  return {
+    id: row.id,
+    venueId: row.venue_id,
+    status: row.status,
+    previousValues: row.previous_values,
+    proposedValues: row.proposed_values,
+    submittedBy: row.submitted_by,
+    reviewedBy: row.reviewed_by,
+    reviewNote: row.review_note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export function partnerTypeLabel(type: PartnerApplicationType) {
@@ -339,6 +382,7 @@ export function reverificationTaskFromRow(row: ReverificationTaskRow): Reverific
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
     notes: row.notes,
+    liveRevisionId: row.live_revision_id,
   };
 }
 
@@ -352,6 +396,8 @@ export function reviewReasonLabel(reason: string | null) {
       return 'Category changed';
     case 'price_changed':
       return 'Price changed';
+    case 'admin_live_revision':
+      return 'Live listing revision';
     case 'sensitive_field_changed':
       return 'Photos or sensitive fields changed';
     case 'admin_review':
