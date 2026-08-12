@@ -29,7 +29,7 @@ function throwIfError(error: { message: string } | null) {
 export async function fetchAdminVenues(): Promise<Venue[]> {
   const { data, error } = await supabase
     .from('venues')
-    .select('id,name,category,city,area,address,tier,price_tier,description,cover_image,images,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,created_at,updated_at')
+    .select('id,name,category,city,area,address,tier,price_tier,description,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,partner_id,operator_organization_id,source,created_at,updated_at')
     .order('updated_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as AdminVenueRow[]).map(adminVenueFromRow);
@@ -120,6 +120,43 @@ export async function setVenueListingStatus(
     venue_id: venueId,
     new_status: status,
     reason,
+  });
+  throwIfError(error);
+}
+
+export interface AdminDraftVenueUpdateInput {
+  name: string;
+  city: string;
+  category: string;
+  area?: string;
+  address?: string;
+  description?: string;
+  priceTier?: string;
+  averageCostPerPerson?: number;
+  coverImage?: string;
+  vibes: string[];
+}
+
+export async function updateAdminDraftVenue(
+  venueId: string,
+  expectedUpdatedAt: string,
+  input: AdminDraftVenueUpdateInput,
+) {
+  const { error } = await supabase.rpc('admin_update_draft_venue', {
+    p_venue_id: venueId,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_payload: {
+      name: input.name.trim(),
+      city: input.city.trim(),
+      category: input.category.trim(),
+      area: input.area?.trim() || null,
+      address: input.address?.trim() || null,
+      description: input.description?.trim() || null,
+      price_tier: input.priceTier?.trim() || null,
+      avg_cost_pp: input.averageCostPerPerson ?? null,
+      cover_image: input.coverImage?.trim() || null,
+      vibes: input.vibes,
+    },
   });
   throwIfError(error);
 }

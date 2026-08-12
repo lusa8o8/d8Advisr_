@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
-  ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle,
+  ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle, Pencil,
   ClipboardList, Search, Shield, Eye,
   ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, Hourglass, LogOut
 } from 'lucide-react';
@@ -46,6 +46,7 @@ import {
   setVenueTier,
 } from '@/features/admin/adminListingData';
 import { AdminListingCreate } from '@/features/admin/AdminListingCreate';
+import { AdminVenueDraftEdit } from '@/features/admin/AdminVenueDraftEdit';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -129,6 +130,7 @@ export function AdminPanel() {
   const [activeSection, setActiveSection] = useState<'listing' | 'media' | 'experience' | 'review'>('listing');
   const [adminActionError, setAdminActionError] = useState<string | null>(null);
   const [adminActionLoading, setAdminActionLoading] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState(false);
   const [inspectionDraft, setInspectionDraft] = useState<InspectionDraft>({
     atmosphereScore: '',
     lightingScore: '',
@@ -138,6 +140,13 @@ export function AdminPanel() {
   });
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
+  const canEditSelectedDraft = Boolean(
+    selectedVenue
+    && selectedVenue.source === 'd8_admin'
+    && selectedVenue.partnerId === null
+    && !selectedVenue.isActive
+    && ['draft', 'submitted', 'under_review', 'needs_update'].includes(selectedVenue.listingStatus)
+  );
   const selectedInspection = selectedVenue
     ? venueInspections.find(inspection => inspection.venue_id === selectedVenue.id) ?? null
     : null;
@@ -329,6 +338,7 @@ export function AdminPanel() {
     setSelectedId(id);
     setView('detail');
     setActiveSection('listing');
+    setEditingDraft(false);
     setInspectionDraft({
       atmosphereScore: '',
       lightingScore: '',
@@ -649,7 +659,22 @@ export function AdminPanel() {
             </div>
             <h2 className="font-black text-gray-900 text-[18px] leading-tight mt-2">{selectedVenue.name}</h2>
             <p className="text-[13px] text-gray-500 mt-0.5">{selectedVenue.category} · {selectedVenue.city}</p>
+            {canEditSelectedDraft && !editingDraft && (
+              <button onClick={() => setEditingDraft(true)} className="mt-3 flex items-center gap-1.5 rounded-xl border border-[#FF5A5F]/20 bg-[#FFF0F1] px-3 py-2 text-[12px] font-bold text-[#FF5A5F]"><Pencil size={13} /> Edit draft</button>
+            )}
           </div>
+
+          {canEditSelectedDraft && editingDraft && (
+            <AdminVenueDraftEdit
+              venue={selectedVenue}
+              onCancel={() => setEditingDraft(false)}
+              onSaved={async () => {
+                await loadAdminVenues();
+                await loadVenueChangeLog(selectedVenue.id);
+                setEditingDraft(false);
+              }}
+            />
+          )}
 
           {/* Tier control */}
           <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">

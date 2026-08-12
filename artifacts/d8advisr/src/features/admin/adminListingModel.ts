@@ -13,6 +13,13 @@ export interface Venue {
   hours: string;
   photos: string[];
   coverImage: string | null;
+  priceTier: string | null;
+  averageCostPerPerson: number | null;
+  vibes: string[];
+  source: string | null;
+  partnerId: string | null;
+  operatorOrganizationId: string | null;
+  updatedAt: string;
   listingStatus: string;
   verificationStatus: string;
   reverificationReason: string | null;
@@ -38,6 +45,7 @@ export interface AdminVenueRow {
   description: string | null;
   cover_image: string | null;
   images: string[] | null;
+  vibes: string[] | null;
   rating: number | null;
   review_count: number | null;
   avg_cost_pp: number | null;
@@ -49,6 +57,9 @@ export interface AdminVenueRow {
   next_verification_due_at: string | null;
   is_active: boolean | null;
   is_hidden_gem: boolean | null;
+  partner_id: string | null;
+  operator_organization_id: string | null;
+  source: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -432,6 +443,13 @@ export function adminVenueFromRow(row: AdminVenueRow): Venue {
     hours,
     photos,
     coverImage: row.cover_image,
+    priceTier: row.price_tier,
+    averageCostPerPerson: row.avg_cost_pp,
+    vibes: row.vibes ?? [],
+    source: row.source,
+    partnerId: row.partner_id,
+    operatorOrganizationId: row.operator_organization_id,
+    updatedAt: row.updated_at,
     listingStatus: row.listing_status,
     verificationStatus: row.verification_status,
     reverificationReason: row.reverification_reason,
