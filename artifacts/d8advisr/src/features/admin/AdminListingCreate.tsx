@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CalendarPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, ImagePlus, ShieldCheck } from 'lucide-react';
 import type { Venue } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
+import { uploadListingImage } from '@/lib/supabase';
 import {
   createAdminEvent,
   createAdminVenue,
@@ -55,6 +56,8 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   const submissionInFlight = useRef(false);
   const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
   const [venue, setVenue] = useState({
@@ -74,6 +77,21 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const references = useListingReferences(kind, selectedRegion?.id);
 
   const liveVenues = venues.filter(item => item.isActive && item.listingStatus === 'live');
+
+  const uploadCover = async (file?: File) => {
+    if (!file) return;
+    setUploading(true); setError(null);
+    try {
+      const url = await uploadListingImage(file, kind === 'venue' ? 'venues' : 'events');
+      if (kind === 'venue') setVenue(current => ({ ...current, coverImage: url }));
+      else setEvent(current => ({ ...current, coverImage: url }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not upload the image.');
+    } finally {
+      setUploading(false);
+      if (mediaInputRef.current) mediaInputRef.current.value = '';
+    }
+  };
 
   const submit = async (formEvent: FormEvent) => {
     formEvent.preventDefault();
@@ -127,6 +145,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 no-scrollbar">
       <form onSubmit={submit} className="mx-auto max-w-2xl space-y-4">
+        <input ref={mediaInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event => void uploadCover(event.target.files?.[0])} />
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-start gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF0F1] text-[#FF5A5F]"><CalendarPlus size={19} /></div>
@@ -175,7 +194,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
                 <Field label="Price level"><select className={inputClass} value={venue.priceTier} onChange={e => setVenue(v => ({ ...v, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></Field>
                 <Field label="Average cost"><input min="0" type="number" className={inputClass} value={venue.averageCost} onChange={e => setVenue(v => ({ ...v, averageCost: e.target.value }))} /></Field>
               </div>
-              <Field label="Cover image URL"><input type="url" className={inputClass} value={venue.coverImage} onChange={e => setVenue(v => ({ ...v, coverImage: e.target.value }))} /></Field>
+              <Field label="Cover image"><div className="space-y-2">{venue.coverImage && <img src={venue.coverImage} alt="Venue cover preview" className="h-36 w-full rounded-xl object-cover" />}<button type="button" disabled={uploading} onClick={() => mediaInputRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-3 text-[12px] font-bold text-gray-600 disabled:opacity-50"><ImagePlus size={16} />{uploading ? 'Uploading...' : venue.coverImage ? 'Replace uploaded cover' : 'Upload cover image'}</button><input type="url" aria-label="Legacy venue cover URL fallback" placeholder="Temporary URL fallback" className={inputClass} value={venue.coverImage} onChange={e => setVenue(v => ({ ...v, coverImage: e.target.value }))} /></div></Field>
               <Field label="Vibes"><VibePicker value={venue.vibes} options={references.vibes} onChange={vibes => setVenue(v => ({ ...v, vibes }))} /></Field>
             </>
           ) : (
@@ -198,7 +217,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
                 <Field label="Capacity"><input min="0" type="number" className={inputClass} value={event.capacity} onChange={e => setEvent(v => ({ ...v, capacity: e.target.value }))} /></Field>
               </div>
               <div className="flex gap-5 text-[12px] font-semibold"><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFree} onChange={e => setEvent(v => ({ ...v, isFree: e.target.checked, price: e.target.checked ? '' : v.price }))} />Free</label><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFeatured} onChange={e => setEvent(v => ({ ...v, isFeatured: e.target.checked }))} />Featured</label></div>
-              <Field label="Cover image URL"><input type="url" className={inputClass} value={event.coverImage} onChange={e => setEvent(v => ({ ...v, coverImage: e.target.value }))} /></Field>
+              <Field label="Cover image"><div className="space-y-2">{event.coverImage && <img src={event.coverImage} alt="Event cover preview" className="h-36 w-full rounded-xl object-cover" />}<button type="button" disabled={uploading} onClick={() => mediaInputRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-3 text-[12px] font-bold text-gray-600 disabled:opacity-50"><ImagePlus size={16} />{uploading ? 'Uploading...' : event.coverImage ? 'Replace uploaded cover' : 'Upload cover image'}</button><input type="url" aria-label="Legacy event cover URL fallback" placeholder="Temporary URL fallback" className={inputClass} value={event.coverImage} onChange={e => setEvent(v => ({ ...v, coverImage: e.target.value }))} /></div></Field>
               <Field label="Vibes"><VibePicker value={event.vibes} options={references.vibes} onChange={vibes => setEvent(v => ({ ...v, vibes }))} /></Field>
             </>
           )}

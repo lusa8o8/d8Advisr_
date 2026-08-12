@@ -43,6 +43,48 @@ export type ListingSource = 'd8_admin' | 'partner' | 'import' | 'community';
 export const VENUE_CLIENT_SELECT = 'id,name,slug,city,region_id,area,area_id,area_source,category,category_id,tier,price_tier,price_level,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,operator_organization_id,source,created_at,updated_at';
 export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,organizer_organization_id,source,title,description,category,category_id,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,spots_left,is_free,is_featured,city,region_id,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
 
+export type ListingMediaScope = 'events' | 'venues';
+export const LISTING_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+export const LISTING_IMAGE_MIN_WIDTH = 800;
+export const LISTING_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export async function validateListingImage(file: File, minWidth = LISTING_IMAGE_MIN_WIDTH) {
+  if (!LISTING_IMAGE_TYPES.includes(file.type)) throw new Error('Use JPG, PNG, or WebP images only.');
+  if (file.size > LISTING_IMAGE_MAX_BYTES) throw new Error('Images must be 3 MB or smaller.');
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const width = await new Promise<number>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image.naturalWidth);
+      image.onerror = () => reject(new Error('Could not read image dimensions.'));
+      image.src = objectUrl;
+    });
+    if (width < minWidth) throw new Error(`Images must be at least ${minWidth}px wide.`);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+export async function uploadListingImage(file: File, scope: ListingMediaScope) {
+  await validateListingImage(file);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${user.id}/${scope}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  const upload = await supabase.storage.from('listing-media').upload(path, file, {
+    cacheControl: '3600', contentType: file.type, upsert: false,
+  });
+  if (upload.error) throw upload.error;
+  const registration = await supabase.rpc('register_listing_media', {
+    p_object_path: path, p_scope: scope,
+  });
+  if (registration.error) {
+    await supabase.storage.from('listing-media').remove([path]);
+    throw registration.error;
+  }
+  return supabase.storage.from('listing-media').getPublicUrl(path).data.publicUrl;
+}
+
 export type Database = {
   public: {
     Tables: {
