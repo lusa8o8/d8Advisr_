@@ -10,6 +10,7 @@
     "dev:consumer:staging": "pnpm --filter @workspace/d8advisr exec vite --config vite.config.ts --host 0.0.0.0 --mode staging",
     "dev:partner:staging": "pnpm --filter @workspace/d8advisr-partner exec vite --config vite.config.ts --host 0.0.0.0 --mode staging",
     "test:local:browser-env": "node scripts/check-local-browser-env.mjs",
+    "test:session-lifecycle:static": "node scripts/check-session-lifecycle.mjs",
     "build:staging": "pnpm --filter @workspace/d8advisr exec vite build --config vite.config.ts --mode staging && pnpm --filter @workspace/d8advisr-partner exec vite build --config vite.config.ts --mode staging",
     "test:staging": "node scripts/staging-smoke.mjs",
     "test:staging:full": "node scripts/staging-smoke.mjs --require-identities",
