@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document - Phase 4.5 implementation and automated staging verification complete; local browser closure next
+Status: active planning document - Phase 4.5 core partner revision path browser-verified; remaining acceptance checks precede Phase 5
 
 Created: 2026-08-11
 
@@ -355,6 +355,14 @@ Implemented commits are separated by boundary:
 4. `feat(partner): review high-risk live venue revisions`
 5. `test(phase4.5): cover local listing workflows`
 
+Browser evidence on 2026-08-12 confirmed the core live-venue contract end to
+end: a partner submitted controlled venue fields and six uploaded photos, the
+low-risk description applied immediately, the controlled proposal remained
+private, admin reviewed and approved it, and the updated listing and gallery
+appeared in the consumer feed. Phase 4.5 still requires the unchecked items in
+the local checklist, particularly rejection, cross-user media isolation, event
+reference parity, manual area fallback, and draft/media recovery cases.
+
 ### Phase 5 — Claim submission and approval
 
 Outcome: a real user claims an existing listing and receives approved access.
@@ -501,8 +509,11 @@ Primary references:
 
 ## Immediate Next Step
 
-Complete the Phase 4.5 local browser checklist against staging, including shared
-selectors, media upload, partner pending-review visibility, rejection, approval,
-and consumer discovery. After browser closure, begin fresh Phase 5 claim
-discovery and its mini plan. Production promotion of the accumulated migrations
-remains a separate explicit decision.
+Close the remaining unchecked Phase 4.5 browser cases against staging. The core
+partner submission, pending-review visibility, approval, media persistence, and
+consumer discovery path has passed. Rejection, cross-user media isolation,
+event reference parity, manual area fallback, and remaining draft/media
+recovery cases are still required or must be accepted as documented exceptions.
+After that gate, begin fresh Phase 5 claim discovery and write its mini plan.
+Production promotion of the accumulated migrations remains a separate explicit
+decision.

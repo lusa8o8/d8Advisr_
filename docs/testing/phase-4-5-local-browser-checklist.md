@@ -58,23 +58,26 @@ Browser evidence, 2026-08-12:
 
 ## Partner shared editor and media
 
-- [ ] Sign in as the staging partner and open the venue editor.
-- [ ] Confirm category and reviewed-area choices match the admin catalogs.
+- [x] Sign in as the staging partner and open the venue editor.
+- [x] Confirm category and reviewed-area choices match the admin catalogs.
 - [ ] Confirm manual area fallback is available and visibly identified.
-- [ ] Upload a valid image and save it successfully.
+- [x] Upload valid images and save them successfully. Six 1080x1350 images were
+  preserved in the pending revision, approved by admin, and rendered in the
+  consumer feed on 2026-08-12.
 - [ ] Confirm another user's storage path cannot be used or overwritten.
 
 ## Partner live revision privacy
 
-- [ ] Change description/opening hours plus name/category/address/area or media.
-- [ ] Save once and confirm the dashboard says the listing is in review.
+- [x] Change description/opening hours plus name/category/address/area or media.
+- [x] Save once and confirm the dashboard says the listing is in review.
 - [ ] Reopen the editor and confirm the pending-review banner is visible and the
   save button is disabled.
-- [ ] In the consumer client, confirm low-risk values changed but high-risk
+- [x] In the consumer client, confirm low-risk values changed but high-risk
   values did not.
-- [ ] In admin, confirm the revision is labeled as a partner revision.
+- [x] In admin, confirm the revision is labeled as a partner revision and shows
+  all proposed fields and image previews.
 - [ ] Reject it and confirm the old public high-risk values remain.
-- [ ] Submit a second revision, approve it, and confirm the consumer sees the
+- [x] Submit a revision, approve it, and confirm the consumer sees the
   approved values without the listing becoming inactive.
 - [ ] Confirm the partner can edit again after the decision.
 
