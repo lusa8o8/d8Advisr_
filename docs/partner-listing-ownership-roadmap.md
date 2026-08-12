@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 4 admin lifecycle automated staging verification complete; browser closure and Phase 4.5 next
+Status: active planning document - Phase 4.5 implementation and automated staging verification complete; local browser closure next
 
 Created: 2026-08-11
 
@@ -347,11 +347,13 @@ copy promising the opposite. Phase 4.5 must migrate partner live edits onto the
 same pending-revision principle after canonical fields and shared media are
 defined; this is a production-readiness gate, not an optional cleanup.
 
-Likely commits remain separated by boundary:
+Implemented commits are separated by boundary:
 
 1. `feat(db): add listing reference catalogs`
-2. `refactor(apps): use canonical listing fields`
+2. `feat(listings): use shared reference selectors`
 3. `feat(media): add shared listing uploads`
+4. `feat(partner): review high-risk live venue revisions`
+5. `test(phase4.5): cover local listing workflows`
 
 ### Phase 5 — Claim submission and approval
 
@@ -499,9 +501,8 @@ Primary references:
 
 ## Immediate Next Step
 
-Complete the local browser create-edit-approve-discover and live-revision
-checklists, then perform Phase 4.5 value inventory and schema design, including
-partner live-edit migration. Begin Phase 5 claim
-discovery only after the shared reference-data contract is staging verified.
-Production promotion of the Phase 3 and Phase 4 migrations remains a separate
-explicit decision.
+Complete the Phase 4.5 local browser checklist against staging, including shared
+selectors, media upload, partner pending-review visibility, rejection, approval,
+and consumer discovery. After browser closure, begin fresh Phase 5 claim
+discovery and its mini plan. Production promotion of the accumulated migrations
+remains a separate explicit decision.

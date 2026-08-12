@@ -1,6 +1,6 @@
 # Phase 4.5 Mini Plan: Listing Reference Data and Media
 
-Status: discovery complete; implementation in progress after Phase 4 browser closure
+Status: implementation and automated staging verification complete; local browser checklist pending
 
 Date: 2026-08-12
 
@@ -157,6 +157,33 @@ object URLs/paths.
 6. Add the shared listing-media upload flow and migrate URL-only UI.
 7. Enforce constraints only after reconciliation shows no unmapped required
    values.
+
+## Implemented staging result
+
+- Canonical regions, reviewed areas, listing categories, aliases, vibes, and
+  ordinal price levels now coexist with legacy display fields through additive
+  dual-read and dual-write compatibility.
+- Admin and partner listing forms read the same active reference catalogs.
+  Currency and timezone come from region data; area supports a visibly manual
+  fallback when the reviewed catalog has no match.
+- Shared listing media uses uploader-scoped storage paths, validated images,
+  public reads, and database metadata. Consumers and cross-user uploads are
+  rejected.
+- Partner edits to live descriptions and opening hours apply immediately.
+  Name, category, address, area, cover image, and gallery changes remain private
+  until an admin approves them. Approval and rejection are audited.
+- A pending partner revision is visible to its owner, hidden from consumers,
+  surfaced in the partner dashboard/editor, and cannot be submitted twice.
+- Staging smoke tests restore their venue fixture exactly after exercising
+  rejection and approval. No production migrations were applied.
+
+Run the automated Phase 4.5 gate with:
+
+`pnpm run test:staging:phase45`
+
+Then complete
+`docs/testing/phase-4-5-local-browser-checklist.md` before proposing production
+promotion.
 
 ## Implementation slices and commit boundaries
 
