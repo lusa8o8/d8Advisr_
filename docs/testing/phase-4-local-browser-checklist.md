@@ -14,6 +14,10 @@ Known deferred observation: the five saved plans and consumer notifications are
 demo-only UI rather than authenticated persisted data. This is recorded in the
 deferred consumer demo-data and notification note.
 
+Known deferred observation: Surprise Me and Plan Overview are also demo-only.
+The itinerary, Lagos location, naira costs, transport, fund progress, and save
+target are hardcoded rather than generated from staging inventory.
+
 ## Before starting
 
 - Use test listing names beginning with `[BROWSER TEST]`. This makes cleanup

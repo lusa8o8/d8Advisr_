@@ -23,6 +23,19 @@ Observed: 2026-08-12
 - The existing partner_notifications table serves the partner workflow; it is
   not a suitable consumer inbox contract without a deliberate redesign.
 
+### Surprise Me and plan overview
+
+- Surprise Me routes directly to PlanOverview; it does not select from the
+  authenticated user's eligible staging venues or events.
+- The three stops, Lagos title/area, stop times, tiers, labels, images, venue
+  IDs, and transport legs are fixed constants.
+- Costs use a legacy multiplier of 1500 and every amount is rendered with a
+  hardcoded naira symbol rather than the selected region currency.
+- The 45% Evening Fund state is fixed rather than loaded from a user fund.
+- Anchored plan generation can replace only the middle demo stop while leaving
+  the remaining Lagos itinerary and cost assumptions intact.
+- Saving does not persist a generated plan and redirects to fixed /plan/1.
+
 ## Product risk
 
 Demo content shown inside an authenticated account looks like real private
@@ -44,6 +57,9 @@ Implement in separate bounded phases:
    generation.
 3. Replace or isolate remaining demo IDs in plan generation, reviews, budget,
    notification links, and detail pages.
+4. Build a plan-generation contract that filters eligible inventory by region,
+   visibility, operating/event time, budget, and travel feasibility before
+   scoring and assembling stops.
 
 ## Acceptance criteria
 
@@ -54,3 +70,9 @@ Implement in separate bounded phases:
 - Mark-read, mark-all-read, dismiss, and deep links persist and are authorized.
 - No production-like page presents unlabeled hardcoded personal activity.
 - Automated RLS tests cover cross-consumer plan and notification isolation.
+- Surprise Me uses real eligible inventory for the selected region and never
+  mixes cities, currencies, timezones, or inaccessible listings.
+- All stop, transport, total, and fund amounts share one explicit plan currency
+  and documented price-unit convention.
+- Generated stop IDs resolve to real listings, and save creates a real plan
+  that survives refresh instead of redirecting to a fixed ID.
