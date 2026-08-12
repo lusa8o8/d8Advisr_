@@ -87,8 +87,10 @@ New admin and partner submissions must choose a valid stable category.
   `Chill`/`Relaxed`, `Art`/`Creative`, and `Cultural`/`Culture`). Distinct
   signals such as Romantic, Date Night, Anniversary, and Intimate stay distinct
   because they can carry different relevance weights later.
-- Staging lowercase `outdoor` maps to `outdoor`; `loud` remains an explicit
-  unmapped exception rather than silently becoming `lively`.
+- Staging lowercase `outdoor` maps to `outdoor`. `DJ`, found during the
+  first staging reconciliation, is a legitimate production signal and has its
+  own stable key. Test-only `loud` and `Staging` remain explicit unmapped
+  exceptions rather than being silently assigned product meaning.
 
 The exception query is part of the static/staging test harness. Required
 canonical columns remain nullable during compatibility; database mutation
