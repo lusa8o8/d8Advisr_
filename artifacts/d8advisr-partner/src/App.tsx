@@ -283,7 +283,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <WouterRouter>
-          <div className="min-h-screen flex flex-col bg-[#F7F7F7]">
+          <div className="h-dvh min-h-0 flex flex-col overflow-hidden bg-[#F7F7F7]">
             <Router />
           </div>
         </WouterRouter>
