@@ -15,8 +15,18 @@ interface Props {
 
 const inputClass = 'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-[13px] text-gray-900 outline-none focus:border-[#FF5A5F] focus:ring-1 focus:ring-[#FF5A5F]';
 const tags = (value: string) => value.split(',').map(item => item.trim()).filter(Boolean);
-const displayValue = (value: unknown) => Array.isArray(value) ? value.join(', ') : value === null || value === undefined || value === '' ? 'Not provided' : String(value);
-const fieldLabel = (field: string) => ({ price_tier: 'Price tier', avg_cost_pp: 'Average cost / person', cover_image: 'Cover image', images: 'Gallery images', name: 'Name', city: 'City', category: 'Category', area: 'Area', address: 'Address', vibes: 'Vibes' }[field] ?? field.replaceAll('_', ' '));
+const PRICE_LABELS: Record<string, string> = {
+  '$': '1 - Budget',
+  '$$': '2 - Moderate',
+  '$$$': '3 - Premium',
+  '$$$$': '4 - Luxury',
+};
+const displayValue = (field: string, value: unknown) => {
+  if (field === 'price_tier' && typeof value === 'string') return PRICE_LABELS[value] ?? value;
+  if (field === 'avg_cost_pp' && value !== null && value !== undefined) return `${value} per person`;
+  return Array.isArray(value) ? value.join(', ') : value === null || value === undefined || value === '' ? 'Not provided' : String(value);
+};
+const fieldLabel = (field: string) => ({ price_tier: 'Price level', avg_cost_pp: 'Average cost / person', cover_image: 'Cover image', images: 'Gallery images', contact_phone: 'Phone / WhatsApp', website_url: 'Website', name: 'Name', city: 'City', category: 'Category', area: 'Area', address: 'Address', vibes: 'Vibes' }[field] ?? field.replaceAll('_', ' '));
 
 function initialDraft(venue: Venue) {
   return {
@@ -69,7 +79,23 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
           {Object.keys(pendingRevision.proposedValues).sort().map(field => (
             <div key={field} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
               <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{fieldLabel(field)}</p>
-              <div className="mt-1 grid grid-cols-2 gap-2 text-[12px]"><div><span className="text-[9px] font-bold uppercase text-gray-400">Current</span><p className="break-words text-gray-600">{displayValue(pendingRevision.previousValues[field])}</p></div><div><span className="text-[9px] font-bold uppercase text-amber-600">Proposed</span><p className="break-words font-semibold text-gray-900">{displayValue(pendingRevision.proposedValues[field])}</p></div></div>
+              {field === 'images' && Array.isArray(pendingRevision.proposedValues[field]) ? (
+                <div className="mt-2">
+                  <p className="mb-2 text-[9px] font-bold uppercase text-amber-600">Proposed - {pendingRevision.proposedValues[field].length} images</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(pendingRevision.proposedValues[field] as string[]).map((url, index) => (
+                      <img key={url} src={url} alt={`Proposed venue photo ${index + 1}`} className="aspect-square w-full rounded-lg border border-gray-200 object-cover" />
+                    ))}
+                  </div>
+                </div>
+              ) : field === 'cover_image' && typeof pendingRevision.proposedValues[field] === 'string' ? (
+                <div className="mt-2">
+                  <p className="mb-2 text-[9px] font-bold uppercase text-amber-600">Proposed cover</p>
+                  <img src={pendingRevision.proposedValues[field] as string} alt="Proposed venue cover" className="h-36 w-full rounded-lg border border-gray-200 object-cover" />
+                </div>
+              ) : (
+                <div className="mt-1 grid grid-cols-2 gap-2 text-[12px]"><div><span className="text-[9px] font-bold uppercase text-gray-400">Current</span><p className="break-words text-gray-600">{displayValue(field, pendingRevision.previousValues[field])}</p></div><div><span className="text-[9px] font-bold uppercase text-amber-600">Proposed</span><p className="break-words font-semibold text-gray-900">{displayValue(field, pendingRevision.proposedValues[field])}</p></div></div>
+              )}
             </div>
           ))}
         </div>

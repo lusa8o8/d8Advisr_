@@ -17,6 +17,11 @@ Use the local partner staging server and the staging partner venue account.
   existing image URLs recover.
 - [ ] Save changes to a live venue and confirm the dashboard reports a pending
   revision.
+- [ ] In Admin venue detail, confirm the pending partner review panel appears
+  above the live listing tabs without requiring the venue to be D8-owned.
+- [ ] Confirm all proposed images render as previews in the review panel.
+- [ ] Confirm price levels use Budget/Moderate/Premium/Luxury labels rather
+  than raw dollar signs in venue detail, proposals, and change history.
 - [ ] Before admin approval, confirm controlled/contact changes are absent from
   the consumer venue while description/hours changes apply immediately.
 - [ ] Approve the revision as admin and confirm the consumer venue receives the

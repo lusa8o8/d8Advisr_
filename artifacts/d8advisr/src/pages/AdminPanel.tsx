@@ -82,6 +82,19 @@ const HEALTH_LABEL: Record<Health, string> = {
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
 const NOISE_LEVELS: NoiseLevel[] = ['quiet', 'moderate', 'lively', 'loud'];
 type AdminNavTab = 'venues' | 'tracker' | 'health' | 'submissions' | 'create';
+const PRICE_LEVEL_LABELS: Record<string, string> = {
+  '$': '1 - Budget',
+  '$$': '2 - Moderate',
+  '$$$': '3 - Premium',
+  '$$$$': '4 - Luxury',
+};
+
+function displayChangeValue(field: string, value: string | null) {
+  if (!value) return value;
+  if (field === 'price_tier') return PRICE_LEVEL_LABELS[value] ?? value;
+  if (field === 'avg_cost_pp') return `${value} per person`;
+  return value;
+}
 
 function adminSectionFromLocation(location: string): { tab: AdminNavTab; view: AdminView } {
   const section = new URL(location, window.location.origin).searchParams.get('section') as AdminNavTab | null;
@@ -696,6 +709,11 @@ export function AdminPanel() {
             </div>
             <h2 className="font-black text-gray-900 text-[18px] leading-tight mt-2">{selectedVenue.name}</h2>
             <p className="text-[13px] text-gray-500 mt-0.5">{selectedVenue.category} · {selectedVenue.city}</p>
+            {selectedPendingLiveRevision && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] font-semibold text-amber-700">
+                Partner changes are awaiting review below. Current listing tabs remain unchanged until approval.
+              </div>
+            )}
             {canEditSelectedDraft && !editingDraft && (
               <button onClick={() => setEditingDraft(true)} className="mt-3 flex items-center gap-1.5 rounded-xl border border-[#FF5A5F]/20 bg-[#FFF0F1] px-3 py-2 text-[12px] font-bold text-[#FF5A5F]"><Pencil size={13} /> Edit draft</button>
             )}
@@ -716,7 +734,7 @@ export function AdminPanel() {
             />
           )}
 
-          {canEditSelectedLive && (editingLive || selectedPendingLiveRevision) && (
+          {((canEditSelectedLive && editingLive) || selectedPendingLiveRevision) && (
             <AdminVenueLiveEdit
               venue={selectedVenue}
               pendingRevision={selectedPendingLiveRevision}
@@ -1108,11 +1126,11 @@ export function AdminPanel() {
                         {(entry.old_value || entry.new_value) && (
                           <div className="flex flex-wrap gap-1.5 text-[11px] mb-2">
                             {entry.old_value && (
-                              <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-500 line-through">{entry.old_value}</span>
+                              <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-500 line-through">{displayChangeValue(entry.field_name, entry.old_value)}</span>
                             )}
                             {entry.old_value && entry.new_value && <span className="text-gray-300">to</span>}
                             {entry.new_value && (
-                              <span className="rounded-full bg-[#E8FFF0] px-2 py-0.5 font-medium text-[#00C851]">{entry.new_value}</span>
+                              <span className="rounded-full bg-[#E8FFF0] px-2 py-0.5 font-medium text-[#00C851]">{displayChangeValue(entry.field_name, entry.new_value)}</span>
                             )}
                           </div>
                         )}

@@ -25,6 +25,14 @@ const partnerEditor = readFileSync(resolve(
   import.meta.dirname,
   '../artifacts/d8advisr-partner/src/pages/PartnerVenueEditor.tsx',
 ), 'utf8');
+const adminPanel = readFileSync(resolve(
+  import.meta.dirname,
+  '../artifacts/d8advisr/src/pages/AdminPanel.tsx',
+), 'utf8');
+const adminReview = readFileSync(resolve(
+  import.meta.dirname,
+  '../artifacts/d8advisr/src/features/admin/AdminVenueLiveEdit.tsx',
+), 'utf8');
 
 for (const value of [
   'add column if not exists contact_phone text',
@@ -40,6 +48,17 @@ for (const value of [
   "website_url = case when revision.proposed_values ? 'website_url'",
 ]) {
   if (!sql.includes(value)) throw new Error(`Missing partner venue parity contract: ${value}`);
+}
+for (const [source, value] of [
+  [adminPanel, '|| selectedPendingLiveRevision) && ('],
+  [adminPanel, 'Partner changes are awaiting review below'],
+  [adminReview, "field === 'images'"],
+  [adminReview, 'Proposed venue photo'],
+  [adminReview, 'PRICE_LABELS'],
+]) {
+  if (!source.includes(value)) {
+    throw new Error(`Missing admin partner revision presentation: ${value}`);
+  }
 }
 const revisionUpdate = reviewOrder.indexOf('update public.venue_live_revisions set');
 const taskUpdate = reviewOrder.indexOf('update public.venue_reverification_tasks');

@@ -475,9 +475,15 @@ export function healthFromVenue(row: AdminVenueRow): Health {
 
 export function adminVenueFromRow(row: AdminVenueRow): Venue {
   const photos = Array.from(new Set([row.cover_image, ...(row.images ?? [])].filter((url): url is string => Boolean(url))));
+  const priceLevel = ({
+    '$': '1 - Budget',
+    '$$': '2 - Moderate',
+    '$$$': '3 - Premium',
+    '$$$$': '4 - Luxury',
+  } as Record<string, string>)[row.price_tier ?? ''];
   const price = row.avg_cost_pp
-    ? `${row.price_tier ?? ''} ${row.avg_cost_pp}/pp`.trim()
-    : row.price_tier ?? 'Not provided';
+    ? `${priceLevel ? `${priceLevel} - ` : ''}${row.avg_cost_pp} per person`
+    : priceLevel || 'Not provided';
   const hours = formatOpenHours(row.open_hours);
 
   return {
