@@ -88,7 +88,22 @@ From Admin → Create → Venue:
 Expected data contract: no partner user, no organization owner, `d8_admin`
 source, inactive draft, unverified.
 
-## 3. Approve an unclaimed venue
+## 3. Correct an admin-created draft
+
+- [ ] Open the admin-created `BROWSER TEST` draft (ID starts `0156b1b1`) from
+      Venues and confirm `Edit draft` is visible.
+- [ ] Change its name, area, description, average cost, and vibes, then save.
+- [ ] Confirm the corrected values persist after refresh.
+- [ ] Open its Review tab and confirm each changed field appears in Change
+      history with the staging admin as actor.
+- [ ] Confirm ownership, tier, draft status, and verification did not change.
+- [ ] Open a live, partner-owned, or legacy venue and confirm the bounded `Edit
+      draft` action is absent.
+- [ ] In a second tab, load the same draft; save in the first tab, then try to
+      save the stale second tab. Confirm it reports that the venue changed and
+      does not overwrite the first save.
+
+## 4. Approve an unclaimed venue
 
 - [ ] Create `[BROWSER TEST] Public Unclaimed Venue` with `Unclaimed listing`.
 - [ ] Provide realistic display data and a valid cover image URL.
@@ -98,7 +113,7 @@ source, inactive draft, unverified.
 - [ ] Its details page says `Listed by D8Advisr`, not `Operated by D8Advisr`.
 - [ ] Address, price, category, description, images, and map behave sensibly.
 
-## 4. D8Advisr-operated venue
+## 5. D8Advisr-operated venue
 
 - [ ] Create `[BROWSER TEST] D8 Operated Venue` with `Operated by D8Advisr`.
 - [ ] Confirm it remains private until approved in Submissions.
@@ -106,7 +121,7 @@ source, inactive draft, unverified.
 - [ ] Its details page says `Operated by D8Advisr`.
 - [ ] It does not display or imply a fake partner owner.
 
-## 5. Event creation and visibility
+## 6. Event creation and visibility
 
 - [ ] Create `[BROWSER TEST] Draft Event` with a future start time and save it
       as a draft. It stays out of consumer event discovery.
@@ -121,7 +136,7 @@ source, inactive draft, unverified.
 - [ ] Its venue link opens the intended venue and the event appears on that
       venue page without an approval dead end.
 
-## 6. Validation and failure states
+## 7. Validation and failure states
 
 - [ ] Required fields prevent an empty submission.
 - [ ] External location requires a location name.
@@ -131,7 +146,7 @@ source, inactive draft, unverified.
 - [ ] Repeated clicks while saving do not create duplicates.
 - [ ] A failed request leaves the form usable for correction and retry.
 
-## 7. Partner regression
+## 8. Partner regression
 
 - [ ] Existing partner email/password sign-in works on port 3001.
 - [ ] Existing partner venue/event data loads.

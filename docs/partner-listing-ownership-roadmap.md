@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 4 integrity verified; Phase 4 closure and Phase 4.5 next
+Status: active planning document — Phase 4 automated staging verification complete; browser closure and Phase 4.5 next
 
 Created: 2026-08-11
 
@@ -321,11 +321,11 @@ Likely commits:
 1. `feat(db): add admin listing creation RPCs`
 2. `feat(admin): create venues and events`
 
-Browser verification added two closure requirements: creation is idempotent and
-admin-created venues cannot publish before Submissions approval. These are
-implemented and staging verified. The remaining bounded closure is an audited
-editor for non-live `d8_admin` venues so an admin can correct a draft before
-approval without opening a general post-publication edit path.
+Browser verification added three closure requirements: creation is idempotent,
+admin-created venues cannot publish before Submissions approval, and non-live
+admin-created venues can be corrected through an audited bounded editor. All
+three are implemented and automated-staging verified. The local browser
+create-edit-approve-discover checklist remains before Phase 4 is closed.
 
 ### Phase 4.5 — Shared listing reference data and media
 
@@ -491,8 +491,8 @@ Primary references:
 
 ## Immediate Next Step
 
-Complete the bounded audited editor for non-live D8-admin-created venue drafts,
-then perform Phase 4.5 value inventory and schema design. Begin Phase 5 claim
+Complete the local browser create-edit-approve-discover checklist, then perform
+Phase 4.5 value inventory and schema design. Begin Phase 5 claim
 discovery only after the shared reference-data contract is staging verified.
 Production promotion of the Phase 3 and Phase 4 migrations remains a separate
 explicit decision.

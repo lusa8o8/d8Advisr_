@@ -1,6 +1,6 @@
 # Phase 4 Closure Mini Plan: Admin Draft Venue Editing
 
-Status: implementation planned against staging only
+Status: automated staging verification complete; local browser verification pending
 
 Date: 2026-08-12
 
@@ -92,3 +92,24 @@ venues.
 4. `test(browser): cover admin draft correction flow`
 
 Production promotion remains a separate explicit approval gate.
+
+## Completion record
+
+- Added `admin_update_draft_venue(uuid, jsonb, timestamptz)` with admin-only
+  authorization, row locking, strict payload allowlisting, source/ownership and
+  non-live eligibility checks, optimistic concurrency, input bounds, protected
+  field preservation, and one atomic change-log row per changed field.
+- Added a forward correction so intentional stale-write conflicts use
+  non-retryable SQLSTATE `P0001`; Supabase treated the original `40001` as a
+  transaction retry and held the HTTP request open.
+- Applied both migrations to staging only. Database lint is clean and local and
+  remote migration histories match.
+- Added static migration checks plus a live staging suite proving consumer and
+  partner denial, unknown-field denial, successful eligible edits, audit
+  completeness, stale-write rejection, partner/legacy/live denial, and fixture
+  cleanup.
+- Added an Edit draft action to eligible admin venue detail pages. The focused
+  form refreshes venue data and audit history after save and does not expose
+  ownership, tier, status, verification, publication, or coordinates.
+- Workspace typecheck and the consumer/admin production build pass. Browser
+  create-edit-approve-discover verification remains for the operator checklist.
