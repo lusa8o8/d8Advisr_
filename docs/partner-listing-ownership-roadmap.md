@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 4 staging verified; Phase 5 discovery next
+Status: active planning document — Phase 4 integrity verified; Phase 4 closure and Phase 4.5 next
 
 Created: 2026-08-11
 
@@ -321,6 +321,30 @@ Likely commits:
 1. `feat(db): add admin listing creation RPCs`
 2. `feat(admin): create venues and events`
 
+Browser verification added two closure requirements: creation is idempotent and
+admin-created venues cannot publish before Submissions approval. These are
+implemented and staging verified. The remaining bounded closure is an audited
+editor for non-live `d8_admin` venues so an admin can correct a draft before
+approval without opening a general post-publication edit path.
+
+### Phase 4.5 — Shared listing reference data and media
+
+Outcome: admin, partner, and consumer flows use the same canonical location,
+category, vibe, price-tier, currency, timezone, and media contracts before
+claims are introduced.
+
+Use the mini plan in
+`docs/implementation/phase-4-5-listing-reference-data-and-media.md`. Extend the
+existing regions and partner media foundations; add an admin-managed area
+fallback catalog; preserve explicit free-text area fallback; and defer PostGIS
+until accurate coordinates and a spatial query requirement exist.
+
+Likely commits remain separated by boundary:
+
+1. `feat(db): add listing reference catalogs`
+2. `refactor(apps): use canonical listing fields`
+3. `feat(media): add shared listing uploads`
+
 ### Phase 5 — Claim submission and approval
 
 Outcome: a real user claims an existing listing and receives approved access.
@@ -467,8 +491,8 @@ Primary references:
 
 ## Immediate Next Step
 
-Begin fresh Phase 5 discovery against the verified staging schema: reread
-partner onboarding, partner applications, notifications, admin review, and
-email/password session flows; then define evidence privacy and the atomic claim
-approval contract before implementation. Production promotion of the Phase 3
-and Phase 4 migrations remains a separate explicit decision.
+Complete the bounded audited editor for non-live D8-admin-created venue drafts,
+then perform Phase 4.5 value inventory and schema design. Begin Phase 5 claim
+discovery only after the shared reference-data contract is staging verified.
+Production promotion of the Phase 3 and Phase 4 migrations remains a separate
+explicit decision.
