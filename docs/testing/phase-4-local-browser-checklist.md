@@ -10,6 +10,10 @@ region selection, and Step 1 plan intent is not persisted. This is recorded in
 the deferred onboarding localization and relevance note and is not a Phase 4
 listing-creation acceptance failure.
 
+Known deferred observation: the five saved plans and consumer notifications are
+demo-only UI rather than authenticated persisted data. This is recorded in the
+deferred consumer demo-data and notification note.
+
 ## Before starting
 
 - Use test listing names beginning with `[BROWSER TEST]`. This makes cleanup
