@@ -5,6 +5,11 @@ Date prepared: 2026-08-11
 Environment: local consumer and partner clients connected to the staging
 Supabase project. No Vercel deployment is required for this checklist.
 
+Known deferred observation: onboarding shows the Lagos/NGN fallback before
+region selection, and Step 1 plan intent is not persisted. This is recorded in
+the deferred onboarding localization and relevance note and is not a Phase 4
+listing-creation acceptance failure.
+
 ## Before starting
 
 - Use test listing names beginning with `[BROWSER TEST]`. This makes cleanup
