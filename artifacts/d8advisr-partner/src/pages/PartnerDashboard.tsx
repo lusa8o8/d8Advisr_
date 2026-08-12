@@ -109,7 +109,7 @@ export function PartnerDashboard() {
   const canEditVenue = canManageVenues(profile.partner_type);
   const venueInReview = Boolean(
     venueListing
-    && (venueListing.status !== 'live' || venueListing.verificationStatus === 'reverify_required')
+    && (venueListing.status !== 'live' || venueListing.verificationStatus === 'reverify_required' || venueListing.hasPendingRevision)
   );
   const venueListingCopy = !venueListing
     ? {
@@ -117,7 +117,7 @@ export function PartnerDashboard() {
         body: 'Your partner account is approved. Add venue details so D8 can review the listing before it appears publicly.',
         action: 'Complete listing',
       }
-    : venueListing.status === 'live' && venueListing.verificationStatus === 'reverify_required'
+    : venueListing.status === 'live' && (venueListing.verificationStatus === 'reverify_required' || venueListing.hasPendingRevision)
       ? {
           title: 'Listing in review',
           body: 'Your venue is still visible while D8 reviews the latest updates.',

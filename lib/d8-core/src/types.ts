@@ -51,6 +51,8 @@ export interface PartnerVenueListing {
   openHours: Record<string, string> | null;
   coverImage: string | null;
   images: string[];
+  updatedAt: string;
+  hasPendingRevision: boolean;
 }
 
 export interface VenuePlacementRequest {

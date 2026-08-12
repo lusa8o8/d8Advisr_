@@ -24,19 +24,30 @@ function throwIfError(error: { message: string } | null) {
 export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListing | null> {
   const { data, error } = await supabase
     .from('venues')
-    .select('id,name,category,description,address,area,open_hours,cover_image,images,listing_status,verification_status,reverification_reason,is_active')
+    .select('id,name,category,description,address,area,open_hours,cover_image,images,listing_status,verification_status,reverification_reason,is_active,updated_at')
     .eq('partner_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   throwIfError(error);
   if (!data) return null;
+  const { data: pendingRevision, error: pendingError } = await supabase
+    .from('venue_live_revisions')
+    .select('id')
+    .eq('venue_id', data.id)
+    .eq('revision_source', 'partner')
+    .eq('status', 'pending')
+    .limit(1)
+    .maybeSingle();
+  throwIfError(pendingError);
   return {
     id: data.id, name: data.name, status: data.listing_status,
     verificationStatus: data.verification_status, reverificationReason: data.reverification_reason,
     isActive: data.is_active, category: data.category, description: data.description,
     address: data.address, area: data.area, openHours: data.open_hours as Record<string, string> | null,
     coverImage: data.cover_image, images: data.images ?? [],
+    updatedAt: data.updated_at,
+    hasPendingRevision: Boolean(pendingRevision),
   };
 }
 
@@ -95,7 +106,7 @@ export async function savePartnerVenue(
   const city = application.city?.split(',')[0]?.trim() ?? 'Lusaka';
   const { data: existing, error: lookupError } = await supabase
     .from('venues')
-    .select('id')
+    .select('id,listing_status,updated_at')
     .eq('partner_id', userId)
     .maybeSingle();
   throwIfError(lookupError);
@@ -108,6 +119,15 @@ export async function savePartnerVenue(
   };
 
   if (existing) {
+    if (existing.listing_status === 'live') {
+      const { error } = await supabase.rpc('partner_submit_live_venue_revision', {
+        p_venue_id: existing.id,
+        p_expected_updated_at: existing.updated_at,
+        p_payload: common,
+      });
+      throwIfError(error);
+      return;
+    }
     const { error } = await supabase.from('venues').update(common).eq('id', existing.id);
     throwIfError(error);
     return;

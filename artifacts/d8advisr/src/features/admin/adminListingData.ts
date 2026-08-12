@@ -101,7 +101,7 @@ export async function fetchVenueChangeLog(venueId: string): Promise<VenueChangeL
 export async function fetchPendingVenueLiveRevisions(): Promise<VenueLiveRevision[]> {
   const { data, error } = await supabase
     .from('venue_live_revisions')
-    .select('id,venue_id,status,previous_values,proposed_values,submitted_by,reviewed_by,review_note,created_at,updated_at')
+    .select('id,venue_id,status,previous_values,proposed_values,submitted_by,reviewed_by,review_note,created_at,updated_at,revision_source')
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
   throwIfError(error);
@@ -200,8 +200,12 @@ export async function reviewAdminLiveVenueRevision(
   revisionId: string,
   decision: 'approved' | 'rejected',
   note?: string,
+  source: 'admin' | 'partner' = 'admin',
 ) {
-  const { data, error } = await supabase.rpc('admin_review_live_venue_revision', {
+  const rpcName = source === 'partner'
+    ? 'admin_review_partner_live_venue_revision'
+    : 'admin_review_live_venue_revision';
+  const { data, error } = await supabase.rpc(rpcName, {
     p_revision_id: revisionId,
     p_decision: decision,
     p_note: note?.trim() || null,

@@ -124,7 +124,7 @@ export function PartnerVenueEditor() {
     });
   };
 
-  const canSave = venueName.trim() && venueType && address.trim();
+  const canSave = Boolean(venueName.trim() && venueType && address.trim() && !venueListing?.hasPendingRevision);
 
   const save = async () => {
     if (!canSave) return;
@@ -195,6 +195,15 @@ export function PartnerVenueEditor() {
       </div>
 
       <div className="px-5 pt-5 flex flex-col gap-4">
+
+        {venueListing?.hasPendingRevision && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-[13px] font-black text-blue-900">Changes awaiting D8 review</p>
+            <p className="mt-1 text-[11px] font-medium leading-relaxed text-blue-700">
+              Your current public listing remains live. You can edit again after D8 approves or rejects the pending changes.
+            </p>
+          </div>
+        )}
 
         {saveError && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">

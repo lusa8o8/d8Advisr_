@@ -53,7 +53,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
 
   const review = async (decision: 'approved' | 'rejected') => {
     if (!pendingRevision || reviewing) return; setReviewing(decision); setError(null);
-    try { await reviewAdminLiveVenueRevision(pendingRevision.id, decision, note); await onChanged(); }
+    try { await reviewAdminLiveVenueRevision(pendingRevision.id, decision, note, pendingRevision.revisionSource); await onChanged(); }
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not review the live venue revision.'); }
     finally { setReviewing(null); }
   };
@@ -61,7 +61,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
   if (pendingRevision) {
     return (
       <section className="mx-4 mt-4 rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-start gap-3"><ShieldCheck size={18} className="mt-0.5 text-amber-600" /><div><h3 className="text-[14px] font-black text-gray-900">High-risk revision awaiting review</h3><p className="mt-1 text-[11px] text-gray-500">The current public venue is unchanged until this proposal is approved.</p></div></div>
+        <div className="mb-3 flex items-start gap-3"><ShieldCheck size={18} className="mt-0.5 text-amber-600" /><div><h3 className="text-[14px] font-black text-gray-900">{pendingRevision.revisionSource === 'partner' ? 'Partner revision awaiting review' : 'High-risk revision awaiting review'}</h3><p className="mt-1 text-[11px] text-gray-500">The current public venue is unchanged until this proposal is approved.</p></div></div>
         <div className="space-y-2">
           {Object.keys(pendingRevision.proposedValues).sort().map(field => (
             <div key={field} className="rounded-xl border border-gray-100 bg-gray-50 p-3">

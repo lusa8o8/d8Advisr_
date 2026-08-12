@@ -258,6 +258,7 @@ export interface VenueLiveRevision {
   reviewNote: string | null;
   createdAt: string;
   updatedAt: string;
+  revisionSource: 'admin' | 'partner';
 }
 
 export interface VenueLiveRevisionRow {
@@ -271,6 +272,7 @@ export interface VenueLiveRevisionRow {
   review_note: string | null;
   created_at: string;
   updated_at: string;
+  revision_source: 'admin' | 'partner';
 }
 
 export function venueLiveRevisionFromRow(row: VenueLiveRevisionRow): VenueLiveRevision {
@@ -285,6 +287,7 @@ export function venueLiveRevisionFromRow(row: VenueLiveRevisionRow): VenueLiveRe
     reviewNote: row.review_note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    revisionSource: row.revision_source,
   };
 }
 
