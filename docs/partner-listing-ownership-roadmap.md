@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document — Phase 4 automated staging verification complete; browser closure and Phase 4.5 next
+Status: active planning document — Phase 4 admin lifecycle automated staging verification complete; browser closure and Phase 4.5 next
 
 Created: 2026-08-11
 
@@ -321,11 +321,13 @@ Likely commits:
 1. `feat(db): add admin listing creation RPCs`
 2. `feat(admin): create venues and events`
 
-Browser verification added three closure requirements: creation is idempotent,
+Browser verification added four closure requirements: creation is idempotent,
 admin-created venues cannot publish before Submissions approval, and non-live
 admin-created venues can be corrected through an audited bounded editor. All
-three are implemented and automated-staging verified. The local browser
-create-edit-approve-discover checklist remains before Phase 4 is closed.
+three plus reviewed live editing are implemented and automated-staging verified.
+Live description edits apply immediately; high-risk edits remain private until
+explicit approval or rejection. The local browser create-edit-approve-discover
+and live-revision checklist remains before Phase 4 is closed.
 
 ### Phase 4.5 — Shared listing reference data and media
 
@@ -338,6 +340,12 @@ Use the mini plan in
 existing regions and partner media foundations; add an admin-managed area
 fallback catalog; preserve explicit free-text area fallback; and defer PostGIS
 until accurate coordinates and a spatial query requirement exist.
+
+Fresh discovery also proved the partner editor currently applies sensitive
+changes to the live row before its re-verification task is reviewed, despite UI
+copy promising the opposite. Phase 4.5 must migrate partner live edits onto the
+same pending-revision principle after canonical fields and shared media are
+defined; this is a production-readiness gate, not an optional cleanup.
 
 Likely commits remain separated by boundary:
 
@@ -491,8 +499,9 @@ Primary references:
 
 ## Immediate Next Step
 
-Complete the local browser create-edit-approve-discover checklist, then perform
-Phase 4.5 value inventory and schema design. Begin Phase 5 claim
+Complete the local browser create-edit-approve-discover and live-revision
+checklists, then perform Phase 4.5 value inventory and schema design, including
+partner live-edit migration. Begin Phase 5 claim
 discovery only after the shared reference-data contract is staging verified.
 Production promotion of the Phase 3 and Phase 4 migrations remains a separate
 explicit decision.

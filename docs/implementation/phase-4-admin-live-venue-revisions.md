@@ -1,6 +1,6 @@
 # Phase 4 Extension Mini Plan: Admin Live Venue Revisions
 
-Status: planned for staging implementation
+Status: automated staging verification complete; local browser verification pending
 
 Date: 2026-08-12
 
@@ -116,3 +116,29 @@ editor.
 4. `test(browser): cover live venue revision workflow`
 
 Production promotion remains a separate explicit approval gate.
+
+## Completion record
+
+- Added private, admin-readable `venue_live_revisions` with previous/proposed
+  snapshots, actor/reviewer provenance, review notes, and one pending proposal
+  per venue.
+- Added admin-only submit/review RPCs. Description applies and audits
+  immediately; changed high-risk fields stay private until an explicit atomic
+  approval. Rejection leaves the public venue unchanged.
+- Linked proposals to internal re-verification tasks. A database trigger blocks
+  generic task, mark-verified, and delete paths while the proposal is pending;
+  only revision approval/rejection can resolve it.
+- Added an admin live editor, field-risk labels, pending field comparisons,
+  approve/reject controls, and task routing back to the proposal instead of
+  generic re-verification actions.
+- Applied migrations `20260812120000` and `20260812121000` to staging only.
+  Database lint is clean and migration parity is exact.
+- Static and live tests prove role denial, optimistic concurrency, protected
+  fields, immediate/private separation, private revision visibility, bypass
+  prevention, rejection, approval, audit completeness, verification refresh,
+  ineligible-source denial, and cascading cleanup.
+- Phase 3, creation, draft editing, live revision, and full authenticated
+  isolation suites pass. Workspace typecheck and the consumer/admin production
+  build pass.
+- Local browser verification remains. The partner editor discrepancy found in
+  discovery is retained as explicit Phase 4.5 work rather than silently changed.

@@ -121,7 +121,34 @@ source, inactive draft, unverified.
 - [ ] Its details page says `Operated by D8Advisr`.
 - [ ] It does not display or imply a fake partner owner.
 
-## 6. Event creation and visibility
+## 6. Review a live venue edit
+
+Use the live admin-created venue whose ID starts `0156b1b1`:
+
+- [ ] Open its detail page and confirm `Edit live listing` is visible while
+      `Edit draft` is absent.
+- [ ] Change description plus at least name, area, average cost, and vibes.
+- [ ] Confirm the form labels description as immediate and the other fields as
+      requiring review.
+- [ ] Submit once. Confirm the description changes after refresh, while the
+      consumer feed/details still show the old high-risk values.
+- [ ] Confirm a pending comparison card shows current and proposed values.
+- [ ] Open Inspections and confirm the linked task offers `Review pending
+      proposal`, not generic start/resolve/dismiss actions.
+- [ ] Reject the first proposal and confirm the old high-risk public values
+      remain unchanged.
+- [ ] Submit a second high-risk proposal, approve it, and confirm all proposed
+      values appear together in consumer discovery/details.
+- [ ] In the Review tab, confirm the immediate description and approved
+      high-risk fields have separate audit entries.
+- [ ] Confirm the proposal task is resolved and `Edit live listing` becomes
+      available again.
+- [ ] Open a live partner-owned or legacy venue and confirm the bounded live
+      editor is absent.
+- [ ] Test two tabs: submit from one after loading both, then submit stale data
+      from the other. Confirm it asks for refresh and does not overwrite data.
+
+## 7. Event creation and visibility
 
 - [ ] Create `[BROWSER TEST] Draft Event` with a future start time and save it
       as a draft. It stays out of consumer event discovery.
@@ -136,7 +163,7 @@ source, inactive draft, unverified.
 - [ ] Its venue link opens the intended venue and the event appears on that
       venue page without an approval dead end.
 
-## 7. Validation and failure states
+## 8. Validation and failure states
 
 - [ ] Required fields prevent an empty submission.
 - [ ] External location requires a location name.
@@ -146,7 +173,7 @@ source, inactive draft, unverified.
 - [ ] Repeated clicks while saving do not create duplicates.
 - [ ] A failed request leaves the form usable for correction and retry.
 
-## 8. Partner regression
+## 9. Partner regression
 
 - [ ] Existing partner email/password sign-in works on port 3001.
 - [ ] Existing partner venue/event data loads.
@@ -155,7 +182,7 @@ source, inactive draft, unverified.
 - [ ] A partner cannot see or use an admin creation action.
 - [ ] Consumer redirects use `http://localhost:3000`.
 
-## 8. Responsive and browser quality
+## 10. Responsive and browser quality
 
 Check approximately 390 px mobile width and desktop width:
 
