@@ -69,6 +69,8 @@ const partner = await session(url, apiKey, identities.STAGING_PARTNER_EMAIL, ide
 const admin = await session(url, apiKey, identities.STAGING_ADMIN_EMAIL, identities.STAGING_ADMIN_PASSWORD);
 
 const marker = `phase4-${Date.now()}`;
+const venueRequestKey = crypto.randomUUID();
+const eventRequestKey = crypto.randomUUID();
 let venueId = null;
 let eventId = null;
 let failure = null;
@@ -76,13 +78,13 @@ let failure = null;
 try {
   const unauthorizedVenue = {
     name: `Unauthorized ${marker}`, city: 'Lusaka', category: 'Test',
-    attribution: 'unclaimed', publication_status: 'draft',
+    attribution: 'unclaimed', publication_status: 'draft', request_key: crypto.randomUUID(),
   };
   assertDenied(await create(url, apiKey, consumer.accessToken, 'admin_create_venue', unauthorizedVenue), 'Consumer admin venue RPC');
   assertDenied(await create(url, apiKey, partner.accessToken, 'admin_create_venue', unauthorizedVenue), 'Partner admin venue RPC');
   assertDenied(await create(url, apiKey, consumer.accessToken, 'admin_create_event', {
     title: `Unauthorized ${marker}`, city: 'Lusaka', starts_at: new Date(Date.now() + 86400000).toISOString(),
-    attribution: 'd8advisr', publication_status: 'live', event_location_kind: 'undisclosed',
+    attribution: 'd8advisr', publication_status: 'live', event_location_kind: 'undisclosed', request_key: crypto.randomUUID(),
   }), 'Consumer admin event RPC');
   console.log('PASS consumer and partner identities cannot call admin creation RPCs');
 
@@ -92,15 +94,37 @@ try {
   assert(missingAttribution.response.status === 400, `Missing attribution expected HTTP 400, got ${missingAttribution.response.status}`);
   console.log('PASS admin creation requires explicit attribution');
 
+  const missingRequestKey = await create(url, apiKey, admin.accessToken, 'admin_create_venue', {
+    name: `No key ${marker}`, city: 'Lusaka', category: 'Test', attribution: 'unclaimed',
+  });
+  assert(missingRequestKey.response.status === 400, `Missing request key expected HTTP 400, got ${missingRequestKey.response.status}`);
+
+  const directVenuePublish = await create(url, apiKey, admin.accessToken, 'admin_create_venue', {
+    name: `Publish bypass ${marker}`, city: 'Lusaka', category: 'Test', attribution: 'unclaimed',
+    publication_status: 'live', request_key: crypto.randomUUID(),
+  });
+  assert(directVenuePublish.response.status === 400, `Direct venue publish expected HTTP 400, got ${directVenuePublish.response.status}`);
+  console.log('PASS venue creation requires an idempotency key and rejects publish-on-create');
+
   const venueCreate = await create(url, apiKey, admin.accessToken, 'admin_create_venue', {
     name: `Unclaimed ${marker}`,
     city: 'Lusaka',
     category: 'Test venue',
     attribution: 'unclaimed',
+    request_key: venueRequestKey,
     description: 'Temporary Phase 4 staging verification fixture',
   });
   assert(venueCreate.response.ok && typeof venueCreate.body === 'string', `Admin venue RPC failed: HTTP ${venueCreate.response.status}`);
   venueId = venueCreate.body;
+
+  const venueRetry = await create(url, apiKey, admin.accessToken, 'admin_create_venue', {
+    name: `Changed retry ${marker}`,
+    city: 'Lagos',
+    category: 'Should not create',
+    attribution: 'd8advisr',
+    request_key: venueRequestKey,
+  });
+  assert(venueRetry.response.ok && venueRetry.body === venueId, 'Venue retry did not return the original listing ID');
 
   const adminVenue = await request(url, apiKey, `/rest/v1/venues?select=id,partner_id,operator_organization_id,source,listing_status,is_active,verification_status&id=eq.${venueId}`, {
     accessToken: admin.accessToken,
@@ -111,6 +135,7 @@ try {
   assert(adminVenue.body[0].listing_status === 'draft' && adminVenue.body[0].is_active === false && adminVenue.body[0].verification_status === 'unverified', 'Admin venue did not default safely to draft');
   assertRows(await request(url, apiKey, `/rest/v1/venues?select=id&id=eq.${venueId}`), 0, 'Anonymous draft venue visibility');
   console.log('PASS unclaimed venue has no fake owner and defaults to a private draft');
+  console.log('PASS repeated venue request key returns exactly one venue');
 
   const eventCreate = await create(url, apiKey, admin.accessToken, 'admin_create_event', {
     title: `D8 ${marker}`,
@@ -118,6 +143,7 @@ try {
     category: 'Test event',
     starts_at: new Date(Date.now() + 7 * 86400000).toISOString(),
     attribution: 'd8advisr',
+    request_key: eventRequestKey,
     publication_status: 'live',
     event_location_kind: 'external',
     external_location_name: 'Phase 4 staging test location',
@@ -126,14 +152,26 @@ try {
   assert(eventCreate.response.ok && typeof eventCreate.body === 'string', `Admin event RPC failed: HTTP ${eventCreate.response.status}`);
   eventId = eventCreate.body;
 
+  const eventRetry = await create(url, apiKey, admin.accessToken, 'admin_create_event', {
+    title: `Changed retry ${marker}`,
+    city: 'Lagos',
+    starts_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+    attribution: 'unclaimed',
+    publication_status: 'draft',
+    event_location_kind: 'undisclosed',
+    request_key: eventRequestKey,
+  });
+  assert(eventRetry.response.ok && eventRetry.body === eventId, 'Event retry did not return the original listing ID');
+
   const publicEvent = await request(url, apiKey, `/rest/v1/events?select=id,partner_id,organizer_organization_id,source,event_status,title&id=eq.${eventId}`);
   assertRows(publicEvent, 1, 'Anonymous live D8 event visibility');
   assert(publicEvent.body[0].partner_id === null, 'D8 event has a fake partner owner');
   assert(publicEvent.body[0].organizer_organization_id === platformOrganizationId, 'D8 event is missing platform attribution');
   assert(publicEvent.body[0].source === 'd8_admin' && publicEvent.body[0].event_status === 'live', 'D8 event publication contract is incorrect');
   console.log('PASS explicitly published D8 event is public with platform attribution');
+  console.log('PASS repeated event request key returns exactly one event');
 
-  const audit = await request(url, apiKey, `/rest/v1/listing_admin_audit_log?select=venue_id,event_id,action,attribution,publication_status,actor_id&or=(venue_id.eq.${venueId},event_id.eq.${eventId})`, {
+  const audit = await request(url, apiKey, `/rest/v1/listing_admin_audit_log?select=venue_id,event_id,action,attribution,publication_status,actor_id,request_key&or=(venue_id.eq.${venueId},event_id.eq.${eventId})`, {
     accessToken: admin.accessToken,
   });
   assertRows(audit, 2, 'Admin creation audit read');

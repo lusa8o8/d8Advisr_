@@ -76,9 +76,11 @@ Open `http://localhost:3001`. Stop either server with `Ctrl+C`.
 From Admin → Create → Venue:
 
 - [ ] Name it `[BROWSER TEST] Unclaimed Draft Venue`.
-- [ ] Select `Unclaimed listing` and `Save as draft`.
+- [ ] Select `Unclaimed listing` and confirm the only venue publication state
+      is `Draft - approval required`.
 - [ ] Enter city, category, address, description, and optional image/vibes.
-- [ ] Submit once; a success message appears and no duplicate is created.
+- [ ] Rapidly press the final create button twice; one success ID appears and
+      exactly one matching row is present in Submissions.
 - [ ] Return to Venues and confirm it is present for the admin.
 - [ ] Refresh consumer discovery/map and confirm the draft is absent.
 - [ ] No failed creation request appears in Console or Network.
@@ -86,20 +88,21 @@ From Admin → Create → Venue:
 Expected data contract: no partner user, no organization owner, `d8_admin`
 source, inactive draft, unverified.
 
-## 3. Public unclaimed venue
+## 3. Approve an unclaimed venue
 
-- [ ] Create `[BROWSER TEST] Public Unclaimed Venue` with `Unclaimed listing`
-      and `Publish now`.
+- [ ] Create `[BROWSER TEST] Public Unclaimed Venue` with `Unclaimed listing`.
 - [ ] Provide realistic display data and a valid cover image URL.
+- [ ] Confirm the draft is absent from consumer discovery.
+- [ ] Open Submissions and approve the listing.
 - [ ] It appears in consumer discovery for its selected city.
 - [ ] Its details page says `Listed by D8Advisr`, not `Operated by D8Advisr`.
 - [ ] Address, price, category, description, images, and map behave sensibly.
 
 ## 4. D8Advisr-operated venue
 
-- [ ] Create `[BROWSER TEST] D8 Operated Venue` with `Operated by D8Advisr`
-      and `Publish now`.
-- [ ] It appears publicly after refresh.
+- [ ] Create `[BROWSER TEST] D8 Operated Venue` with `Operated by D8Advisr`.
+- [ ] Confirm it remains private until approved in Submissions.
+- [ ] Approve it, then confirm it appears publicly after refresh.
 - [ ] Its details page says `Operated by D8Advisr`.
 - [ ] It does not display or imply a fake partner owner.
 

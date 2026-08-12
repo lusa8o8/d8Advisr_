@@ -4,6 +4,7 @@ export type AdminListingAttribution = 'unclaimed' | 'd8advisr';
 export type AdminPublicationStatus = 'draft' | 'live';
 
 export interface AdminVenueCreationInput {
+  requestKey: string;
   name: string;
   city: string;
   category: string;
@@ -20,6 +21,7 @@ export interface AdminVenueCreationInput {
 }
 
 export interface AdminEventCreationInput {
+  requestKey: string;
   title: string;
   city: string;
   startsAt: string;
@@ -49,6 +51,7 @@ function throwIfError(error: { message: string } | null) {
 export async function createAdminVenue(input: AdminVenueCreationInput): Promise<string> {
   const { data, error } = await supabase.rpc('admin_create_venue', {
     p_payload: {
+      request_key: input.requestKey,
       name: input.name.trim(),
       city: input.city.trim(),
       category: input.category.trim(),
@@ -72,6 +75,7 @@ export async function createAdminVenue(input: AdminVenueCreationInput): Promise<
 export async function createAdminEvent(input: AdminEventCreationInput): Promise<string> {
   const { data, error } = await supabase.rpc('admin_create_event', {
     p_payload: {
+      request_key: input.requestKey,
       title: input.title.trim(),
       city: input.city.trim(),
       category: input.category?.trim() || null,

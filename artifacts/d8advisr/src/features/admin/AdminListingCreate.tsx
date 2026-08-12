@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { CalendarPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { Venue } from './adminListingModel';
 import {
@@ -38,6 +38,8 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const submissionInFlight = useRef(false);
+  const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
   const [venue, setVenue] = useState({
     name: '', city: 'Lusaka', category: '', area: '', address: '', description: '',
     tier: 'Verified' as 'Verified' | 'D8 Approved' | 'Hidden Gem',
@@ -54,14 +56,19 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
 
   const submit = async (formEvent: FormEvent) => {
     formEvent.preventDefault();
+    if (submissionInFlight.current) return;
+    submissionInFlight.current = true;
     setSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
+      const requestKey = requestKeys.current[kind] ?? crypto.randomUUID();
+      requestKeys.current[kind] = requestKey;
       let id: string;
       if (kind === 'venue') {
         id = await createAdminVenue({
+          requestKey,
           name: venue.name, city: venue.city, category: venue.category,
           attribution, publicationStatus, area: venue.area, address: venue.address,
           description: venue.description, tier: venue.tier, priceTier: venue.priceTier,
@@ -73,6 +80,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         if (event.locationKind === 'd8_venue' && !event.venueId) throw new Error('Choose a live D8 venue.');
         if (event.locationKind === 'external' && !event.externalLocationName.trim()) throw new Error('Enter the external location name.');
         id = await createAdminEvent({
+          requestKey,
           title: event.title, city: event.city, category: event.category,
           description: event.description, startsAt: new Date(event.startsAt).toISOString(),
           endsAt: event.endsAt ? new Date(event.endsAt).toISOString() : undefined,
@@ -85,10 +93,12 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           vibes: tags(event.vibes), emoji: event.emoji,
         });
       }
+      requestKeys.current[kind] = null;
       setSuccess(`${kind === 'venue' ? 'Venue' : 'Event'} created · ${id.slice(0, 8)}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not create the listing.');
     } finally {
+      submissionInFlight.current = false;
       setSaving(false);
     }
   };
@@ -115,11 +125,15 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           <div className="mb-3 flex items-center gap-2"><ShieldCheck size={16} className="text-[#FF5A5F]" /><h2 className="text-[13px] font-black">Ownership and publication</h2></div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Attribution"><select className={inputClass} value={attribution} onChange={e => setAttribution(e.target.value as AdminListingAttribution)}><option value="unclaimed">Unclaimed listing</option><option value="d8advisr">Operated by D8Advisr</option></select></Field>
-            <Field label="Publication"><select className={inputClass} value={publicationStatus} onChange={e => setPublicationStatus(e.target.value as AdminPublicationStatus)}><option value="draft">Save as draft</option><option value="live">Publish now</option></select></Field>
+            {kind === 'venue' ? (
+              <Field label="Publication"><div className={`${inputClass} bg-gray-50 text-gray-600`}>Draft - approval required</div></Field>
+            ) : (
+              <Field label="Publication"><select className={inputClass} value={publicationStatus} onChange={e => setPublicationStatus(e.target.value as AdminPublicationStatus)}><option value="draft">Save as draft</option><option value="live">Publish now</option></select></Field>
+            )}
           </div>
           <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
             {attribution === 'unclaimed' ? 'No user or organization owns this listing.' : 'D8Advisr is the operator or organiser.'}
-            {' '}{publicationStatus === 'draft' ? 'It stays private.' : 'It becomes public immediately.'}
+            {' '}{kind === 'venue' ? 'It stays private until approved in Submissions.' : publicationStatus === 'draft' ? 'It stays private.' : 'It becomes public immediately.'}
           </p>
         </section>
 
@@ -172,7 +186,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         {error && <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">{error}</div>}
         {success && <div className="flex items-center gap-2 rounded-xl border border-green-100 bg-green-50 p-3 text-[12px] font-semibold text-green-700"><CheckCircle2 size={16} />{success}</div>}
         <button disabled={saving} className="w-full rounded-xl bg-[#FF5A5F] px-4 py-3.5 text-[13px] font-black text-white disabled:opacity-60">
-          {saving ? 'Creating…' : publicationStatus === 'live' ? `Create and publish ${kind}` : `Create ${kind} draft`}
+          {saving ? 'Creating…' : kind === 'venue' ? 'Create venue draft' : publicationStatus === 'live' ? 'Create and publish event' : 'Create event draft'}
         </button>
       </form>
     </div>

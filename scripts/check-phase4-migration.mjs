@@ -6,6 +6,10 @@ const migration = await readFile(
   resolve(root, 'supabase/migrations/20260811170000_admin_listing_creation.sql'),
   'utf8',
 );
+const integrityMigration = await readFile(
+  resolve(root, 'supabase/migrations/20260812100000_admin_listing_creation_integrity.sql'),
+  'utf8',
+);
 const plan = await readFile(
   resolve(root, 'docs/implementation/phase-4-admin-listing-creation.md'),
   'utf8',
@@ -40,6 +44,23 @@ for (const fn of ['admin_create_venue', 'admin_create_event']) {
 requireText(migration, "'00000000-0000-4000-8000-00000000d800'::uuid", 'platform organization');
 requireText(migration, "coalesce(nullif(btrim(p_payload ->> 'publication_status'), ''), 'draft')", 'draft-safe default');
 requireText(plan, 'fake partner user', 'no-fake-user decision');
+
+for (const value of [
+  'add column request_key uuid',
+  'listing_admin_audit_log_venue_request_key_idx',
+  'listing_admin_audit_log_event_request_key_idx',
+  'pg_advisory_xact_lock',
+  'Venue request_key is required',
+  'Event request_key is required',
+  'Admin-created venues must be saved as drafts and approved separately',
+  "jsonb_build_object('publication_status', 'draft')",
+]) {
+  requireText(integrityMigration, value, `creation integrity: ${value}`);
+}
+
+for (const legacyFn of ['admin_create_venue_phase4_legacy', 'admin_create_event_phase4_legacy']) {
+  requireText(integrityMigration, `revoke all on function public.${legacyFn}(jsonb)`, `${legacyFn} is private`);
+}
 
 for (const forbidden of [
   'insert into auth.users',

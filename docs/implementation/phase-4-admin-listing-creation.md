@@ -1,6 +1,6 @@
 # Phase 4 Mini Plan: Admin Listing Creation
 
-Status: staging verified; production promotion pending separate approval
+Status: staging verified, including integrity correction; production promotion pending separate approval
 
 Date: 2026-08-11
 
@@ -37,8 +37,9 @@ published immediately.
 3. Keep `partner_id` null. Use a null organization for unclaimed listings and
    the deterministic platform organization for D8Advisr listings.
 4. Set `created_by = auth.uid()` and `source = 'd8_admin'` in the database.
-5. Default clients to draft creation. Only an explicit publish choice creates a
-   live venue/event.
+5. Admin-created venues always start as drafts and use the existing Submissions
+   approval action before becoming public. Events retain the explicit draft or
+   publish choice from the original Phase 4 boundary.
 6. Add focused admin creation forms and data functions rather than importing
    partner-account behavior.
 7. Include safe provenance fields in consumer reads and render D8Advisr
@@ -89,6 +90,16 @@ Production promotion remains a separate explicit approval gate.
   consumer/partner denial, mandatory attribution, unclaimed draft privacy, D8
   publication visibility, null fake ownership, platform attribution, admin-only
   audit access, and cascaded cleanup.
+- Browser testing exposed a double-submit duplicate and a venue
+  publish-on-create approval bypass. Additive migration
+  `20260812100000_admin_listing_creation_integrity.sql` now requires a UUID
+  request key, serializes matching retries per admin and listing kind, returns
+  the original listing ID for a retry, and rejects live venue creation.
+- The admin client keeps one request key across a failed/retried submission,
+  blocks same-page concurrent submits synchronously, and no longer offers
+  publish-now for venues.
+- The staging suite proves venue approval cannot be bypassed, missing request
+  keys fail, and repeated venue/event keys each create exactly one listing.
 - Phase 3 regression tests, the full authenticated staging isolation suite,
   consumer type-check/build, linked database lint, and migration parity all
   pass after Phase 4.
