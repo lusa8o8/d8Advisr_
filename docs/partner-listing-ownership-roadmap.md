@@ -379,6 +379,9 @@ Mini plan:
 - expose “Claim this listing” only for eligible unclaimed listings;
 - create claim submission RPC with duplicate/dispute controls;
 - add claimant status and admin review screens;
+- define a shared notification event/recipient contract before claim decisions
+  depend on it; retain the durable in-app inbox as the source of truth and defer
+  external delivery channels to an asynchronous outbox;
 - add admin approval/rejection RPCs with audit and notifications;
 - create business membership on approval without changing listing IDs.
 
@@ -410,6 +413,9 @@ Mini plan:
 - attach their venues/events while retaining `partner_id` for compatibility;
 - update helper functions, policies, analytics, notifications, and visibility
   to use active membership;
+- expose a partner-visible organization activity ledger before multiple members
+  can mutate listings; record actor, action, listing, decision reason, changed
+  fields, and timestamp while keeping private admin-only notes separate;
 - dual-read during a defined compatibility window;
 - add reconciliation queries proving old and new access sets match.
 
