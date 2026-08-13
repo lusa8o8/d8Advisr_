@@ -41,18 +41,29 @@ const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wide
 
 const MAX_IMAGES = 3;
 
+function localSchedule(startsAt?: string | null) {
+  if (!startsAt) return { date: '', time: '' };
+  const value = new Date(startsAt);
+  if (Number.isNaN(value.getTime())) return { date: '', time: '' };
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return {
+    date: `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`,
+    time: `${pad(value.getHours())}:${pad(value.getMinutes())}`,
+  };
+}
+
 export function PartnerEventEditor() {
   const [, setLocation] = useLocation();
   const params = useParams<{ id?: string }>();
   const editId = params?.id;
-  const { profile, saveEvent, events, venueOptions } = usePartner();
+  const { profile, saveEvent, events, venueOptions, loading } = usePartner();
   const { user } = useAuth();
   const { regions } = useRegion();
-  const { categories } = useListingReferences('event', profile?.city);
+  const { categories, vibes: vibeOptions, isLoading: referencesLoading } = useListingReferences('event', profile?.city);
   const currencySymbol = regions.find(r => r.id === profile?.city)?.currency_symbol || 'K';
 
   const existing = editId ? events.find(e => e.id === editId) : null;
-  const draftKey = `d8:partner-event:${user?.id ?? 'anonymous'}:${editId ?? 'new'}`;
+  const draftKey = `d8:partner-event:${user?.id ?? 'anonymous'}:${editId ?? 'new'}:v2`;
   const hydratedDraftRef = useRef<string | null>(null);
 
   const [saved, setSaved] = useState(false);
@@ -70,6 +81,7 @@ export function PartnerEventEditor() {
   const [hasCapacity, setHasCapacity] = useState((existing?.spotsTotal ?? 0) > 0);
   const [capacity, setCapacity] = useState(existing?.spotsTotal ? String(existing.spotsTotal) : '');
   const [desc, setDesc] = useState('');
+  const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [emoji, setEmoji] = useState(existing?.emoji ?? '📅');
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [locationChoice, setLocationChoice] = useState<LocationChoice>(
@@ -90,17 +102,18 @@ export function PartnerEventEditor() {
   const video  = media.find(m => m.type === 'video');
 
   useEffect(() => {
-    if (!profile || (editId && !existing) || hydratedDraftRef.current === draftKey) return;
+    if (loading || referencesLoading || !profile || (editId && !existing) || hydratedDraftRef.current === draftKey) return;
     const recovered = readSessionDraft<{
       name: string; category: string; frequency: Frequency; weekday: string; date: string; time: string;
       price: string; isFree: boolean; hasCapacity: boolean; capacity: string; desc: string; emoji: string;
+      selectedVibes: string[];
       locationChoice: LocationChoice; venueId: string; externalLocationName: string; externalLocationAddress: string;
       images: string[];
     }>(draftKey);
     if (recovered) {
       setName(recovered.name); setCategory(recovered.category); setFrequency(recovered.frequency);
       setWeekday(recovered.weekday); setDate(recovered.date); setTime(recovered.time); setPrice(recovered.price);
-      setIsFree(recovered.isFree); setHasCapacity(recovered.hasCapacity); setCapacity(recovered.capacity);
+      setIsFree(recovered.isFree); setHasCapacity(recovered.hasCapacity); setCapacity(recovered.capacity); setSelectedVibes(recovered.selectedVibes ?? []);
       setDesc(recovered.desc); setEmoji(recovered.emoji); setLocationChoice(recovered.locationChoice);
       setVenueId(recovered.venueId); setExternalLocationName(recovered.externalLocationName);
       setExternalLocationAddress(recovered.externalLocationAddress);
@@ -115,8 +128,14 @@ export function PartnerEventEditor() {
     setName(existing.name);
     setCategory(existing.category);
     setFrequency(existing.frequency as Frequency);
-    setPrice(existing.isFree ? '' : existing.price);
+    const schedule = localSchedule(existing.startsAt);
+    setWeekday(existing.weekday ?? '');
+    setDate(schedule.date);
+    setTime(schedule.time);
+    setPrice(existing.isFree ? '' : String(existing.priceAmount));
     setIsFree(existing.isFree ?? false);
+    setDesc(existing.description);
+    setSelectedVibes(existing.vibes);
     setHasCapacity(existing.spotsTotal > 0);
     setCapacity(existing.spotsTotal > 0 ? String(existing.spotsTotal) : '');
     setEmoji(existing.emoji);
@@ -141,16 +160,16 @@ export function PartnerEventEditor() {
       name: index === 0 ? 'Cover image' : `Event image ${index + 1}`,
     })));
     hydratedDraftRef.current = draftKey;
-  }, [draftKey, editId, existing, profile]);
+  }, [draftKey, editId, existing, loading, profile, referencesLoading]);
 
   useEffect(() => {
     if (hydratedDraftRef.current !== draftKey) return;
     writeSessionDraft(draftKey, {
-      name, category, frequency, weekday, date, time, price, isFree, hasCapacity, capacity, desc, emoji,
+      name, category, frequency, weekday, date, time, price, isFree, hasCapacity, capacity, desc, emoji, selectedVibes,
       locationChoice, venueId, externalLocationName, externalLocationAddress,
       images: media.filter(item => item.type === 'image' && !item.file).map(item => item.url),
     });
-  }, [capacity, category, date, desc, draftKey, emoji, externalLocationAddress, externalLocationName, frequency, hasCapacity, isFree, locationChoice, media, name, price, time, venueId, weekday]);
+  }, [capacity, category, date, desc, draftKey, emoji, externalLocationAddress, externalLocationName, frequency, hasCapacity, isFree, locationChoice, media, name, price, selectedVibes, time, venueId, weekday]);
 
   const handleImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -237,6 +256,7 @@ export function PartnerEventEditor() {
         externalLocationAddress,
         coverImage: imageUrls[0] ?? null,
         images: imageUrls,
+        vibes: selectedVibes,
       }, editId);
       clearSessionDraft(draftKey);
       setSaved(true);
@@ -328,6 +348,29 @@ export function PartnerEventEditor() {
               rows={3}
               className={cn(INPUT, 'resize-none')}
             />
+          </div>
+          <div>
+            <label className={LABEL}>Vibes</label>
+            <div className="flex flex-wrap gap-2">
+              {vibeOptions.map(option => {
+                const selected = selectedVibes.includes(option.label);
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedVibes(current => selected
+                      ? current.filter(item => item !== option.label)
+                      : [...current, option.label])}
+                    className={cn(
+                      'rounded-full border px-3 py-2 text-[12px] font-bold transition-colors',
+                      selected ? 'border-primary bg-[#FFF0F1] text-primary' : 'border-gray-200 bg-white text-gray-500'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

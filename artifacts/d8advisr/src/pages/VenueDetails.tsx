@@ -95,6 +95,7 @@ const VENUE_EVENTS = [
     desc: "Local jazz quartet paired with a curated wine flight. Perfect for a slow, soulful evening.",
     image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 8,
+    hasCapacity: true,
     recurrence: "weekly" as const,
     recurrenceLabel: "Every Friday",
   },
@@ -109,6 +110,7 @@ const VENUE_EVENTS = [
     desc: "6-course tasting menu crafted live by the head chef. Limited to 10 guests.",
     image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 3,
+    hasCapacity: true,
     recurrence: null as null,
     recurrenceLabel: null,
   },
@@ -123,6 +125,7 @@ const VENUE_EVENTS = [
     desc: "Cocktails and small bites as the sun sets over downtown. Relaxed and open format.",
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&h=200&fit=crop&auto=format",
     spotsLeft: 22,
+    hasCapacity: true,
     recurrence: "monthly" as const,
     recurrenceLabel: "Every last Sunday",
   },
@@ -266,6 +269,7 @@ export function VenueDetails() {
         desc: event.description ?? '',
         image: event.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format',
         spotsLeft: event.spots_left ?? Math.max(0, event.spots_total - event.spots_filled),
+        hasCapacity: event.spots_total > 0,
         recurrence: event.frequency === 'weekly' || event.frequency === 'monthly' || event.frequency === 'annual' ? event.frequency : null,
         recurrenceLabel: event.next_occurrence,
       }))
@@ -631,7 +635,7 @@ export function VenueDetails() {
                         </p>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1.5 rounded-xl shrink-0 bg-white/20 text-white backdrop-blur-sm border border-white/20">
-                        {event.spotsLeft <= 5 ? `${event.spotsLeft} left` : `${event.spotsLeft} spots`}
+                        {event.hasCapacity === false ? 'Open attendance' : event.spotsLeft <= 5 ? `${event.spotsLeft} left` : `${event.spotsLeft} spots`}
                       </span>
                     </div>
                   </div>

@@ -34,6 +34,7 @@ interface EventData {
   image: string;
   spotsLeft: number;
   totalCapacity: number;
+  hasCapacity?: boolean;
   organizer: string;
   organizerVerified: boolean;
   highlights: string[];
@@ -103,6 +104,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     image: row.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
     spotsLeft,
     totalCapacity,
+    hasCapacity: spotsTotal > 0,
     organizer: isD8Organized ? 'D8Advisr' : row.partner_id ? 'D8 Partner' : row.source === 'd8_admin' ? 'D8Advisr listing' : 'Event organiser',
     organizerVerified: isD8Organized || Boolean(row.partner_id),
     highlights: [
@@ -366,7 +368,8 @@ export function EventDetail() {
     );
   }
 
-  const spotsPercent = Math.round((1 - event.spotsLeft / event.totalCapacity) * 100);
+  const hasCapacity = event.hasCapacity !== false;
+  const spotsPercent = hasCapacity ? Math.round((1 - event.spotsLeft / event.totalCapacity) * 100) : 0;
   const isAlmostFull = event.spotsLeft <= 5;
   const hasVenueLink = Boolean(event.venueId && event.venueIsLink !== false);
 
@@ -471,28 +474,39 @@ export function EventDetail() {
           </div>
         </div>
 
-        {/* Capacity bar */}
-        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <Users size={14} className="text-gray-400" />
-              <span className="font-semibold text-gray-700 text-[13px]">Availability</span>
+        {/* Capacity */}
+        {hasCapacity ? (
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-1.5">
+                <Users size={14} className="text-gray-400" />
+                <span className="font-semibold text-gray-700 text-[13px]">Availability</span>
+              </div>
+              <span className={cn('font-bold text-[13px]', isAlmostFull ? 'text-primary' : 'text-[#00C851]')}>
+                {isAlmostFull ? `⚠️ Only ${event.spotsLeft} left` : `${event.spotsLeft} spots open`}
+              </span>
             </div>
-            <span className={cn('font-bold text-[13px]', isAlmostFull ? 'text-primary' : 'text-[#00C851]')}>
-              {isAlmostFull ? `⚠️ Only ${event.spotsLeft} left` : `${event.spotsLeft} spots open`}
-            </span>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-1.5">
+              <div
+                className={cn('h-full rounded-full transition-all', isAlmostFull ? 'bg-primary' : 'bg-[#00C851]')}
+                style={{ width: `${spotsPercent}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 font-medium">
+              {event.totalCapacity - event.spotsLeft} of {event.totalCapacity} spots taken
+            </p>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-1.5">
-            <div
-              className={cn('h-full rounded-full transition-all', isAlmostFull ? 'bg-primary' : 'bg-[#00C851]')}
-              style={{ width: `${spotsPercent}%` }}
-            />
+        ) : (
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Users size={15} className="text-[#00C851]" />
+              <div>
+                <p className="font-semibold text-gray-700 text-[13px]">Open attendance</p>
+                <p className="mt-0.5 text-[11px] font-medium text-gray-400">No attendance limit has been set for this event.</p>
+              </div>
+            </div>
           </div>
-          <p className="text-[11px] text-gray-400 font-medium">
-            {event.totalCapacity - event.spotsLeft} of {event.totalCapacity} spots taken
-          </p>
-        </div>
-
+        )}
         {/* Description */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h3 className="font-bold text-gray-900 text-[15px] mb-2.5">

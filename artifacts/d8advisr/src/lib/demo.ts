@@ -22,7 +22,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
     spotsFilled: 44,
     price: 'K150/pp',
     status: 'live',
-    category: 'Music',
+    category: 'Music', description: '', priceAmount: 150, currency: 'ZMW', vibes: [],
   },
   {
     id: 'pe2',
@@ -34,7 +34,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
     spotsFilled: 12,
     price: 'K200/pp',
     status: 'live',
-    category: 'Dining',
+    category: 'Dining', description: '', priceAmount: 200, currency: 'ZMW', vibes: [],
   },
   {
     id: 'pe3',
@@ -46,7 +46,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
     spotsFilled: 0,
     price: 'K100/pp',
     status: 'draft',
-    category: 'Entertainment',
+    category: 'Entertainment', description: '', priceAmount: 100, currency: 'ZMW', vibes: [],
   },
   {
     id: 'pe4',
@@ -60,7 +60,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
     price: 'Free',
     isFree: true,
     status: 'live',
-    category: 'Sports & Fitness',
+    category: 'Sports & Fitness', description: '', priceAmount: 0, currency: 'ZMW', vibes: [],
   },
 ];
 

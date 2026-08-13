@@ -19,6 +19,12 @@ export interface PartnerEvent {
   isFree?: boolean;
   status: EventStatus;
   category: string;
+  description: string;
+  weekday?: string | null;
+  startsAt?: string | null;
+  priceAmount: number;
+  currency: string;
+  vibes: string[];
   coverImage?: string | null;
   images?: string[];
   locationKind?: EventLocationKind;

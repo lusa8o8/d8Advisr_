@@ -24,6 +24,7 @@ export interface PartnerEventInput {
   externalLocationAddress?: string;
   coverImage?: string | null;
   images?: string[];
+  vibes: string[];
 }
 
 const WEEKDAY_INDEX: Record<string, number> = {
@@ -113,21 +114,21 @@ export async function savePartnerEvent(
   const payload = {
     title: eventData.title, category: eventData.category, description: eventData.description ?? null,
     frequency: eventData.frequency, weekday: eventData.weekday ?? null, next_occurrence: nextOccurrence,
-    spots_total: spotsTotal, spots_filled: 0, price_pp: pricePp, is_free: eventData.isFree,
+    spots_total: spotsTotal, price_pp: pricePp, is_free: eventData.isFree,
     emoji: eventData.emoji ?? '📅', cover_image: eventData.coverImage ?? eventData.images?.[0] ?? null,
     images: eventData.images ?? [], event_status: eventData.publishNow ? 'live' : 'draft',
     event_location_kind: locationKind, venue_id: selectedVenue?.id ?? null,
     external_location_name: locationKind === 'external' ? eventData.externalLocationName?.trim() || null : null,
     external_location_address: locationKind === 'external' ? eventData.externalLocationAddress?.trim() || null : null,
     venue_page_status: venuePageStatus, partner_id: userId, city, currency: city === 'Lusaka' ? 'K' : '₦',
-    starts_at: buildNextStartsAt(eventData), vibes: [], updated_at: now,
+    starts_at: buildNextStartsAt(eventData), vibes: eventData.vibes, updated_at: now,
   };
 
   if (editId) {
     const { error } = await supabase.from('events').update(payload).eq('id', editId);
     throwIfError(error);
   } else {
-    const { error } = await supabase.from('events').insert({ ...payload, created_at: now });
+    const { error } = await supabase.from('events').insert({ ...payload, spots_filled: 0, created_at: now });
     throwIfError(error);
   }
 }
