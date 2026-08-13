@@ -67,6 +67,8 @@ for (const [source, value] of [
   [adminReview, "field === 'images'"],
   [adminReview, 'Proposed venue photo'],
   [adminReview, 'PRICE_LABELS'],
+  [adminReview, 'Partner-visible decision note'],
+  [adminReview, 'This note will appear in the partner inbox.'],
 ]) {
   if (!source.includes(value)) {
     throw new Error(`Missing admin partner revision presentation: ${value}`);

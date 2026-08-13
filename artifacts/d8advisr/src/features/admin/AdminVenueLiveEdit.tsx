@@ -99,7 +99,15 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
             </div>
           ))}
         </div>
-        <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Review note</span><textarea className={`${inputClass} min-h-20 resize-y`} value={note} onChange={e => setNote(e.target.value)} /></label>
+        <label className="mt-3 block">
+          <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">
+            {pendingRevision.revisionSource === 'partner' ? 'Partner-visible decision note' : 'Review note'}
+          </span>
+          <textarea className={`${inputClass} min-h-20 resize-y`} value={note} onChange={e => setNote(e.target.value)} />
+          {pendingRevision.revisionSource === 'partner' && (
+            <span className="mt-1 block text-[10px] font-semibold text-amber-600">This note will appear in the partner inbox.</span>
+          )}
+        </label>
         {error && <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700">{error}</div>}
         <div className="mt-4 grid grid-cols-2 gap-2"><button type="button" disabled={Boolean(reviewing)} onClick={() => void review('rejected')} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-100 bg-red-50 py-3 text-[12px] font-bold text-red-600 disabled:opacity-50"><XCircle size={14} />{reviewing === 'rejected' ? 'Rejecting...' : 'Reject proposal'}</button><button type="button" disabled={Boolean(reviewing)} onClick={() => void review('approved')} className="flex items-center justify-center gap-1.5 rounded-xl bg-[#00C851] py-3 text-[12px] font-bold text-white disabled:opacity-50"><CheckCircle2 size={14} />{reviewing === 'approved' ? 'Approving...' : 'Approve & apply'}</button></div>
       </section>
