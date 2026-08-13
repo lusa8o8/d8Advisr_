@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ImagePlus, X, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, ImagePlus, X, Check, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
 import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
@@ -181,6 +181,23 @@ export function PartnerVenueEditor() {
     });
   };
 
+  const movePhoto = (id: string, offset: -1 | 1) => {
+    setPhotos(current => {
+      const index = current.findIndex(photo => photo.id === id);
+      const target = index + offset;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const makeCover = (id: string) => {
+    setPhotos(current => {
+      const selected = current.find(photo => photo.id === id);
+      return selected ? [selected, ...current.filter(photo => photo.id !== id)] : current;
+    });
+  };
   const canSave = Boolean(venueName.trim() && venueType && address.trim() && !venueListing?.hasPendingRevision);
 
   const toggleVibe = (label: string) => {
@@ -399,7 +416,7 @@ export function PartnerVenueEditor() {
           </div>
           <div className="rounded-xl bg-gray-50 border border-gray-100 px-3.5 py-3">
             <p className="text-[12px] text-gray-600 font-semibold">Use clear, real photos of the venue. Up to 6 photos, JPG/PNG/WebP, max 3 MB each, minimum 800px wide.</p>
-            <p className="text-[11px] text-amber-600 font-semibold mt-1">Photo changes are sensitive and may trigger D8 review. Upload persistence is next; this screen currently previews selected files.</p>
+            <p className="text-[11px] text-amber-600 font-semibold mt-1">Photo changes are sensitive and remain private until D8 approves the proposed gallery.</p>
             <p className="text-[11px] text-gray-400 font-medium mt-1">Video support is coming soon.</p>
           </div>
 
@@ -408,14 +425,24 @@ export function PartnerVenueEditor() {
               {photos.map((photo, idx) => (
                 <div key={photo.id} className="relative rounded-xl overflow-hidden aspect-square bg-gray-100">
                   <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
-                  {idx === 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/55 text-white text-[9px] font-bold px-1.5 py-1 text-center tracking-wider uppercase">
-                      Cover
-                    </div>
-                  )}
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/60 p-1 text-white">
+                    <button type="button" disabled={idx === 0} onClick={() => movePhoto(photo.id, -1)} className="grid h-5 w-5 place-items-center rounded bg-white/15 disabled:opacity-30" aria-label={`Move ${photo.name} earlier`}>
+                      <ChevronLeft size={11} />
+                    </button>
+                    {idx === 0 ? (
+                      <span className="text-[8px] font-black uppercase tracking-wider">Cover</span>
+                    ) : (
+                      <button type="button" onClick={() => makeCover(photo.id)} className="text-[8px] font-black uppercase tracking-wider">Make cover</button>
+                    )}
+                    <button type="button" disabled={idx === photos.length - 1} onClick={() => movePhoto(photo.id, 1)} className="grid h-5 w-5 place-items-center rounded bg-white/15 disabled:opacity-30" aria-label={`Move ${photo.name} later`}>
+                      <ChevronRight size={11} />
+                    </button>
+                  </div>
                   <button
+                    type="button"
                     onClick={() => removePhoto(photo.id)}
                     className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center text-white active:scale-90 transition-transform"
+                    aria-label={`Remove ${photo.name}`}
                   >
                     <X size={10} strokeWidth={3} />
                   </button>
