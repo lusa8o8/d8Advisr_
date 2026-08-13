@@ -25,6 +25,10 @@ const partnerEditor = readFileSync(resolve(
   import.meta.dirname,
   '../artifacts/d8advisr-partner/src/pages/PartnerVenueEditor.tsx',
 ), 'utf8');
+const partnerDashboard = readFileSync(resolve(
+  import.meta.dirname,
+  '../artifacts/d8advisr-partner/src/pages/PartnerDashboard.tsx',
+), 'utf8');
 const adminPanel = readFileSync(resolve(
   import.meta.dirname,
   '../artifacts/d8advisr/src/pages/AdminPanel.tsx',
@@ -82,9 +86,20 @@ for (const value of [
   'priceTier: priceTier || undefined',
   'const cityId                      = selectedRegion?.id',
   'normalizedRegionValue(region.name) === profileRegionValue',
+  'loading || !profile || referencesLoading',
+  ':v3`',
 ]) {
   if (!partnerEditor.includes(value)) {
     throw new Error(`Missing controlled partner venue field: ${value}`);
+  }
+}
+
+for (const value of [
+  'const dashboardName = canEditVenue && venueListing?.name ? venueListing.name : profile.name',
+  '{dashboardName}',
+]) {
+  if (!partnerDashboard.includes(value)) {
+    throw new Error(`Missing current venue dashboard identity: ${value}`);
   }
 }
 

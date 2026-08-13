@@ -156,3 +156,7 @@ Commit boundary: test(listings): verify admin partner venue parity
 
 Admin opening-hours and contact controls remain the next parity slice; they are
 not required for the corrected partner form to persist truthful listing data.
+
+Partner dark mode is a deferred cross-portal UX enhancement. It should use the
+shared theme contract when scheduled rather than adding page-specific dark
+styles during listing workflow fixes.

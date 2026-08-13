@@ -45,7 +45,7 @@ const MAX_PHOTOS = 6;
 export function PartnerVenueEditor() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { profile, venueListing, saveVenue } = usePartner();
+  const { profile, venueListing, loading, saveVenue } = usePartner();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -72,11 +72,11 @@ export function PartnerVenueEditor() {
   const [desc, setDesc]             = useState('');
   const [hours, setHours]           = useState<DayHours[]>(DEFAULT_HOURS);
   const [photos, setPhotos]         = useState<MediaFile[]>([]);
-  const draftKey = `d8:partner-venue:${user?.id ?? 'anonymous'}:v2`;
+  const draftKey = `d8:partner-venue:${user?.id ?? 'anonymous'}:v3`;
   const hydratedDraftRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!profile || referencesLoading || hydratedDraftRef.current === draftKey) return;
+    if (loading || !profile || referencesLoading || hydratedDraftRef.current === draftKey) return;
     const recovered = readSessionDraft<{
       venueName: string; venueType: string; address: string; area: string;
       areaMode: AreaMode; priceTier: string; averageCost: string; selectedVibes: string[];
@@ -135,7 +135,7 @@ export function PartnerVenueEditor() {
       })));
     }
     hydratedDraftRef.current = draftKey;
-  }, [areas, draftKey, profile, referencesLoading, venueListing]);
+  }, [areas, draftKey, loading, profile, referencesLoading, venueListing]);
 
   useEffect(() => {
     if (hydratedDraftRef.current !== draftKey) return;

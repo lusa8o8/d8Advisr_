@@ -28,6 +28,8 @@ Browser evidence recorded 2026-08-12:
 - [ ] Switch browser tabs and return; the current form remains mounted.
 - [ ] Reload; category, area mode/value, price, cost, vibes, contact, hours, and
   existing image URLs recover.
+- [ ] Confirm the dashboard header uses the current approved venue name rather
+  than the original partner application name.
 - [x] Save changes to a live venue and confirm the dashboard reports a pending
   revision.
 - [x] In Admin venue detail, confirm the pending partner review panel appears

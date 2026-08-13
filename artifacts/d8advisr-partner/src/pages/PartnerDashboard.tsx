@@ -107,6 +107,7 @@ export function PartnerDashboard() {
     'Venue & Organiser';
   const canCreateEvents = canManageEvents(profile.partner_type);
   const canEditVenue = canManageVenues(profile.partner_type);
+  const dashboardName = canEditVenue && venueListing?.name ? venueListing.name : profile.name;
   const venueInReview = Boolean(
     venueListing
     && (venueListing.status !== 'live' || venueListing.verificationStatus === 'reverify_required' || venueListing.hasPendingRevision)
@@ -175,7 +176,7 @@ export function PartnerDashboard() {
         <p className="text-white/40 text-[11px] font-bold uppercase tracking-widest mb-0.5">D8 Partner</p>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-white font-black text-[20px] leading-tight">{profile.name}</h1>
+            <h1 className="text-white font-black text-[20px] leading-tight">{dashboardName}</h1>
             <p className="text-white/50 text-[12px] font-medium mt-0.5">{typeLabel} · {profile.city}</p>
           </div>
           <span className={cn('text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 mt-1', STATUS_PILL[profile.status].color)}>
