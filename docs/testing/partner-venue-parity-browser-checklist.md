@@ -19,7 +19,7 @@ Browser evidence recorded 2026-08-12:
 - [x] Area is a dropdown of reviewed areas.
 - [x] Account region shows the approved partner region and its reviewed areas
   load even when the stored application uses a display name such as Lusaka.
-- [ ] Choosing "Area not listed" reveals a manual area input.
+- [x] Choosing "Area not listed" reveals a manual area input.
 - [x] Street address remains a normal factual text input.
 - [x] Price level offers only Not set and levels 1 through 4.
 - [ ] Average cost is numeric and shows the account region's currency symbol.
@@ -41,3 +41,10 @@ Browser evidence recorded 2026-08-12:
   the consumer venue while description/hours changes apply immediately.
 - [x] Approve the revision as admin and confirm the consumer venue receives the
   approved name, category, address, area, price, average cost, and media changes.
+
+## Remaining browser retest
+
+- [ ] Rejection notification exposes the admin note to the submitting partner.
+- [ ] Approval notification is durable and deduplicated.
+- [ ] Partner venue gallery can choose a cover and reorder photos before review.
+- [ ] Refresh preserves `/venue/edit` and the recovered editor state.

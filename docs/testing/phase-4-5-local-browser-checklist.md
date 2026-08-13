@@ -60,11 +60,24 @@ Browser evidence, 2026-08-12:
 
 - [x] Sign in as the staging partner and open the venue editor.
 - [x] Confirm category and reviewed-area choices match the admin catalogs.
-- [ ] Confirm manual area fallback is available and visibly identified.
+- [x] Confirm manual area fallback is available and visibly identified.
 - [x] Upload valid images and save them successfully. Six 1080x1350 images were
   preserved in the pending revision, approved by admin, and rendered in the
   consumer feed on 2026-08-12.
 - [ ] Confirm another user's storage path cannot be used or overwritten.
+
+Browser evidence, 2026-08-13:
+
+- Rejection preserved the consumer listing and approval published the proposal.
+- The manual area fallback worked.
+- Removing one of six partner gallery images stayed private during review and,
+  after approval, both partner and consumer surfaces showed five images.
+- The existing database audit stored the admin review note, but no partner
+  notification was created and the partner could not see the rejection reason.
+  The local notification migration now requires staging promotion and retest.
+- Venue and event editor refresh returned to the dashboard. Existing event edit
+  state was incomplete, and an unlimited free event rendered as 0 of 1 spots.
+  Local lifecycle/event fixes now require browser retest.
 
 ## Partner live revision privacy
 
@@ -76,18 +89,40 @@ Browser evidence, 2026-08-12:
   values did not.
 - [x] In admin, confirm the revision is labeled as a partner revision and shows
   all proposed fields and image previews.
-- [ ] Reject it and confirm the old public high-risk values remain.
+- [x] Reject it and confirm the old public high-risk values remain.
 - [x] Submit a revision, approve it, and confirm the consumer sees the
   approved values without the listing becoming inactive.
 - [ ] Confirm the partner can edit again after the decision.
 
 ## Event references
 
+Browser evidence, 2026-08-13: a partner-created live event appeared in consumer
+discovery, under the venue's Upcoming section, and in its Events tab. The form
+still needs a complete edit/reload retest after the local hydration and vibe
+changes.
+
 - [ ] Create/edit an admin event and a partner event.
 - [ ] Confirm both use the shared event category catalog.
 - [ ] Confirm event currency follows the selected region.
 - [ ] Confirm venue placement and existing event publication behavior still
   work.
+
+## Notification and editor closure
+
+- [ ] Reject a partner venue revision with a note and confirm one unread partner
+  inbox item contains the reason while the live listing remains unchanged.
+- [ ] Approve a partner venue revision and confirm one approval notification is
+  created without duplicating on reload.
+- [ ] Leave the partner inbox open, decide a revision as admin, and confirm the
+  unread badge/inbox refreshes without signing in again.
+- [ ] Edit an existing partner event and confirm description, schedule, price,
+  capacity mode, location, images, and vibes are prefilled.
+- [ ] Refresh both partner editors and confirm the route and recovered form state
+  remain intact.
+- [ ] Publish an open-attendance event and confirm consumer event and venue pages
+  say Open attendance without a fabricated capacity meter.
+- [ ] Reorder partner venue photos, select a different cover, approve it, and
+  confirm partner and consumer gallery order match.
 
 ## Failure capture
 
