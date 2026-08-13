@@ -21,6 +21,14 @@ const revisionWebsiteValidation = readFileSync(resolve(
   import.meta.dirname,
   '../supabase/migrations/20260812174000_validate_venue_revision_website_urls.sql',
 ), 'utf8');
+const decisionNotifications = readFileSync(resolve(
+  import.meta.dirname,
+  '../supabase/migrations/20260813090000_notify_partner_venue_revision_decisions.sql',
+), 'utf8');
+const partnerNotificationHook = readFileSync(resolve(
+  import.meta.dirname,
+  '../artifacts/d8advisr-partner/src/hooks/usePartnerNotifications.ts',
+), 'utf8');
 const partnerEditor = readFileSync(resolve(
   import.meta.dirname,
   '../artifacts/d8advisr-partner/src/pages/PartnerVenueEditor.tsx',
@@ -64,6 +72,26 @@ for (const [source, value] of [
     throw new Error(`Missing admin partner revision presentation: ${value}`);
   }
 }
+for (const value of [
+  'insert into public.partner_notifications',
+  "pn.metadata->>'revision_id' = revision.id::text",
+  "'review_note', decision_note",
+  "case when decision = 'approved' then 'approval' else 'review' end",
+]) {
+  if (!decisionNotifications.includes(value)) {
+    throw new Error(`Missing partner decision notification contract: ${value}`);
+  }
+}
+for (const value of [
+  "table: 'partner_notifications'",
+  'filter: `user_id=eq.${user.id}`',
+  "document.addEventListener('visibilitychange'",
+]) {
+  if (!partnerNotificationHook.includes(value)) {
+    throw new Error(`Missing partner notification refresh contract: ${value}`);
+  }
+}
+
 const revisionUpdate = reviewOrder.indexOf('update public.venue_live_revisions set');
 const taskUpdate = reviewOrder.indexOf('update public.venue_reverification_tasks');
 if (revisionUpdate < 0 || taskUpdate < 0 || revisionUpdate > taskUpdate) {

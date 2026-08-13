@@ -39,7 +39,32 @@ export function usePartnerNotifications() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      channel = supabase
+        .channel(`partner-notifications:${user.id}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'partner_notifications',
+          filter: `user_id=eq.${user.id}`,
+        }, () => { void load(); })
+        .subscribe();
+    });
+    document.addEventListener('visibilitychange', onVisible);
+    void load();
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [load]);
 
   const markRead = useCallback(async (id: string) => {
     const readAt = new Date().toISOString();
