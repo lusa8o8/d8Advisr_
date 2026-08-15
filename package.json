@@ -25,6 +25,7 @@
     "test:phase45:reference:static": "node scripts/check-phase45-reference-catalogs.mjs",
     "test:partner-venue-parity:static": "node scripts/check-partner-venue-parity-migration.mjs",
     "test:phase45:browser-closure:static": "node scripts/check-phase45-browser-closure.mjs",
+    "test:event-contract:static": "node scripts/check-event-attendance-contract.mjs",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",
     "test:staging:phase45:media": "node scripts/staging-phase45-media-smoke.mjs",
     "test:staging:phase45:partner-revision": "node scripts/staging-phase45-partner-revision-smoke.mjs",

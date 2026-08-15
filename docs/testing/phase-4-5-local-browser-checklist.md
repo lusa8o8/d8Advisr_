@@ -121,6 +121,14 @@ changes.
   remain intact.
 - [ ] Publish an open-attendance event and confirm consumer event and venue pages
   say Open attendance without a fabricated capacity meter.
+- [ ] Publish a limited event and confirm partner and consumer surfaces say
+  Up to N attendees or Limited capacity without claiming spots left or taken.
+- [ ] Edit that event without changing its attendance limit and confirm no
+  attendance count is reset or presented as registrations.
+- [ ] Mark an event as Free entry and confirm the editor explains that food,
+  drinks, transport, and optional purchases may still cost extra.
+- [ ] Confirm a paid event still displays its configured entry price and that
+  changing it to Free entry persists a zero entry price.
 - [ ] Reorder partner venue photos, select a different cover, approve it, and
   confirm partner and consumer gallery order match.
 
