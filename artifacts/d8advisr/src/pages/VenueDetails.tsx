@@ -224,7 +224,7 @@ function fmtTime(iso: string): string {
 }
 
 function fmtPrice(price: number, currency: string, isFree: boolean): string {
-  if (isFree) return 'Free';
+  if (isFree) return 'Free entry';
   return `${currency} ${price.toLocaleString()}`;
 }
 
@@ -268,7 +268,6 @@ export function VenueDetails() {
         emoji: event.emoji ?? 'ðŸ“…',
         desc: event.description ?? '',
         image: event.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=200&fit=crop&auto=format',
-        spotsLeft: event.spots_left ?? Math.max(0, event.spots_total - event.spots_filled),
         hasCapacity: event.spots_total > 0,
         recurrence: event.frequency === 'weekly' || event.frequency === 'monthly' || event.frequency === 'annual' ? event.frequency : null,
         recurrenceLabel: event.next_occurrence,
@@ -635,7 +634,7 @@ export function VenueDetails() {
                         </p>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1.5 rounded-xl shrink-0 bg-white/20 text-white backdrop-blur-sm border border-white/20">
-                        {event.hasCapacity === false ? 'Open attendance' : event.spotsLeft <= 5 ? `${event.spotsLeft} left` : `${event.spotsLeft} spots`}
+                        {event.hasCapacity === false ? 'Open attendance' : 'Limited capacity'}
                       </span>
                     </div>
                   </div>

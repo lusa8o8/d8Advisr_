@@ -92,11 +92,11 @@ export function HomeDiscovery() {
     location: ev.city,
     date: fmtDate(ev.starts_at),
     time: fmtTime(ev.starts_at),
-    price: formatPrice(ev.price_pp, ev.currency, ev.is_free),
+    price: ev.is_free ? 'Free entry' : formatPrice(ev.price_pp, ev.currency, false),
     vibes: ev.vibes ?? [],
     emoji: categoryEmoji(ev.category ?? ''),
     image: ev.cover_image ?? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=480&h=200&fit=crop&auto=format',
-    urgency: ev.spots_left ? `${ev.spots_left} spots left` : null as string | null,
+    urgency: null as string | null,
   }));
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
@@ -233,9 +233,9 @@ export function HomeDiscovery() {
                         {exp.urgency}
                       </span>
                     )}
-                    {exp.price === 'Free' && (
+                    {exp.price === 'Free entry' && (
                       <span className="absolute top-3 right-3 bg-[#E8FFF0] text-[#00C851] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                        Free
+                        Free entry
                       </span>
                     )}
                   </div>
@@ -251,7 +251,7 @@ export function HomeDiscovery() {
                           </span>
                         ))}
                       </div>
-                      {exp.price !== 'Free' && (
+                      {exp.price !== 'Free entry' && (
                         <span className="text-[14px] font-bold text-foreground">{exp.price}</span>
                       )}
                     </div>
@@ -592,9 +592,9 @@ export function HomeDiscovery() {
                       {exp.urgency}
                     </span>
                   )}
-                  {exp.price === 'Free' && (
+                  {exp.price === 'Free entry' && (
                     <span className="absolute top-2.5 right-2.5 bg-[#E8FFF0] text-[#00C851] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                      Free
+                      Free entry
                     </span>
                   )}
                 </div>
@@ -610,7 +610,7 @@ export function HomeDiscovery() {
                         </span>
                       ))}
                     </div>
-                    {exp.price !== 'Free' && (
+                    {exp.price !== 'Free entry' && (
                       <span className="text-[12px] font-bold text-foreground ml-1 shrink-0">{exp.price}</span>
                     )}
                   </div>

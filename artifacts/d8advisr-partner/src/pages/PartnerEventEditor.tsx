@@ -222,7 +222,8 @@ export function PartnerEventEditor() {
         ? Boolean(externalLocationName.trim())
         : true;
 
-  const canSave = name.trim() && category && time && hasValidLocation && (
+  const hasValidCapacity = !hasCapacity || (/^\d+$/.test(capacity) && Number(capacity) > 0);
+  const canSave = name.trim() && category && time && hasValidLocation && hasValidCapacity && (
     frequency === 'one-off' ? date : frequency === 'weekly' ? weekday : true
   );
 
@@ -645,7 +646,7 @@ export function PartnerEventEditor() {
           {/* Price */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className={cn(LABEL, 'mb-0')}>Price</label>
+              <label className={cn(LABEL, 'mb-0')}>Entry price</label>
               <button
                 onClick={() => { setIsFree(f => !f); setPrice(''); }}
                 className={cn(
@@ -655,13 +656,13 @@ export function PartnerEventEditor() {
                     : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
                 )}
               >
-                {isFree && <Check size={11} strokeWidth={3} />} Free event
+                {isFree && <Check size={11} strokeWidth={3} />} Free entry
               </button>
             </div>
             {isFree ? (
-              <div className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl bg-[#E8FFF0] border border-green-100">
-                <span className="text-[13px] text-[#00C851] font-bold">Free admission</span>
-                <span className="text-[12px] text-green-400">· No payment collected</span>
+              <div className="px-4 py-3.5 rounded-xl bg-[#E8FFF0] border border-green-100">
+                <p className="text-[13px] text-[#00C851] font-bold">Free entry</p>
+                <p className="text-[12px] text-green-500 mt-0.5">No mandatory entry fee. Food, drinks and other costs may still apply.</p>
               </div>
             ) : (
               <input
@@ -692,9 +693,12 @@ export function PartnerEventEditor() {
             </div>
             {hasCapacity ? (
               <input
+                type="number"
+                min="1"
+                step="1"
                 value={capacity}
                 onChange={e => setCapacity(e.target.value)}
-                placeholder="e.g. 60 guests"
+                placeholder="e.g. 60 attendees"
                 className={INPUT}
               />
             ) : (
@@ -702,7 +706,7 @@ export function PartnerEventEditor() {
                 <div>
                   <p className="text-[13px] font-semibold text-gray-700">Open attendance</p>
                   <p className="text-[12px] text-gray-400 mt-0.5 leading-snug">
-                    No cap on numbers. D8 will track how many people plan to attend through the app.
+                    No maximum attendance has been listed. This is not a reservation count.
                   </p>
                 </div>
               </div>

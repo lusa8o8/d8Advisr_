@@ -3,7 +3,7 @@ import { EVENT_CLIENT_SELECT, VENUE_CLIENT_SELECT, supabase } from '@/lib/supaba
 import type { Database } from '@/lib/supabase';
 
 type VenueRow = Omit<Database['public']['Tables']['venues']['Row'], 'created_by'>;
-type EventRow = Omit<Database['public']['Tables']['events']['Row'], 'created_by'>;
+type EventRow = Omit<Database['public']['Tables']['events']['Row'], 'created_by' | 'capacity' | 'spots_left'>;
 
 function logDataIssue(scope: string, message: string, detail?: unknown) {
   if (!import.meta.env.DEV) return;

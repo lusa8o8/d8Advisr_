@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   Plus, ChevronRight, AlertCircle, CheckCircle,
-  Clock, Pause, Users, Edit3, Bell, Loader2, LogOut,
+  Clock, Pause, Edit3, Bell, Loader2, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PartnerEvent } from '@workspace/d8-core/types';
@@ -15,27 +15,6 @@ import { usePartner } from '@/hooks/usePartner';
 import { usePartnerNotifications } from '@/hooks/usePartnerNotifications';
 import { canManageEvents, canManageVenues } from '@workspace/d8-core/partner-capabilities';
 import { useAuth } from '@workspace/d8-core/auth';
-
-function SpotsBar({ filled, total }: { filled: number; total: number }) {
-  const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
-  const almostFull = pct >= 80;
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
-        <span className="text-[11px] text-gray-400 font-medium">{filled}/{total} spots filled</span>
-        <span className={cn('text-[11px] font-bold', almostFull ? 'text-primary' : 'text-[#00C851]')}>
-          {total - filled} left
-        </span>
-      </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all', almostFull ? 'bg-primary' : 'bg-[#00C851]')}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 export function PartnerDashboard() {
   const [, setLocation] = useLocation();
@@ -406,23 +385,20 @@ export function PartnerDashboard() {
                   <span className="text-[12px] text-gray-500 font-medium">Next: {event.nextOccurrence}</span>
                   <span className="text-gray-300 mx-1">·</span>
                   {event.isFree ? (
-                    <span className="text-[11px] font-bold text-[#00C851] bg-[#E8FFF0] px-2 py-0.5 rounded-full">Free</span>
+                    <span className="text-[11px] font-bold text-[#00C851] bg-[#E8FFF0] px-2 py-0.5 rounded-full">Free entry</span>
                   ) : (
                     <span className="text-[12px] font-bold text-gray-700">{event.price}</span>
                   )}
                 </div>
 
-                {(event.status === 'live' || event.status === 'paused') && event.spotsTotal > 0 && (
-                  <div className="mb-3">
-                    <SpotsBar filled={event.spotsFilled} total={event.spotsTotal} />
-                  </div>
-                )}
-
-                {(event.status === 'live' || event.status === 'paused') && event.spotsTotal === 0 && event.interestCount !== undefined && (
-                  <div className="flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
-                    <Users size={13} className="text-gray-400 shrink-0" />
-                    <span className="text-[13px] font-bold text-gray-800">{event.interestCount}</span>
-                    <span className="text-[12px] text-gray-400 font-medium">people planning to attend via D8</span>
+                {(event.status === 'live' || event.status === 'paused') && (
+                  <div className="mb-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                    <p className="text-[12px] font-bold text-gray-700">
+                      {event.spotsTotal > 0 ? 'Up to ' + event.spotsTotal + ' attendees' : 'Open attendance'}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {event.spotsTotal > 0 ? 'Maximum attendance, not live availability' : 'No listed attendance limit'}
+                    </p>
                   </div>
                 )}
 
@@ -478,16 +454,6 @@ export function PartnerDashboard() {
                     >
                       <Edit3 size={13} /> Edit
                     </button>
-                    {event.spotsTotal > 0 && (
-                      <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200">
-                        <Users size={13} /> Attendees
-                      </button>
-                    )}
-                    {event.spotsTotal === 0 && event.interestCount !== undefined && (
-                      <button className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200">
-                        <Users size={13} /> {event.interestCount} going
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>

@@ -13,9 +13,7 @@ export interface PartnerEvent {
   frequency: Frequency;
   nextOccurrence: string;
   spotsTotal: number;     // 0 = open / no cap
-  spotsFilled: number;
-  interestCount?: number; // for open events — people going via D8
-  price: string;          // 'Free' or formatted price string
+  price: string;          // 'Free entry' or formatted entry price
   isFree?: boolean;
   status: EventStatus;
   category: string;

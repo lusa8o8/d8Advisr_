@@ -29,6 +29,7 @@ interface EventData {
   recurrenceLabel: string | null;
   price: string;
   priceAmount: number | null;
+  isFree?: boolean;
   vibes: string[];
   desc: string;
   image: string;
@@ -68,10 +69,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
   const venue = row.venues && !Array.isArray(row.venues) ? row.venues : null;
   const locationKind = row.event_location_kind ?? (row.venue_id ? 'd8_venue' : 'undisclosed');
   const hasVenueLink = locationKind === 'd8_venue' && Boolean(row.venue_id && venue);
-  const spotsTotal = Number(row.spots_total ?? row.capacity ?? 0);
-  const spotsFilled = Number(row.spots_filled ?? 0);
-  const spotsLeft = Number(row.spots_left ?? Math.max(0, spotsTotal - spotsFilled));
-  const totalCapacity = spotsTotal > 0 ? spotsTotal : Math.max(spotsLeft, 1);
+  const spotsTotal = Number(row.spots_total ?? 0);
   const isD8Organized = row.organizer_organization_id === D8_PLATFORM_ORGANIZATION_ID;
 
   return {
@@ -99,18 +97,19 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     recurrenceLabel: row.next_occurrence ?? null,
     price: '', 
     priceAmount: Boolean(row.is_free) ? 0 : Number(row.price_pp ?? 0),
+    isFree: Boolean(row.is_free),
     vibes: Array.isArray(row.vibes) ? row.vibes : [],
     desc: row.description ?? 'Details will be added by the organizer soon.',
     image: row.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
-    spotsLeft,
-    totalCapacity,
+    spotsLeft: 0,
+    totalCapacity: spotsTotal,
     hasCapacity: spotsTotal > 0,
     organizer: isD8Organized ? 'D8Advisr' : row.partner_id ? 'D8 Partner' : row.source === 'd8_admin' ? 'D8Advisr listing' : 'Event organiser',
     organizerVerified: isD8Organized || Boolean(row.partner_id),
     highlights: [
       row.category ?? 'Curated experience',
       locationKind === 'external' ? 'External location' : hasVenueLink ? 'Hosted at a D8 venue' : 'Location pending',
-      row.is_free ? 'Free admission' : 'Paid admission',
+      row.is_free ? 'Free entry' : 'Paid entry',
       row.frequency && row.frequency !== 'one-off' ? 'Recurring event' : 'One-off event',
     ],
   };
@@ -252,6 +251,7 @@ const ALL_EVENTS: Record<string, EventData> = {
     recurrenceLabel: null,
     price: '0',
     priceAmount: 0,
+    isFree: true,
     vibes: ['Adventurous', 'Group'],
     desc: 'A free open-air night market with live painting, craft stalls, street food, and local music. Bring friends, explore the art, grab something to eat, and stay as long as you like. Open to everyone.',
     image: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&h=400&fit=crop&auto=format',
@@ -369,8 +369,9 @@ export function EventDetail() {
   }
 
   const hasCapacity = event.hasCapacity !== false;
-  const spotsPercent = hasCapacity ? Math.round((1 - event.spotsLeft / event.totalCapacity) * 100) : 0;
-  const isAlmostFull = event.spotsLeft <= 5;
+  const displayedPrice = event.isFree
+    ? 'Free entry'
+    : event.priceAmount != null ? formatPrice(event.priceAmount) : event.price;
   const hasVenueLink = Boolean(event.venueId && event.venueIsLink !== false);
 
   return (
@@ -470,31 +471,22 @@ export function EventDetail() {
           {/* Price */}
           <div className="flex items-center justify-between bg-[#FFF0F1] rounded-2xl px-4 py-3.5">
             <span className="font-semibold text-gray-700 text-[14px]">Price per person</span>
-            <span className="font-black text-primary text-[20px]">{event.priceAmount != null ? formatPrice(event.priceAmount) : event.price}</span>
+            <span className="font-black text-primary text-[20px]">{displayedPrice}</span>
           </div>
         </div>
 
         {/* Capacity */}
         {hasCapacity ? (
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-2.5">
-              <div className="flex items-center gap-1.5">
-                <Users size={14} className="text-gray-400" />
-                <span className="font-semibold text-gray-700 text-[13px]">Availability</span>
+            <div className="flex items-center gap-2">
+              <Users size={14} className="text-gray-400" />
+              <div>
+                <p className="font-semibold text-gray-700 text-[13px]">Limited capacity</p>
+                <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                  Up to {event.totalCapacity} attendees. This is a maximum, not live availability.
+                </p>
               </div>
-              <span className={cn('font-bold text-[13px]', isAlmostFull ? 'text-primary' : 'text-[#00C851]')}>
-                {isAlmostFull ? `⚠️ Only ${event.spotsLeft} left` : `${event.spotsLeft} spots open`}
-              </span>
             </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-1.5">
-              <div
-                className={cn('h-full rounded-full transition-all', isAlmostFull ? 'bg-primary' : 'bg-[#00C851]')}
-                style={{ width: `${spotsPercent}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-gray-400 font-medium">
-              {event.totalCapacity - event.spotsLeft} of {event.totalCapacity} spots taken
-            </p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
@@ -611,7 +603,7 @@ export function EventDetail() {
       <div className="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-gray-100 px-6 py-5 flex items-center gap-4 z-20 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
         <div>
           <p className="text-[11px] text-gray-400 font-medium">Per person</p>
-          <p className="font-black text-primary text-[18px] leading-tight">{event.priceAmount != null ? formatPrice(event.priceAmount) : event.price}</p>
+          <p className="font-black text-primary text-[18px] leading-tight">{displayedPrice}</p>
         </div>
         <button
           onClick={() => {

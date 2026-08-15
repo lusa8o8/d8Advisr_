@@ -48,11 +48,10 @@ export function partnerProfileFromRow(row: PartnerApplicationRow): PartnerProfil
 
 export function partnerEventFromRow(row: Record<string, unknown>): PartnerEvent {
   const spotsTotal = Number(row.spots_total ?? 0);
-  const spotsFilled = Number(row.spots_filled ?? 0);
   const isFree = Boolean(row.is_free);
   const pricePp = Number(row.price_pp ?? 0);
   const currency = String(row.currency ?? 'ZMW');
-  let price = 'Free';
+  let price = 'Free entry';
   if (!isFree) {
     price = currency === 'ZMW' || currency === 'K'
       ? `K${pricePp}/pp`
@@ -63,8 +62,7 @@ export function partnerEventFromRow(row: Record<string, unknown>): PartnerEvent 
   return {
     id: String(row.id), name: String(row.title), emoji: String(row.emoji ?? '📅'),
     frequency: (row.frequency as PartnerEvent['frequency']) ?? 'one-off',
-    nextOccurrence: String(row.next_occurrence ?? ''), spotsTotal, spotsFilled,
-    interestCount: spotsTotal === 0 ? spotsFilled : undefined, price, isFree,
+    nextOccurrence: String(row.next_occurrence ?? ''), spotsTotal, price, isFree,
     status: (row.event_status as PartnerEvent['status']) ?? 'live', category: String(row.category ?? ''),
     description: String(row.description ?? ''), weekday: row.weekday ? String(row.weekday) : null,
     startsAt: row.starts_at ? String(row.starts_at) : null, priceAmount: pricePp, currency,

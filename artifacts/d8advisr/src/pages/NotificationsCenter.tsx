@@ -55,7 +55,7 @@ export function NotificationsCenter() {
                 <div>
                   <p className="font-extrabold text-foreground text-[16px] leading-tight mb-0.5">Matches your Romantic vibe</p>
                   <p className="text-[14px] text-muted-foreground font-medium mb-2 leading-snug">
-                    <span className="font-bold text-foreground">Jazz & Wine Night</span> at Lumina — Fri, Oct 18 · 7:30 PM · Only 8 spots left.
+                    <span className="font-bold text-foreground">Jazz & Wine Night</span> at Lumina — Fri, Oct 18 · 7:30 PM · Limited capacity.
                   </p>
                 </div>
               </div>

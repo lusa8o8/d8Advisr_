@@ -101,7 +101,11 @@ export async function savePartnerEvent(
   const locationKind = hasLinkedVenue ? 'd8_venue' : eventData.locationKind === 'external' ? 'external' : 'undisclosed';
   const venuePageStatus = hasLinkedVenue && selectedVenue?.isOwnedByCurrentPartner
     ? 'approved' : hasLinkedVenue ? 'requested' : 'hidden';
-  const spotsTotal = eventData.hasCapacity ? (parseInt(eventData.capacity ?? '0') || 0) : 0;
+  const parsedCapacity = Number(eventData.capacity);
+  if (eventData.hasCapacity && (!Number.isInteger(parsedCapacity) || parsedCapacity <= 0)) {
+    throw new Error('Attendance limit must be a whole number greater than zero');
+  }
+  const spotsTotal = eventData.hasCapacity ? parsedCapacity : 0;
   const pricePp = eventData.isFree ? 0 : parseFloat(eventData.price.replace(/[^0-9.]/g, '')) || 0;
 
   let nextOccurrence = '';
