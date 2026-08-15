@@ -9,7 +9,13 @@ set
   end,
   spots_filled = greatest(coalesce(spots_filled, 0), 0),
   price_pp = case when coalesce(is_free, false) then 0 else greatest(coalesce(price_pp, 0), 0) end,
-  capacity = nullif(greatest(coalesce(spots_total, 0), 0), 0),
+  capacity = nullif(
+    case
+      when greatest(coalesce(spots_total, 0), 0) = 0 then 0
+      else greatest(coalesce(spots_total, 0), greatest(coalesce(spots_filled, 0), 0))
+    end,
+    0
+  ),
   spots_left = null;
 
 alter table public.events
