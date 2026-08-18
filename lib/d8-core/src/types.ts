@@ -30,6 +30,10 @@ export interface PartnerEvent {
   venuePageStatus?: VenuePageStatus;
   externalLocationName?: string | null;
   externalLocationAddress?: string | null;
+  firstPublishedAt?: string | null;
+  initialPublishedIsFree?: boolean | null;
+  initialPublishedPrice?: number | null;
+  initialPublishedCurrency?: string | null;
 }
 
 export interface PartnerVenueOption {

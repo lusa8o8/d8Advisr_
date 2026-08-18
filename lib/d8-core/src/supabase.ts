@@ -41,7 +41,7 @@ export type ListingSource = 'd8_admin' | 'partner' | 'import' | 'community';
 // Listing reads deliberately exclude created_by, which is private audit data.
 // Organization and source are public attribution fields introduced in Phase 3.
 export const VENUE_CLIENT_SELECT = 'id,name,slug,city,region_id,area,area_id,area_source,category,category_id,tier,price_tier,price_level,description,address,lat,lng,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,contact_phone,website_url,is_active,is_hidden_gem,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,partner_id,operator_organization_id,source,created_at,updated_at';
-export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,organizer_organization_id,source,title,description,category,category_id,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,is_free,is_featured,city,region_id,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,created_at,updated_at';
+export const EVENT_CLIENT_SELECT = 'id,venue_id,partner_id,organizer_organization_id,source,title,description,category,category_id,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,is_free,is_featured,city,region_id,event_location_kind,external_location_name,external_location_address,venue_page_status,frequency,weekday,next_occurrence,spots_total,spots_filled,emoji,event_status,first_published_at,initial_published_is_free,initial_published_price,initial_published_currency,commercial_policy_id,commercial_policy_version,commercial_baseline_source,created_at,updated_at';
 
 export type ListingMediaScope = 'events' | 'venues';
 export const LISTING_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
@@ -183,6 +183,13 @@ export type Database = {
           spots_filled: number;
           emoji: string | null;
           event_status: string;
+          first_published_at: string | null;
+          initial_published_is_free: boolean | null;
+          initial_published_price: number | null;
+          initial_published_currency: string | null;
+          commercial_policy_id: string | null;
+          commercial_policy_version: string | null;
+          commercial_baseline_source: 'first_publication' | 'legacy_backfill' | null;
           created_at: string;
           updated_at: string;
         };

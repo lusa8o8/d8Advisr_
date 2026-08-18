@@ -12,6 +12,7 @@ export const PRIVACY_EMAIL = 'lusamalungisha@gmail.com';
 
 type LegalPageProps = {
   homeHref?: string;
+  effectiveDate?: string;
 };
 
 type LegalSectionProps = {
@@ -45,6 +46,7 @@ function LegalPage({
   title,
   summary,
   homeHref,
+  effectiveDate = LEGAL_EFFECTIVE_DATE,
   children,
 }: LegalPageProps & {
   title: string;
@@ -78,7 +80,7 @@ function LegalPage({
           <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">{title}</h1>
           <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">{summary}</p>
           <p className="mt-5 text-sm font-medium text-muted-foreground">
-            Effective date: {LEGAL_EFFECTIVE_DATE}
+            Effective date: {effectiveDate}
           </p>
         </div>
 
@@ -580,6 +582,7 @@ export function EventPublishingPolicyPage({ homeHref = '/' }: LegalPageProps) {
       title="Partner Event Publishing and Change Policy"
       summary="The rules for first publication, commercial promises, later event changes, review, and consumer communication."
       homeHref={homeHref}
+      effectiveDate={EVENT_PUBLISHING_POLICY_APPROVED_DATE}
     >
       <div className="rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground">
         <p><strong className="text-foreground">Policy ID:</strong> {EVENT_PUBLISHING_POLICY_ID}</p>

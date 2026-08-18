@@ -3,6 +3,11 @@ import { canManageEvents, type PartnerType } from '@workspace/d8-core/partner-ca
 import type { PartnerEvent, PartnerVenueOption } from '@workspace/d8-core/types';
 import type { PartnerApplicationRow } from './partnerModels';
 import { partnerEventFromRow } from './partnerModels';
+import {
+  EVENT_PUBLISHING_POLICY_ID,
+  EVENT_PUBLISHING_POLICY_VERSION,
+  parseEventPriceInput,
+} from '@workspace/d8-core/event-policy';
 
 export interface PartnerEventInput {
   title: string;
@@ -25,6 +30,10 @@ export interface PartnerEventInput {
   coverImage?: string | null;
   images?: string[];
   vibes: string[];
+  publicationAcknowledgement?: {
+    requestKey: string;
+    acknowledged: boolean;
+  };
 }
 
 const WEEKDAY_INDEX: Record<string, number> = {
@@ -106,7 +115,7 @@ export async function savePartnerEvent(
     throw new Error('Attendance limit must be a whole number greater than zero');
   }
   const spotsTotal = eventData.hasCapacity ? parsedCapacity : 0;
-  const pricePp = eventData.isFree ? 0 : parseFloat(eventData.price.replace(/[^0-9.]/g, '')) || 0;
+  const pricePp = parseEventPriceInput(eventData.price, eventData.isFree);
 
   let nextOccurrence = '';
   if (eventData.frequency === 'weekly' && eventData.weekday) nextOccurrence = `${eventData.weekday}s · ${eventData.time}`;
@@ -120,7 +129,7 @@ export async function savePartnerEvent(
     frequency: eventData.frequency, weekday: eventData.weekday ?? null, next_occurrence: nextOccurrence,
     spots_total: spotsTotal, price_pp: pricePp, is_free: eventData.isFree,
     emoji: eventData.emoji ?? '📅', cover_image: eventData.coverImage ?? eventData.images?.[0] ?? null,
-    images: eventData.images ?? [], event_status: eventData.publishNow ? 'live' : 'draft',
+    images: eventData.images ?? [],
     event_location_kind: locationKind, venue_id: selectedVenue?.id ?? null,
     external_location_name: locationKind === 'external' ? eventData.externalLocationName?.trim() || null : null,
     external_location_address: locationKind === 'external' ? eventData.externalLocationAddress?.trim() || null : null,
@@ -128,19 +137,50 @@ export async function savePartnerEvent(
     starts_at: buildNextStartsAt(eventData), vibes: eventData.vibes, updated_at: now,
   };
 
-  if (editId) {
+  let eventId = editId;
+  if (eventId) {
     const { error } = await supabase.from('events').update(payload).eq('id', editId);
     throwIfError(error);
   } else {
-    const { error } = await supabase.from('events').insert({ ...payload, spots_filled: 0, created_at: now });
+    const { data, error } = await supabase.from('events')
+      .insert({ ...payload, event_status: 'draft', spots_filled: 0, created_at: now })
+      .select('id').single();
+    throwIfError(error);
+    if (!data?.id) throw new Error('Event draft creation did not return an ID');
+    eventId = data.id;
+  }
+
+  if (eventData.publishNow) {
+    const acknowledgement = eventData.publicationAcknowledgement;
+    if (!acknowledgement?.acknowledged || !acknowledgement.requestKey) {
+      throw new Error('Review and accept the Event Publishing Policy before publishing.');
+    }
+    const { error } = await supabase.rpc('publish_event_with_policy', {
+      p_event_id: eventId,
+      p_policy_id: EVENT_PUBLISHING_POLICY_ID,
+      p_policy_version: EVENT_PUBLISHING_POLICY_VERSION,
+      p_acknowledged: true,
+      p_request_key: acknowledgement.requestKey,
+    });
     throwIfError(error);
   }
 }
 
-export async function setPartnerEventStatus(id: string, status: 'live' | 'paused') {
+export async function setPartnerEventStatus(id: string, status: 'paused') {
   const { error } = await supabase
     .from('events')
     .update({ event_status: status, updated_at: new Date().toISOString() })
     .eq('id', id);
+  throwIfError(error);
+}
+
+export async function publishPartnerEvent(id: string, requestKey: string) {
+  const { error } = await supabase.rpc('publish_event_with_policy', {
+    p_event_id: id,
+    p_policy_id: EVENT_PUBLISHING_POLICY_ID,
+    p_policy_version: EVENT_PUBLISHING_POLICY_VERSION,
+    p_acknowledged: true,
+    p_request_key: requestKey,
+  });
   throwIfError(error);
 }

@@ -115,15 +115,9 @@ export function usePartner() {
     await load();
   }, [load, venueOptions]);
 
-  const toggleEventStatus = useCallback(async (id: string, currentStatus: string) => {
-    const status = currentStatus === 'live' ? 'paused' : 'live';
-    await setPartnerEventStatus(id, status);
-    setEvents(current => current.map(event => event.id === id ? { ...event, status } : event));
-  }, []);
-
-  const publishEvent = useCallback(async (id: string) => {
-    await setPartnerEventStatus(id, 'live');
-    setEvents(current => current.map(event => event.id === id ? { ...event, status: 'live' } : event));
+  const pauseEvent = useCallback(async (id: string) => {
+    await setPartnerEventStatus(id, 'paused');
+    setEvents(current => current.map(event => event.id === id ? { ...event, status: 'paused' } : event));
   }, []);
 
   const saveVenue = useCallback(async (venueData: PartnerVenueInput) => {
@@ -134,7 +128,7 @@ export function usePartner() {
 
   return {
     profile, events, venueListing, venueOptions, venuePlacementRequests, demandSignals, reviewInsights,
-    loading, error, reload: load, applyAsPartner, saveEvent, toggleEventStatus, publishEvent, saveVenue,
+    loading, error, reload: load, applyAsPartner, saveEvent, pauseEvent, saveVenue,
     updateVenuePlacementStatus,
   };
 }

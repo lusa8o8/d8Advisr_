@@ -28,8 +28,7 @@ export function PartnerDashboard() {
     reviewInsights,
     loading,
     error,
-    toggleEventStatus,
-    publishEvent,
+    pauseEvent,
     updateVenuePlacementStatus,
   } = usePartner();
   const { unreadCount } = usePartnerNotifications();
@@ -41,21 +40,21 @@ export function PartnerDashboard() {
   };
 
   const handleToggle = async (event: PartnerEvent) => {
+    if (event.status !== 'live') {
+      setLocation(`/event/${event.id}/edit`);
+      return;
+    }
     try {
       setActionError(null);
-      await toggleEventStatus(event.id, event.status);
+      await pauseEvent(event.id);
     } catch {
       setActionError('Failed to update event status. Please try again.');
     }
   };
 
   const handlePublish = async (id: string) => {
-    try {
-      setActionError(null);
-      await publishEvent(id);
-    } catch {
-      setActionError('Failed to publish event. Please try again.');
-    }
+    setActionError(null);
+    setLocation(`/event/${id}/edit`);
   };
 
   const handleVenuePlacement = async (eventId: string, status: 'approved' | 'rejected') => {
@@ -426,7 +425,7 @@ export function PartnerDashboard() {
                         onClick={() => handlePublish(event.id)}
                         className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
                       >
-                        <CheckCircle size={13} /> Publish
+                        <CheckCircle size={13} /> Review &amp; publish
                       </button>
                     )}
                     {event.status === 'live' && (
@@ -442,7 +441,7 @@ export function PartnerDashboard() {
                         onClick={() => handleToggle(event)}
                         className="flex items-center gap-1.5 bg-[#E8FFF0] text-[#00C851] text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
                       >
-                        <CheckCircle size={13} /> Resume
+                        <CheckCircle size={13} /> Review &amp; resume
                       </button>
                     )}
                   </div>

@@ -1,12 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'wouter';
-import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Send, ImagePlus, Film, X, Play, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
 import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 import { useAuth } from '@workspace/d8-core/auth';
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
+import {
+  canPublishedPriceChange,
+  EVENT_PUBLISHING_ACKNOWLEDGEMENT,
+  EVENT_PUBLISHING_POLICY_PATH,
+  EVENT_PUBLISHING_POLICY_VERSION,
+  parseEventPriceInput,
+} from '@workspace/d8-core/event-policy';
 
 type Frequency = 'one-off' | 'weekly' | 'monthly' | 'annual';
 type LocationChoice = 'owned_venue' | 'existing_venue' | 'external' | 'undisclosed';
@@ -69,6 +76,9 @@ export function PartnerEventEditor() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
+  const [policyAccepted, setPolicyAccepted] = useState(false);
+  const [publicationRequestKey, setPublicationRequestKey] = useState<string | null>(null);
 
   const [name, setName] = useState(existing?.name ?? '');
   const [category, setCategory] = useState(existing?.category ?? '');
@@ -223,9 +233,25 @@ export function PartnerEventEditor() {
         : true;
 
   const hasValidCapacity = !hasCapacity || (/^\d+$/.test(capacity) && Number(capacity) > 0);
-  const canSave = name.trim() && category && time && hasValidLocation && hasValidCapacity && (
+  let priceError: string | null = null;
+  let parsedPrice = 0;
+  try {
+    parsedPrice = parseEventPriceInput(price, isFree);
+    const commercialChange = canPublishedPriceChange({
+      previouslyPublished: Boolean(existing?.firstPublishedAt),
+      currentIsFree: Boolean(existing?.isFree),
+      currentPrice: existing?.priceAmount ?? 0,
+      proposedIsFree: isFree,
+      proposedPrice: parsedPrice,
+    });
+    if (!commercialChange.allowed) priceError = commercialChange.reason;
+  } catch (error) {
+    priceError = error instanceof Error ? error.message : 'Enter a valid entry price.';
+  }
+  const canSave = Boolean(name.trim() && category && time && hasValidLocation && hasValidCapacity && !priceError && (
     frequency === 'one-off' ? date : frequency === 'weekly' ? weekday : true
-  );
+  ));
+  const needsPublicationAction = !existing || existing.status !== 'live';
 
   const save = async (publishNow: boolean) => {
     if (!canSave && publishNow) return;
@@ -258,14 +284,33 @@ export function PartnerEventEditor() {
         coverImage: imageUrls[0] ?? null,
         images: imageUrls,
         vibes: selectedVibes,
+        publicationAcknowledgement: publishNow ? {
+          requestKey: publicationRequestKey ?? crypto.randomUUID(),
+          acknowledged: policyAccepted,
+        } : undefined,
       }, editId);
       clearSessionDraft(draftKey);
+      setSaving(false);
       setSaved(true);
       setTimeout(() => setLocation('/dashboard'), 1200);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Failed to save event. Please try again.');
       setSaving(false);
     }
+  };
+
+  const requestPublication = () => {
+    if (!canSave) return;
+    setSaveError(null);
+    setPolicyAccepted(false);
+    setPublicationRequestKey(crypto.randomUUID());
+    setShowPublishConfirmation(true);
+  };
+
+  const confirmPublication = async () => {
+    if (!policyAccepted) return;
+    setShowPublishConfirmation(false);
+    await save(true);
   };
 
   if (saved) {
@@ -648,7 +693,8 @@ export function PartnerEventEditor() {
             <div className="flex items-center justify-between mb-3">
               <label className={cn(LABEL, 'mb-0')}>Entry price</label>
               <button
-                onClick={() => { setIsFree(f => !f); setPrice(''); }}
+                onClick={() => { if (!(existing?.firstPublishedAt && existing.isFree)) { setIsFree(f => !f); setPrice(''); } }}
+                disabled={Boolean(existing?.firstPublishedAt && existing.isFree)}
                 className={cn(
                   'flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-full border transition-all',
                   isFree
@@ -666,11 +712,21 @@ export function PartnerEventEditor() {
               </div>
             ) : (
               <input
+                type="text"
+                inputMode="decimal"
                 value={price}
                 onChange={e => setPrice(e.target.value)}
                 placeholder={`e.g. ${currencySymbol}150 per person`}
+                aria-invalid={Boolean(priceError)}
                 className={INPUT}
               />
+            )}
+            {priceError && <p className="mt-2 text-[11px] font-semibold text-red-600">{priceError}</p>}
+            {existing?.firstPublishedAt && (
+              <p className="mt-2 flex items-start gap-1.5 text-[11px] font-semibold text-amber-700">
+                <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                Published prices may decrease or become free, but can never increase or change from free to paid.
+              </p>
             )}
           </div>
 
@@ -719,7 +775,7 @@ export function PartnerEventEditor() {
       {/* Bottom actions */}
       <div className="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-gray-100 px-5 py-4 z-20 shadow-[0_-8px_24px_rgba(0,0,0,0.05)] flex flex-col gap-2">
         <button
-          onClick={() => save(true)}
+          onClick={() => needsPublicationAction ? requestPublication() : void save(false)}
           disabled={!canSave || saving}
           className={cn(
             'w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all',
@@ -728,9 +784,13 @@ export function PartnerEventEditor() {
               : 'bg-gray-100 text-gray-300 cursor-not-allowed'
           )}
         >
-          {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Send size={16} /> Publish now</>}
+          {saving
+            ? <><Loader2 size={16} className="animate-spin" /> Saving…</>
+            : needsPublicationAction
+              ? <><Send size={16} /> {existing?.firstPublishedAt ? 'Review and resume' : 'Review and publish'}</>
+              : <><Check size={16} /> Save changes</>}
         </button>
-        <button
+        {needsPublicationAction && <button
           onClick={() => save(false)}
           disabled={!name.trim() || saving}
           className={cn(
@@ -739,8 +799,38 @@ export function PartnerEventEditor() {
           )}
         >
           Save as draft
-        </button>
+        </button>}
       </div>
+
+      {showPublishConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><ShieldCheck size={20} /></div>
+              <div>
+                <h2 className="text-[18px] font-black text-gray-900">Confirm event publication</h2>
+                <p className="mt-1 text-[12px] text-gray-500">Policy version {EVENT_PUBLISHING_POLICY_VERSION}</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2 rounded-2xl bg-gray-50 p-4 text-[12px] text-gray-700">
+              <p><strong>Event:</strong> {name}</p>
+              <p><strong>Schedule:</strong> {date || weekday || frequency} at {time}</p>
+              <p><strong>Location:</strong> {selectedVenue?.name || externalLocationName || 'Not publicly disclosed'}</p>
+              <p><strong>Entry:</strong> {isFree ? 'Free entry' : `${currencySymbol}${parsedPrice.toFixed(2)}`}</p>
+              <p><strong>Attendance:</strong> {hasCapacity ? `Up to ${capacity}` : 'Open attendance'}</p>
+            </div>
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4">
+              <input type="checkbox" checked={policyAccepted} onChange={event => setPolicyAccepted(event.target.checked)} className="mt-1" />
+              <span className="text-[12px] font-medium leading-5 text-gray-700">{EVENT_PUBLISHING_ACKNOWLEDGEMENT}</span>
+            </label>
+            <a className="mt-3 inline-block text-[12px] font-bold text-primary hover:underline" href={EVENT_PUBLISHING_POLICY_PATH} target="_blank" rel="noreferrer">Read the Event Publishing Policy</a>
+            <div className="mt-5 flex gap-2">
+              <button type="button" onClick={() => setShowPublishConfirmation(false)} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Cancel</button>
+              <button type="button" disabled={!policyAccepted || saving} onClick={() => void confirmPublication()} className="flex-1 rounded-xl bg-primary px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40">Confirm and publish</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

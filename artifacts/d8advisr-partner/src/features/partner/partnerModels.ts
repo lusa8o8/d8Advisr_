@@ -74,6 +74,10 @@ export function partnerEventFromRow(row: Record<string, unknown>): PartnerEvent 
     venuePageStatus: row.venue_page_status as PartnerEvent['venuePageStatus'],
     externalLocationName: row.external_location_name ? String(row.external_location_name) : null,
     externalLocationAddress: row.external_location_address ? String(row.external_location_address) : null,
+    firstPublishedAt: row.first_published_at ? String(row.first_published_at) : null,
+    initialPublishedIsFree: row.initial_published_is_free == null ? null : Boolean(row.initial_published_is_free),
+    initialPublishedPrice: row.initial_published_price == null ? null : Number(row.initial_published_price),
+    initialPublishedCurrency: row.initial_published_currency ? String(row.initial_published_currency) : null,
   };
 }
 

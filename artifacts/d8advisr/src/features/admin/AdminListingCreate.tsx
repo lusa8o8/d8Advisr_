@@ -6,6 +6,12 @@ import { AdminListingMediaEditor } from './AdminListingMediaEditor';
 import { useAuth } from '@/context/AuthContext';
 import { useSessionDraft } from '@workspace/d8-core/use-session-draft';
 import {
+  EVENT_PUBLISHING_ACKNOWLEDGEMENT,
+  EVENT_PUBLISHING_POLICY_PATH,
+  EVENT_PUBLISHING_POLICY_VERSION,
+  parseEventPriceInput,
+} from '@workspace/d8-core/event-policy';
+import {
   createAdminEvent,
   createAdminVenue,
   type AdminListingAttribution,
@@ -60,6 +66,8 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showEventPublishConfirmation, setShowEventPublishConfirmation] = useState(false);
+  const [eventPolicyAccepted, setEventPolicyAccepted] = useState(false);
   const submissionInFlight = useRef(false);
   const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
   const [venue, setVenue, clearVenue] = useSessionDraft(`${draftPrefix}:venue`, {
@@ -81,8 +89,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
 
   const liveVenues = venues.filter(item => item.isActive && item.listingStatus === 'live');
 
-  const submit = async (formEvent: FormEvent) => {
-    formEvent.preventDefault();
+  const createListing = async (policyAcknowledged: boolean) => {
     if (submissionInFlight.current) return;
     submissionInFlight.current = true;
     setSaving(true);
@@ -106,6 +113,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
       } else {
         if (event.locationKind === 'd8_venue' && !event.venueId) throw new Error('Choose a live D8 venue.');
         if (event.locationKind === 'external' && !event.externalLocationName.trim()) throw new Error('Enter the external location name.');
+        const eventPrice = parseEventPriceInput(event.price, event.isFree);
         id = await createAdminEvent({
           requestKey,
           title: event.title, city: event.city, category: event.category,
@@ -114,10 +122,11 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           attribution, publicationStatus, locationKind: event.locationKind,
           venueId: event.venueId, externalLocationName: event.externalLocationName,
           externalLocationAddress: event.externalLocationAddress,
-          pricePerPerson: event.price ? Number(event.price) : undefined,
+          pricePerPerson: eventPrice,
           currency: event.currency, capacity: event.capacity ? Number(event.capacity) : undefined,
           isFree: event.isFree, isFeatured: event.isFeatured, coverImage: event.coverImage, images: event.images,
           vibes: tags(event.vibes), emoji: event.emoji,
+          policyAcknowledged,
         });
       }
       requestKeys.current[kind] = null;
@@ -138,6 +147,28 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
       submissionInFlight.current = false;
       setSaving(false);
     }
+  };
+
+  const submit = (formEvent: FormEvent) => {
+    formEvent.preventDefault();
+    if (kind === 'event' && publicationStatus === 'live') {
+      try {
+        parseEventPriceInput(event.price, event.isFree);
+        setError(null);
+        setEventPolicyAccepted(false);
+        setShowEventPublishConfirmation(true);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : 'Enter a valid event price.');
+      }
+      return;
+    }
+    void createListing(false);
+  };
+
+  const confirmEventPublication = () => {
+    if (!eventPolicyAccepted) return;
+    setShowEventPublishConfirmation(false);
+    void createListing(true);
   };
 
   return (
@@ -209,7 +240,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
               {event.locationKind === 'd8_venue' && <Field label="Venue"><select required className={inputClass} value={event.venueId} onChange={e => setEvent(v => ({ ...v, venueId: e.target.value }))}><option value="">Choose venue</option>{liveVenues.map(item => <option key={item.id} value={item.id}>{item.name} — {item.city}</option>)}</select></Field>}
               {event.locationKind === 'external' && <div className="grid gap-3 sm:grid-cols-2"><Field label="Location name"><input required className={inputClass} value={event.externalLocationName} onChange={e => setEvent(v => ({ ...v, externalLocationName: e.target.value }))} /></Field><Field label="Location address"><input className={inputClass} value={event.externalLocationAddress} onChange={e => setEvent(v => ({ ...v, externalLocationAddress: e.target.value }))} /></Field></div>}
               <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Entry price / person"><input min="0" disabled={event.isFree} type="number" className={inputClass} value={event.price} onChange={e => setEvent(v => ({ ...v, price: e.target.value }))} /></Field>
+                <Field label="Entry price / person"><input min="0.01" step="0.01" inputMode="decimal" disabled={event.isFree} type="number" className={inputClass} value={event.price} onChange={e => setEvent(v => ({ ...v, price: e.target.value }))} /></Field>
                 <Field label="Currency"><div className={`${inputClass} bg-gray-50 text-gray-600`}>{selectedRegion?.currency_code ?? 'Choose region'}</div></Field>
                 <Field label="Maximum attendance"><input min="0" step="1" type="number" className={inputClass} value={event.capacity} onChange={e => setEvent(v => ({ ...v, capacity: e.target.value }))} /></Field>
               </div>
@@ -226,6 +257,33 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           {saving ? 'Creating…' : kind === 'venue' ? 'Create venue draft' : publicationStatus === 'live' ? 'Create and publish event' : 'Create event draft'}
         </button>
       </form>
+
+      {showEventPublishConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF0F1] text-[#FF5A5F]"><ShieldCheck size={20} /></div>
+              <div><h2 className="text-[18px] font-black text-gray-900">Confirm event publication</h2><p className="mt-1 text-[12px] text-gray-500">Policy version {EVENT_PUBLISHING_POLICY_VERSION}</p></div>
+            </div>
+            <div className="mt-4 space-y-2 rounded-2xl bg-gray-50 p-4 text-[12px] text-gray-700">
+              <p><strong>Event:</strong> {event.title}</p>
+              <p><strong>Starts:</strong> {event.startsAt}</p>
+              <p><strong>Region:</strong> {selectedRegion?.name ?? event.city}</p>
+              <p><strong>Entry:</strong> {event.isFree ? 'Free entry' : `${selectedRegion?.currency_symbol ?? ''}${event.price} ${selectedRegion?.currency_code ?? event.currency}`}</p>
+              <p><strong>Attendance:</strong> {event.capacity ? `Up to ${event.capacity}` : 'Open attendance'}</p>
+            </div>
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4">
+              <input type="checkbox" checked={eventPolicyAccepted} onChange={change => setEventPolicyAccepted(change.target.checked)} className="mt-1" />
+              <span className="text-[12px] font-medium leading-5 text-gray-700">{EVENT_PUBLISHING_ACKNOWLEDGEMENT}</span>
+            </label>
+            <a className="mt-3 inline-block text-[12px] font-bold text-[#FF5A5F] hover:underline" href={EVENT_PUBLISHING_POLICY_PATH} target="_blank" rel="noreferrer">Read the Event Publishing Policy</a>
+            <div className="mt-5 flex gap-2">
+              <button type="button" onClick={() => setShowEventPublishConfirmation(false)} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Cancel</button>
+              <button type="button" disabled={!eventPolicyAccepted || saving} onClick={confirmEventPublication} className="flex-1 rounded-xl bg-[#FF5A5F] px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40">Confirm and publish</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

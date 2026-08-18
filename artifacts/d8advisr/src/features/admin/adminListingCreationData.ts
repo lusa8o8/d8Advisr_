@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { EVENT_PUBLISHING_POLICY_ID, EVENT_PUBLISHING_POLICY_VERSION } from '@workspace/d8-core/event-policy';
 
 export type AdminListingAttribution = 'unclaimed' | 'd8advisr';
 export type AdminPublicationStatus = 'draft' | 'live';
@@ -44,6 +45,7 @@ export interface AdminEventCreationInput {
   images?: string[];
   vibes?: string[];
   emoji?: string;
+  policyAcknowledged?: boolean;
 }
 
 function throwIfError(error: { message: string } | null) {
@@ -101,6 +103,9 @@ export async function createAdminEvent(input: AdminEventCreationInput): Promise<
       vibes: input.vibes ?? [],
       emoji: input.emoji?.trim() || '📅',
       frequency: 'one-off',
+      policy_id: EVENT_PUBLISHING_POLICY_ID,
+      policy_version: EVENT_PUBLISHING_POLICY_VERSION,
+      policy_acknowledged: Boolean(input.policyAcknowledged),
     },
   });
   throwIfError(error);
