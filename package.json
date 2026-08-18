@@ -27,6 +27,7 @@
     "test:phase45:browser-closure:static": "node scripts/check-phase45-browser-closure.mjs",
     "test:event-contract:static": "node scripts/check-event-attendance-contract.mjs",
     "test:staging:event-contract": "node scripts/staging-event-attendance-contract-smoke.mjs",
+    "test:phase46a:static": "node scripts/check-phase46a-migrations.mjs",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",
     "test:staging:phase45:media": "node scripts/staging-phase45-media-smoke.mjs",
     "test:staging:phase45:partner-revision": "node scripts/staging-phase45-partner-revision-smoke.mjs",
