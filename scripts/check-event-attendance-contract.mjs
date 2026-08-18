@@ -41,7 +41,7 @@ forbidText(clientSelect, ['capacity', 'spots_left'], 'legacy event client field'
 
 requireText(partnerData, [
   "throw new Error('Attendance limit must be a whole number greater than zero')",
-  "insert({ ...payload, spots_filled: 0, created_at: now })",
+  "insert({ ...payload, event_status: 'draft', spots_filled: 0, created_at: now })",
 ], 'partner event persistence contract');
 const updateBranch = partnerData.slice(partnerData.indexOf('if (editId)'), partnerData.indexOf('} else {', partnerData.indexOf('if (editId)')));
 forbidText(updateBranch, ['spots_filled'], 'partner edit attendance reset');

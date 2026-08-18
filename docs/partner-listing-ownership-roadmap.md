@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document - Phase 4.5 complete; Phase 4.6 event policy enforcement is next
+Status: active planning document - Phase 4.5 complete; Phase 4.6A automated staging verification complete and browser acceptance pending
 
 Created: 2026-08-11
 
@@ -536,8 +536,9 @@ Primary references:
 
 ## Immediate Next Step
 
-Begin Phase 4.6 Slice A with fresh discovery and a mini plan: decimal event
-prices, strict validation, immutable first-publication history, versioned
-acknowledgements, database commercial protections, shared policy routes, and
-the additive admin-assignment foundation. Production promotion of accumulated
-migrations remains a separate explicit decision.
+Run the Phase 4.6A local browser checklist against staging. Decimal event
+prices, immutable first-publication history, versioned acknowledgements,
+database commercial protections, shared policy routes, and the additive admin
+assignment foundation have passed automated staging verification. After the
+browser gate, begin Phase 4.6B event revision discovery. Production promotion
+of accumulated migrations remains a separate explicit decision.
