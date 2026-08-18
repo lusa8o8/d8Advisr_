@@ -1,4 +1,11 @@
 import type { ReactNode } from 'react';
+import {
+  EVENT_PUBLISHING_ACKNOWLEDGEMENT,
+  EVENT_PUBLISHING_POLICY_APPROVED_DATE,
+  EVENT_PUBLISHING_POLICY_ID,
+  EVENT_PUBLISHING_POLICY_PATH,
+  EVENT_PUBLISHING_POLICY_VERSION,
+} from './eventPolicy';
 
 export const LEGAL_EFFECTIVE_DATE = '25 July 2026';
 export const PRIVACY_EMAIL = 'lusamalungisha@gmail.com';
@@ -58,6 +65,9 @@ function LegalPage({
             <a className="text-muted-foreground transition-colors hover:text-primary" href="/terms">
               Terms
             </a>
+            <a className="text-muted-foreground transition-colors hover:text-primary" href="/partner-policies">
+              Partner policies
+            </a>
           </nav>
         </div>
       </header>
@@ -95,6 +105,9 @@ export function LegalLinks({ className = '' }: { className?: string }) {
       </a>
       <a className="font-medium text-muted-foreground underline-offset-4 hover:text-primary hover:underline" href="/terms">
         Terms of Service
+      </a>
+      <a className="font-medium text-muted-foreground underline-offset-4 hover:text-primary hover:underline" href="/partner-policies">
+        Partner Policies
       </a>
     </nav>
   );
@@ -524,6 +537,114 @@ export function TermsOfServicePage({ homeHref = '/' }: LegalPageProps) {
             {PRIVACY_EMAIL}
           </a>
           .
+        </p>
+      </LegalSection>
+    </LegalPage>
+  );
+}
+
+export function PartnerPoliciesPage({ homeHref = '/' }: LegalPageProps) {
+  return (
+    <LegalPage
+      title="Partner Policies"
+      summary="Operational policies for organizations and people publishing venues, events, and other business content on D8Advisr."
+      homeHref={homeHref}
+    >
+      <LegalSection title="Event publishing and changes">
+        <p>
+          This policy protects the event details consumers rely on while allowing organizers to make
+          genuine operational corrections. Approved partners may publish without routine admin
+          approval, but publication and later changes remain subject to database rules, audit, and
+          review where the change is sensitive.
+        </p>
+        <a
+          className="inline-flex rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground transition-opacity hover:opacity-90"
+          href={EVENT_PUBLISHING_POLICY_PATH}
+        >
+          Read Event Publishing and Change Policy v{EVENT_PUBLISHING_POLICY_VERSION}
+        </a>
+      </LegalSection>
+      <LegalSection title="How policies are versioned">
+        <p>
+          D8 records the exact policy version accepted for a protected publishing action. Material
+          updates are released as a new version and do not silently rewrite an earlier acceptance.
+        </p>
+      </LegalSection>
+    </LegalPage>
+  );
+}
+
+export function EventPublishingPolicyPage({ homeHref = '/' }: LegalPageProps) {
+  return (
+    <LegalPage
+      title="Partner Event Publishing and Change Policy"
+      summary="The rules for first publication, commercial promises, later event changes, review, and consumer communication."
+      homeHref={homeHref}
+    >
+      <div className="rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground">
+        <p><strong className="text-foreground">Policy ID:</strong> {EVENT_PUBLISHING_POLICY_ID}</p>
+        <p><strong className="text-foreground">Version:</strong> {EVENT_PUBLISHING_POLICY_VERSION}</p>
+        <p><strong className="text-foreground">Approved:</strong> {EVENT_PUBLISHING_POLICY_APPROVED_DATE}</p>
+        <p><strong className="text-foreground">Environment status:</strong> Effective when versioned database enforcement is enabled.</p>
+      </div>
+
+      <LegalSection title="1. Purpose and scope">
+        <p>
+          This policy applies to partner- and D8-managed one-off events, recurring series, and later
+          occurrences. It supplements the Terms of Service. Mandatory law and consumer refund rights
+          take precedence.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. First publication">
+        <p>Before an event first becomes public, the publisher must review its title, date, time, location, attendance scope, free/paid state, price, currency, and mandatory charges.</p>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 font-semibold text-foreground">
+          {EVENT_PUBLISHING_ACKNOWLEDGEMENT}
+        </div>
+        <p>D8 stores the accepted policy version, publisher, event, commercial snapshot, and server timestamp.</p>
+      </LegalSection>
+
+      <LegalSection title="3. Permanent commercial protections">
+        <LegalList>
+          <li>A published free event cannot later become paid.</li>
+          <li>A published mandatory entry price cannot be increased.</li>
+          <li>Every permitted reduction becomes the new permanent maximum.</li>
+          <li>The currency cannot change after first publication.</li>
+          <li>A required fee, deposit, minimum spend, package, door charge, or external payment cannot be added or increased to evade these rules.</li>
+        </LegalList>
+        <p>Pausing, unpublishing, returning to draft, changing ownership, or transferring a listing does not reset this history.</p>
+      </LegalSection>
+
+      <LegalSection title="4. Permitted commercial improvements">
+        <p>A paid event may reduce its entry price or become free. The organizer must confirm the before/after values, the change is audited, and interested consumers are notified. Refund reconciliation becomes mandatory when D8 supports paid registrations.</p>
+      </LegalSection>
+
+      <LegalSection title="5. Operational changes">
+        <LegalList>
+          <li>More than 72 hours before start, low-risk corrections may apply automatically; material changes may require review.</li>
+          <li>Between 72 and 24 hours, material changes require a reason, expedited review, and immediate consumer notice.</li>
+          <li>Inside 24 hours, only cancellation, postponement, and documented emergency operational changes are permitted.</li>
+          <li>After start, the public event is historical and cannot be rewritten as if different terms originally applied.</li>
+        </LegalList>
+        <p>Time windows use the event location&apos;s timezone.</p>
+      </LegalSection>
+
+      <LegalSection title="6. Capacity, schedule, and location">
+        <p>Zero capacity means open attendance, not zero available places. Capacity may not fall below confirmed registrations. Material date, time, venue, address, eligibility, accessibility, or core-experience changes require consumer notice and may require reconfirmation.</p>
+      </LegalSection>
+
+      <LegalSection title="7. Cancellation and recurring events">
+        <p>Organizers may cancel or postpone when necessary but must provide an accurate reason. D8 preserves the change history and notifies interested consumers. A recurring series cannot use a later occurrence to change from free to paid or increase the series price; a different commercial model requires a new series.</p>
+      </LegalSection>
+
+      <LegalSection title="8. Review and enforcement">
+        <p>D8 uses three lanes: deterministic blocks, automatic low-risk changes, and admin review for sensitive operational changes. Admin review is not a route around a blocked price increase or free-to-paid change. Repeated evasion may lead to restricted publishing, suspension, or removal.</p>
+      </LegalSection>
+
+      <LegalSection title="9. Questions and policy versions">
+        <p>
+          Material updates receive a new version. Questions may be sent to{' '}
+          <a className="font-semibold text-primary hover:underline" href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>.
         </p>
       </LegalSection>
     </LegalPage>

@@ -9,6 +9,7 @@
     "./auth-redirect": "./src/authRedirect.ts",
     "./ui/auth-layout": "./src/ui/AuthLayout.tsx",
     "./constants": "./src/constants.ts",
+    "./event-policy": "./src/eventPolicy.ts",
     "./legal": "./src/legal.tsx",
     "./partner-capabilities": "./src/partnerCapabilities.ts",
     "./supabase": "./src/supabase.ts",

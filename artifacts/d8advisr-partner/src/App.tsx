@@ -16,7 +16,7 @@ import {
   type PartnerCapability,
 } from '@workspace/d8-core/partner-capabilities';
 import { supabase } from '@workspace/d8-core/supabase';
-import { PrivacyPolicyPage, TermsOfServicePage } from '@workspace/d8-core/legal';
+import { EventPublishingPolicyPage, PartnerPoliciesPage, PrivacyPolicyPage, TermsOfServicePage } from '@workspace/d8-core/legal';
 import { PartnerPortal } from '@/pages/PartnerPortal';
 import { PartnerDashboard } from '@/pages/PartnerDashboard';
 import { PartnerNotifications } from '@/pages/PartnerNotifications';
@@ -264,6 +264,8 @@ function Router() {
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/privacy"><PrivacyPolicyPage /></Route>
       <Route path="/terms"><TermsOfServicePage /></Route>
+      <Route path="/partner-policies"><PartnerPoliciesPage /></Route>
+      <Route path="/partner-policies/event-publishing"><EventPublishingPolicyPage /></Route>
 
       <Route path="/dashboard"><PartnerGuard><PartnerDashboard /></PartnerGuard></Route>
       <Route path="/notifications"><PartnerGuard><PartnerNotifications /></PartnerGuard></Route>
