@@ -118,7 +118,7 @@ alter table public.events validate constraint events_publication_baseline_comple
 create table public.event_publication_acknowledgements (
   id uuid primary key default extensions.uuid_generate_v4(),
   event_id uuid not null references public.events(id) on delete restrict,
-  organization_id uuid references public.organizations(id) on delete set null,
+  organization_id uuid references public.partner_organizations(id) on delete set null,
   actor_user_id uuid not null references public.profiles(id) on delete restrict,
   policy_id text not null,
   policy_version text not null,
@@ -486,7 +486,7 @@ begin
 
   source_value := case when attribution = 'd8advisr' then 'd8_admin' else 'admin_unclaimed' end;
   if attribution = 'd8advisr' then
-    select id into organizer_organization from public.organizations
+    select id into organizer_organization from public.partner_organizations
     where organization_type = 'platform' and status = 'active' order by created_at limit 1;
   end if;
 
