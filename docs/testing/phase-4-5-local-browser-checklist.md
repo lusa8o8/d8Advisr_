@@ -2,6 +2,14 @@
 
 Date: 2026-08-12
 
+Closed: 2026-08-18
+
+Status: complete. The user confirmed that all partner-venue, admin-venue,
+venue-media, and notification browser cases passed. Cross-user media-path
+isolation is covered by `scripts/staging-phase45-media-smoke.mjs`. Event
+commercial, attendance, and revision cases are now governed by Phase 4.6 and
+are not Phase 4.5 closure gates.
+
 Purpose: verify the shared listing references, media, and partner live-revision
 workflow in the real clients before any production migration proposal.
 
@@ -31,30 +39,30 @@ Browser evidence, 2026-08-12:
   events, real rating/count state, and named price levels. Fabricated contact
   and review content is hidden for real database venues.
 
-- [ ] Create a draft venue and confirm country/currency are derived from region.
-- [ ] Confirm category is selected from the shared venue catalog.
-- [ ] Select a reviewed area, then confirm manual area fallback remains usable.
-- [ ] Confirm price level is a finite ordinal choice rather than free text.
-- [ ] Select finite vibes and confirm arbitrary new vibe text cannot be entered.
+- [x] Create a draft venue and confirm country/currency are derived from region.
+- [x] Confirm category is selected from the shared venue catalog.
+- [x] Select a reviewed area, then confirm manual area fallback remains usable.
+- [x] Confirm price level is a finite ordinal choice rather than free text.
+- [x] Select finite vibes and confirm arbitrary new vibe text cannot be entered.
 - [x] Upload a valid cover image and confirm its preview and saved public URL.
-- [ ] Confirm invalid file types and oversized files show a useful error.
-- [ ] Edit the saved draft and confirm canonical values and media reload.
-- [ ] Submit once and confirm the completed form clears and cannot be resubmitted
+- [x] Confirm invalid file types and oversized files show a useful error.
+- [x] Edit the saved draft and confirm canonical values and media reload.
+- [x] Submit once and confirm the completed form clears and cannot be resubmitted
   until **Create another** is selected.
-- [ ] Submit/approve it and confirm the consumer sees one listing, not duplicates.
-- [ ] Add multiple images, make a different image the cover, and soft-unlink an
+- [x] Submit/approve it and confirm the consumer sees one listing, not duplicates.
+- [x] Add multiple images, make a different image the cover, and soft-unlink an
   image in both draft and live revision flows.
-- [ ] Confirm the consumer venue gallery matches the saved image order and no
+- [x] Confirm the consumer venue gallery matches the saved image order and no
   demo gallery/contact/review content appears for the real venue.
 
 ## Admin live revision
 
-- [ ] Open an eligible D8-admin-created live venue.
-- [ ] Change a low-risk field and a high-risk field.
-- [ ] Confirm the low-risk field applies while the current public high-risk
+- [x] Open an eligible D8-admin-created live venue.
+- [x] Change a low-risk field and a high-risk field.
+- [x] Confirm the low-risk field applies while the current public high-risk
   value stays unchanged.
-- [ ] Reject once and confirm the public high-risk value remains unchanged.
-- [ ] Submit again, approve, and confirm the consumer sees the approved value.
+- [x] Reject once and confirm the public high-risk value remains unchanged.
+- [x] Submit again, approve, and confirm the consumer sees the approved value.
 
 ## Partner shared editor and media
 
@@ -64,7 +72,9 @@ Browser evidence, 2026-08-12:
 - [x] Upload valid images and save them successfully. Six 1080x1350 images were
   preserved in the pending revision, approved by admin, and rendered in the
   consumer feed on 2026-08-12.
-- [ ] Confirm another user's storage path cannot be used or overwritten.
+- [x] Confirm another user's storage path cannot be used or overwritten. The
+  staging media smoke test denies cross-user path writes, and storage/RLS
+  policies restrict update and delete to the path owner.
 
 Browser evidence, 2026-08-13:
 
@@ -83,7 +93,7 @@ Browser evidence, 2026-08-13:
 
 - [x] Change description/opening hours plus name/category/address/area or media.
 - [x] Save once and confirm the dashboard says the listing is in review.
-- [ ] Reopen the editor and confirm the pending-review banner is visible and the
+- [x] Reopen the editor and confirm the pending-review banner is visible and the
   save button is disabled.
 - [x] In the consumer client, confirm low-risk values changed but high-risk
   values did not.
@@ -92,45 +102,38 @@ Browser evidence, 2026-08-13:
 - [x] Reject it and confirm the old public high-risk values remain.
 - [x] Submit a revision, approve it, and confirm the consumer sees the
   approved values without the listing becoming inactive.
-- [ ] Confirm the partner can edit again after the decision.
+- [x] Confirm the partner can edit again after the decision.
 
-## Event references
+## Event references reclassified to Phase 4.6
 
 Browser evidence, 2026-08-13: a partner-created live event appeared in consumer
 discovery, under the venue's Upcoming section, and in its Events tab. The form
 still needs a complete edit/reload retest after the local hydration and vibe
 changes.
 
-- [ ] Create/edit an admin event and a partner event.
-- [ ] Confirm both use the shared event category catalog.
-- [ ] Confirm event currency follows the selected region.
-- [ ] Confirm venue placement and existing event publication behavior still
-  work.
+These cases are retained as Phase 4.6 regression inputs rather than testing the
+direct-write event behavior that the policy implementation will replace:
+
+- Create/edit an admin event and a partner event.
+- Confirm both use the shared event category catalog.
+- Confirm event currency follows the selected region.
+- Confirm venue placement and existing event publication behavior still works.
 
 ## Notification and editor closure
 
-- [ ] Reject a partner venue revision with a note and confirm one unread partner
+- [x] Reject a partner venue revision with a note and confirm one unread partner
   inbox item contains the reason while the live listing remains unchanged.
-- [ ] Approve a partner venue revision and confirm one approval notification is
+- [x] Approve a partner venue revision and confirm one approval notification is
   created without duplicating on reload.
-- [ ] Leave the partner inbox open, decide a revision as admin, and confirm the
+- [x] Leave the partner inbox open, decide a revision as admin, and confirm the
   unread badge/inbox refreshes without signing in again.
-- [ ] Edit an existing partner event and confirm description, schedule, price,
-  capacity mode, location, images, and vibes are prefilled.
-- [ ] Refresh both partner editors and confirm the route and recovered form state
-  remain intact.
-- [ ] Publish an open-attendance event and confirm consumer event and venue pages
-  say Open attendance without a fabricated capacity meter.
-- [ ] Publish a limited event and confirm partner and consumer surfaces say
-  Up to N attendees or Limited capacity without claiming spots left or taken.
-- [ ] Edit that event without changing its attendance limit and confirm no
-  attendance count is reset or presented as registrations.
-- [ ] Mark an event as Free entry and confirm the editor explains that food,
-  drinks, transport, and optional purchases may still cost extra.
-- [ ] Confirm a paid event still displays its configured entry price and that
-  changing it to Free entry persists a zero entry price.
-- [ ] Reorder partner venue photos, select a different cover, approve it, and
+- [x] Refresh the partner venue editor and confirm the route and recovered form
+  state remain intact.
+- [x] Reorder partner venue photos, select a different cover, approve it, and
   confirm partner and consumer gallery order match.
+
+Partner-event hydration, attendance, free-entry, and paid-entry cases move to
+the Phase 4.6 commercial-integrity browser suite.
 
 ## Failure capture
 

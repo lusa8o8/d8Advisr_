@@ -1,6 +1,6 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document - Phase 4.5 core partner revision path browser-verified; remaining acceptance checks precede Phase 5
+Status: active planning document - Phase 4.5 complete; Phase 4.6 event policy enforcement is next
 
 Created: 2026-08-11
 
@@ -359,9 +359,30 @@ Browser evidence on 2026-08-12 confirmed the core live-venue contract end to
 end: a partner submitted controlled venue fields and six uploaded photos, the
 low-risk description applied immediately, the controlled proposal remained
 private, admin reviewed and approved it, and the updated listing and gallery
-appeared in the consumer feed. Phase 4.5 still requires the unchecked items in
-the local checklist, particularly rejection, cross-user media isolation, event
-reference parity, manual area fallback, and draft/media recovery cases.
+appeared in the consumer feed. On 2026-08-18 the user confirmed all remaining
+partner-venue, admin-venue, venue-media, and notification browser cases passed.
+The automated staging media test covers cross-user path isolation. Event
+commercial and revision cases were reclassified into Phase 4.6 because that
+phase replaces the current direct-write event contract.
+
+### Phase 4.6 — Event policy enforcement
+
+Outcome: published event commercial promises are enforced in PostgreSQL,
+material changes are auditable, and affected users receive durable
+notifications without requiring admin approval for ordinary publication.
+
+Use the versioned policy, enforcement matrix, and implementation plan in:
+
+- `docs/policies/partner-event-publishing-policy-v1.0.md`;
+- `docs/policies/partner-event-enforcement-matrix-v1.0.md`; and
+- `docs/implementation/event-commercial-integrity-revisions-and-notifications.md`.
+
+Implement the commercial foundation and publication acknowledgement first,
+then event revisions, active interest and notifications, reconfirmation, and
+finally occurrence-level behavior when real usage requires it. Add the
+country/region admin-assignment foundation additively during the first database
+slice, but defer regional enforcement and the read-only Events directory until
+operational staffing requires them.
 
 ### Phase 5 — Claim submission and approval
 
@@ -515,11 +536,8 @@ Primary references:
 
 ## Immediate Next Step
 
-Close the remaining unchecked Phase 4.5 browser cases against staging. The core
-partner submission, pending-review visibility, approval, media persistence, and
-consumer discovery path has passed. Rejection, cross-user media isolation,
-event reference parity, manual area fallback, and remaining draft/media
-recovery cases are still required or must be accepted as documented exceptions.
-After that gate, begin fresh Phase 5 claim discovery and write its mini plan.
-Production promotion of the accumulated migrations remains a separate explicit
-decision.
+Begin Phase 4.6 Slice A with fresh discovery and a mini plan: decimal event
+prices, strict validation, immutable first-publication history, versioned
+acknowledgements, database commercial protections, shared policy routes, and
+the additive admin-assignment foundation. Production promotion of accumulated
+migrations remains a separate explicit decision.

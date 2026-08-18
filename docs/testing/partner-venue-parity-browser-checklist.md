@@ -2,6 +2,9 @@
 
 Use the local partner staging server and the staging partner venue account.
 
+Status: complete on 2026-08-18. The user confirmed all remaining partner venue,
+media, persistence, and notification cases passed.
+
 Browser evidence recorded 2026-08-12:
 
 - The staging partner changed the live venue to **D8 Cinema**, selected the
@@ -22,13 +25,13 @@ Browser evidence recorded 2026-08-12:
 - [x] Choosing "Area not listed" reveals a manual area input.
 - [x] Street address remains a normal factual text input.
 - [x] Price level offers only Not set and levels 1 through 4.
-- [ ] Average cost is numeric and shows the account region's currency symbol.
-- [ ] Vibes render as shared selectable chips and retain multiple selections.
-- [ ] Phone uses a telephone input and website rejects a non-HTTP(S) URL.
-- [ ] Switch browser tabs and return; the current form remains mounted.
-- [ ] Reload; category, area mode/value, price, cost, vibes, contact, hours, and
+- [x] Average cost is numeric and shows the account region's currency symbol.
+- [x] Vibes render as shared selectable chips and retain multiple selections.
+- [x] Phone uses a telephone input and website rejects a non-HTTP(S) URL.
+- [x] Switch browser tabs and return; the current form remains mounted.
+- [x] Reload; category, area mode/value, price, cost, vibes, contact, hours, and
   existing image URLs recover.
-- [ ] Confirm the dashboard header uses the current approved venue name rather
+- [x] Confirm the dashboard header uses the current approved venue name rather
   than the original partner application name.
 - [x] Save changes to a live venue and confirm the dashboard reports a pending
   revision.
@@ -42,9 +45,9 @@ Browser evidence recorded 2026-08-12:
 - [x] Approve the revision as admin and confirm the consumer venue receives the
   approved name, category, address, area, price, average cost, and media changes.
 
-## Remaining browser retest
+## Closure browser retest
 
-- [ ] Rejection notification exposes the admin note to the submitting partner.
-- [ ] Approval notification is durable and deduplicated.
-- [ ] Partner venue gallery can choose a cover and reorder photos before review.
-- [ ] Refresh preserves `/venue/edit` and the recovered editor state.
+- [x] Rejection notification exposes the admin note to the submitting partner.
+- [x] Approval notification is durable and deduplicated.
+- [x] Partner venue gallery can choose a cover and reorder photos before review.
+- [x] Refresh preserves `/venue/edit` and the recovered editor state.
