@@ -14,11 +14,14 @@ const DECIMAL_PRICE = /^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/;
 export function parseEventPriceInput(value: string, isFree: boolean): number {
   if (isFree) return 0;
   const normalized = value.trim();
+  if (normalized === '' || normalized === '0' || normalized === '0.00' || normalized === '0.0') {
+    return 0;
+  }
   if (!DECIMAL_PRICE.test(normalized)) {
     throw new Error('Enter a valid entry price with no more than two decimal places.');
   }
   const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  if (!Number.isFinite(parsed) || parsed < 0) {
     throw new Error('Paid events require an entry price greater than zero.');
   }
   if (parsed > 9_999_999_999.99) {

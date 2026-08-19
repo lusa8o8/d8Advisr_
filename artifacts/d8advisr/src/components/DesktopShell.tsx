@@ -6,6 +6,7 @@ import {
 import { cn } from '@/components/SharedUI';
 import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useConsumerNotifications } from '@/hooks/useConsumerNotifications';
 
 const NAV = [
   { label: 'Discover',   icon: Home,     path: '/home' },
@@ -18,6 +19,7 @@ const NAV = [
 function Sidebar() {
   const [location, setLocation] = useLocation();
   const { displayName, avatarUrl } = useProfile();
+  const { unreadCount } = useConsumerNotifications();
 
   const isActive = (path: string) =>
     path === '/home'
@@ -91,11 +93,13 @@ function Sidebar() {
                 style={active ? { color: '#FF5A5F' } : undefined}
               />
               <span className={active ? 'text-white' : ''}>{item.label}</span>
-              {item.label === 'Notifications' && (
+              {item.label === 'Notifications' && unreadCount > 0 && (
                 <span
-                  className="ml-auto w-2 h-2 rounded-full"
+                  className="ml-auto px-1.5 py-0.5 min-w-[18px] text-[10px] font-black rounded-full text-white text-center"
                   style={{ background: '#FF5A5F' }}
-                />
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
             </button>
           );
@@ -124,9 +128,6 @@ function Sidebar() {
             >
               {localStorage.getItem('d8advisr_avatar') ? (
                 <span>
-                  {/* Default to the romantic emoji if there's an issue with local storage or no avatar is set yet but we expect one, or maybe just render the letter */}
-                  {/* Actually, let's use the local storage emoji or first letter */}
-                  {/* We can just use the same logic as profile but simplified: */}
                   {['🥰', '😎', '🤩', '🌹', '🦋', '🌙', '🍕', '🎭', '✨'].find(e => ['romantic', 'cool', 'excited', 'rose', 'free-spirit', 'night-owl', 'foodie', 'adventurer', 'sparkle'].includes(localStorage.getItem('d8advisr_avatar') as string)) ? '🥰' : displayName.charAt(0).toUpperCase()}
                 </span>
               ) : (

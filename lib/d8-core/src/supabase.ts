@@ -330,6 +330,42 @@ export type Database = {
         };
         Update: Partial<Database['public']['Tables']['event_revisions']['Row']>;
       };
+      event_interests: {
+        Row: {
+          id: string;
+          user_id: string;
+          event_id: string;
+          interest_type: 'reminder' | 'saved' | 'plan' | 'ticket' | 'waitlist';
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['event_interests']['Row'], 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['event_interests']['Row']>;
+      };
+      consumer_notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          event_id: string | null;
+          type: 'event_rescheduled' | 'event_relocated' | 'event_price_reduced' | 'event_cancelled' | 'system' | 'vibe_match';
+          title: string;
+          body: string;
+          metadata: Record<string, unknown>;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['consumer_notifications']['Row'], 'id' | 'created_at' | 'read_at'> & {
+          id?: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['consumer_notifications']['Row']>;
+      };
       plan_reviews: {
         Row: {
           id: string;

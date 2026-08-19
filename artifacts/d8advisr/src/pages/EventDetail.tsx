@@ -8,6 +8,7 @@ import { cn } from '@/components/SharedUI';
 import { useDemandSignals } from '@/hooks/useDemandSignals';
 import { EVENT_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import { useRegion } from '@/hooks/useRegion';
+import { useAuth } from '@workspace/d8-core/auth';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
 const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
@@ -279,6 +280,7 @@ const RECURRENCE_META: Record<NonNullable<Recurrence>, { color: string; icon: st
 
 export function EventDetail() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { formatPrice } = useRegion();
   const [notifyOn, setNotifyOn] = useState(false);
   const [liveEvent, setLiveEvent] = useState<EventData | null>(null);
@@ -323,9 +325,24 @@ export function EventDetail() {
       setLoadingLiveEvent(false);
     }
 
-    loadLiveEvent();
+    async function loadInterest() {
+      if (!isPersistedEvent || !user?.id) return;
+      const { data } = await supabase
+        .from('event_interests')
+        .select('active')
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .eq('interest_type', 'reminder')
+        .maybeSingle();
+      if (data && active) {
+        setNotifyOn(Boolean(data.active));
+      }
+    }
+
+    void loadLiveEvent();
+    void loadInterest();
     return () => { active = false; };
-  }, [eventId, isPersistedEvent]);
+  }, [eventId, isPersistedEvent, user?.id]);
 
   const event = liveEvent ?? (!isPersistedEvent ? (ALL_EVENTS[eventId] ?? ALL_EVENTS['e1']) : null);
   const planParams = event
@@ -550,12 +567,17 @@ export function EventDetail() {
             </div>
           </div>
           <button
-            onClick={() => {
-              setNotifyOn(v => {
-                const next = !v;
-                if (next) void recordEventReminderEnabled(eventId);
-                return next;
-              });
+            onClick={async () => {
+              const next = !notifyOn;
+              setNotifyOn(next);
+              if (next) void recordEventReminderEnabled(eventId);
+              if (user?.id && isPersistedEvent) {
+                await supabase.rpc('toggle_event_interest', {
+                  p_event_id: eventId,
+                  p_interest_type: 'reminder',
+                  p_active: next,
+                });
+              }
             }}
             className={cn(
               'w-11 h-6 rounded-full transition-colors relative shrink-0',
@@ -608,6 +630,13 @@ export function EventDetail() {
         <button
           onClick={() => {
             void recordEventAddToPlan(eventId);
+            if (user?.id && isPersistedEvent) {
+              void supabase.rpc('toggle_event_interest', {
+                p_event_id: eventId,
+                p_interest_type: 'plan',
+                p_active: true,
+              });
+            }
             setLocation(planParams ? `/plan/generate?${planParams.toString()}` : '/plan/generate');
           }}
           className="flex-1 bg-primary text-white rounded-xl font-bold text-[16px] py-4 shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2"

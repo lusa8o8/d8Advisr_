@@ -134,3 +134,25 @@ export interface City {
   currencyName: string;
   live: boolean;
 }
+
+export interface EventInterest {
+  id: string;
+  userId: string;
+  eventId: string;
+  interestType: 'reminder' | 'saved' | 'plan' | 'ticket' | 'waitlist';
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConsumerNotification {
+  id: string;
+  userId: string;
+  eventId: string | null;
+  type: 'event_rescheduled' | 'event_relocated' | 'event_price_reduced' | 'event_cancelled' | 'system' | 'vibe_match';
+  title: string;
+  body: string;
+  metadata: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+}

@@ -4,12 +4,15 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
+import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function TopBar({ transparent = false }: { transparent?: boolean }) {
   const [, setLocation] = useLocation();
+  const { unreadCount } = useConsumerNotifications();
   const isDesktop = useIsDesktop();
   if (isDesktop) return null;
   
@@ -17,7 +20,7 @@ export function TopBar({ transparent = false }: { transparent?: boolean }) {
     <div className={cn("px-6 pt-14 pb-4 flex justify-between items-center sticky top-0 z-20", 
       transparent ? "bg-gradient-to-b from-white/90 to-white/0" : "bg-white shadow-sm"
     )}>
-      <div className="flex items-baseline" onClick={() => setLocation('/home')}>
+      <div className="flex items-baseline cursor-pointer" onClick={() => setLocation('/home')}>
         <span className="font-bold text-2xl text-primary tracking-tight">D8</span>
         <span className="font-bold text-2xl text-foreground tracking-tight">Advisr</span>
       </div>
@@ -27,7 +30,11 @@ export function TopBar({ transparent = false }: { transparent?: boolean }) {
           className="relative text-foreground hover:opacity-70 transition-opacity"
         >
           <Bell size={24} />
-          <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white"></span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-black rounded-full border-2 border-white flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
         <button 
           onClick={() => setLocation('/profile/preferences')}

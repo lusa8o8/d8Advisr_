@@ -271,6 +271,7 @@ export function PartnerEventEditor() {
       const imageUrls = await Promise.all(
         images.map(image => image.file ? uploadPartnerImage(image.file, 'events') : image.url)
       );
+      const effectiveIsFree = isFree || parsedPrice === 0;
       const result = await saveEvent({
         title: name.trim(),
         category,
@@ -279,8 +280,8 @@ export function PartnerEventEditor() {
         weekday: weekday || undefined,
         date: date || undefined,
         time,
-        price,
-        isFree,
+        price: effectiveIsFree ? '0' : price,
+        isFree: effectiveIsFree,
         hasCapacity,
         capacity: capacity || undefined,
         emoji,

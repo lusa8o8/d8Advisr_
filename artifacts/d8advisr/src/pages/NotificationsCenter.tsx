@@ -1,16 +1,22 @@
-import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ArrowLeft, Calendar, AlertCircle, Star, Users, MapPin, Check, Ticket, BellOff } from 'lucide-react';
-import { useRegion } from "@/hooks/useRegion";
+import { ArrowLeft, Calendar, AlertCircle, MapPin, Check, Ticket, Tag, CheckCheck, Loader2 } from 'lucide-react';
+import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
+import { cn } from "@/components/SharedUI";
+
+function formatRelativeTime(dateString: string) {
+  const diff = Date.now() - new Date(dateString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 export function NotificationsCenter() {
   const [, setLocation] = useLocation();
-  const { formatPrice } = useRegion();
-  const [dismissed, setDismissed] = useState<string[]>([]);
-
-  function dismiss(id: string) {
-    setDismissed(v => [...v, id]);
-  }
+  const { notifications, unreadCount, loading, markRead, markAllRead } = useConsumerNotifications();
 
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
@@ -18,168 +24,134 @@ export function NotificationsCenter() {
       <div className="bg-card px-6 pt-14 pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-4">
-            <button onClick={() => window.history.back()} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">
+            <button
+              onClick={() => window.history.back()}
+              className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors"
+            >
               <ArrowLeft size={20} />
             </button>
             <h1 className="font-bold text-foreground text-xl">Notifications</h1>
           </div>
-          <button className="text-primary font-bold text-sm hover:opacity-80">Mark all read</button>
+          {unreadCount > 0 && (
+            <button
+              onClick={() => void markAllRead()}
+              className="text-primary font-bold text-sm hover:opacity-80 flex items-center gap-1.5"
+            >
+              <CheckCheck size={16} /> Mark all read
+            </button>
+          )}
         </div>
       </div>
 
       <div className="flex flex-col pb-10">
-        <h2 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider px-6 py-5">Today</h2>
-        
-        {/* Urgent / Plan tonight */}
-        <div className="bg-[#FFF0F1] border-l-4 border-primary px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-[#ffe5e6] transition-colors">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary absolute right-6 top-7 shadow-sm"></div>
-          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-primary shadow-sm shrink-0 border border-primary/10">
-            <Calendar size={20} strokeWidth={2.5} />
+        {loading ? (
+          <div className="py-20 flex justify-center items-center">
+            <Loader2 size={28} className="animate-spin text-primary" />
           </div>
-          <div className="pr-6">
-            <p className="font-extrabold text-foreground text-[16px] leading-tight mb-1.5">Your date is tonight!</p>
-            <p className="text-[14px] text-muted-foreground font-medium mb-2 leading-snug">Downtown Romance starts at 7:00 PM at Lumina Restaurant.</p>
-            <span className="text-xs text-primary font-bold">2 hours ago</span>
-          </div>
-        </div>
-
-        {/* Vibe-matched event — Jazz Night */}
-        {!dismissed.includes('jazz') && (
-          <div className="bg-amber-50 border-l-4 border-amber-400 border-b border-b-amber-100 px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-amber-100/50 transition-colors">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-400 absolute right-6 top-7 shadow-sm"></div>
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-amber-500 shadow-sm shrink-0 border border-amber-200 text-2xl">
-              🎷
+        ) : notifications.length === 0 ? (
+          <div className="py-20 px-8 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <Calendar size={28} />
             </div>
-            <div className="pr-6 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-extrabold text-foreground text-[16px] leading-tight mb-0.5">Matches your Romantic vibe</p>
-                  <p className="text-[14px] text-muted-foreground font-medium mb-2 leading-snug">
-                    <span className="font-bold text-foreground">Jazz & Wine Night</span> at Lumina — Fri, Oct 18 · 7:30 PM · Limited capacity.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <button
-                  onClick={() => setLocation('/venue/1')}
-                  className="flex items-center gap-1.5 bg-amber-500 text-white text-[12px] font-bold px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
-                >
-                  <Ticket size={12} /> View Event
-                </button>
-                <button
-                  onClick={() => dismiss('jazz')}
-                  className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground px-3 py-2 rounded-xl border border-border bg-white active:scale-95 transition-transform"
-                >
-                  <BellOff size={12} /> Not for me
-                </button>
-              </div>
-              <span className="text-xs text-amber-600 font-bold mt-2 inline-block">4 hours ago</span>
-            </div>
-          </div>
-        )}
-
-        {/* Vibe-matched event — Rooftop Cinema */}
-        {!dismissed.includes('cinema') && (
-          <div className="bg-sky-50 border-l-4 border-sky-400 border-b border-b-sky-100 px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-sky-100/50 transition-colors">
-            <div className="w-2.5 h-2.5 rounded-full bg-sky-400 absolute right-6 top-7 shadow-sm"></div>
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0 border border-sky-200 text-2xl">
-              🎬
-            </div>
-            <div className="pr-6 flex-1">
-              <p className="font-extrabold text-foreground text-[16px] leading-tight mb-0.5">Matches your Date Night vibe</p>
-              <p className="text-[14px] text-muted-foreground font-medium mb-2 leading-snug">
-                <span className="font-bold text-foreground">Rooftop Cinema: La La Land</span> — Sat, Oct 19 · 9:00 PM · Midtown rooftop venue · {formatPrice(18)}/pp.
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <button
-                  onClick={() => setLocation('/plan/generate')}
-                  className="flex items-center gap-1.5 bg-sky-500 text-white text-[12px] font-bold px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
-                >
-                  <Ticket size={12} /> Add to Plan
-                </button>
-                <button
-                  onClick={() => dismiss('cinema')}
-                  className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground px-3 py-2 rounded-xl border border-border bg-white active:scale-95 transition-transform"
-                >
-                  <BellOff size={12} /> Not for me
-                </button>
-              </div>
-              <span className="text-xs text-sky-600 font-bold mt-2 inline-block">6 hours ago</span>
-            </div>
-          </div>
-        )}
-
-        {/* Partner accepted */}
-        <div className="bg-card border-b border-border px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-background transition-colors">
-          <div className="w-12 h-12 rounded-full bg-[#E8FFF0] flex items-center justify-center text-[#00C851] shrink-0 border border-[#00C851]/20">
-            <Check size={20} strokeWidth={3} />
-          </div>
-          <div className="pr-6">
-            <p className="font-medium text-foreground text-[16px] mb-1.5">
-              <span className="font-extrabold">Sarah</span> accepted the plan
+            <h2 className="text-lg font-bold text-foreground mb-1">You're all caught up!</h2>
+            <p className="text-sm text-muted-foreground max-w-xs mb-6">
+              When an event you follow updates its schedule, venue, or pricing, you'll receive instant updates here.
             </p>
-            <p className="text-[14px] text-muted-foreground font-medium">Saturday Night Out is confirmed.</p>
-            <span className="text-xs text-gray-400 font-bold mt-2 inline-block">5 hours ago</span>
-          </div>
-        </div>
-
-        {/* Budget alert */}
-        <div className="bg-card border-b border-border px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-background transition-colors">
-          <div className="w-12 h-12 rounded-full bg-[#FFF3E8] flex items-center justify-center text-[#FF9500] shrink-0 border border-[#FF9500]/20">
-            <AlertCircle size={22} strokeWidth={2.5} />
-          </div>
-          <div>
-            <p className="font-extrabold text-foreground text-[16px] mb-1.5">Budget Alert</p>
-            <p className="text-[14px] text-muted-foreground font-medium">You've used 80% of your October date budget.</p>
-            <span className="text-xs text-gray-400 font-bold mt-2 inline-block">8 hours ago</span>
-          </div>
-        </div>
-
-        <h2 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider px-6 py-5 mt-2 bg-background border-t border-b border-border">Earlier this week</h2>
-
-        {/* Rate last date */}
-        <div className="bg-card border-b border-border px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-background transition-colors">
-          <div className="w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center text-foreground shrink-0 shadow-sm">
-            <Star size={20} strokeWidth={2.5} />
-          </div>
-          <div>
-            <p className="font-extrabold text-foreground text-[16px] mb-1.5">Rate your last date!</p>
-            <p className="text-[14px] text-muted-foreground font-medium mb-3">How was your time at The Jazz Corner?</p>
-            <button 
-              onClick={(e) => { e.stopPropagation(); setLocation('/review'); }}
-              className="bg-background px-5 py-2.5 rounded-xl text-sm font-bold text-foreground border border-border shadow-sm hover:border-gray-400 transition-colors"
+            <button
+              onClick={() => setLocation('/home')}
+              className="bg-primary text-white font-bold text-sm px-5 py-3 rounded-xl shadow-sm active:scale-95 transition-transform"
             >
-              Leave Review
+              Explore Events
             </button>
-            <span className="text-xs text-gray-400 font-bold mt-3 block">2 days ago</span>
           </div>
-        </div>
-
-        {/* Social */}
-        <div className="bg-card border-b border-border px-6 py-5 flex gap-4 items-start relative cursor-pointer hover:bg-background transition-colors">
-          <div className="w-12 h-12 rounded-full bg-[#E8F4FF] flex items-center justify-center text-[#007AFF] shrink-0 border border-blue-200">
-            <Users size={20} strokeWidth={2.5} />
-          </div>
+        ) : (
           <div>
-            <p className="font-medium text-foreground text-[16px] mb-1.5">
-              <span className="font-extrabold">Mike R.</span> added you to a group
-            </p>
-            <p className="text-[14px] text-muted-foreground font-medium">"Ski Trip Planning" group was created.</p>
-            <span className="text-xs text-gray-400 font-bold mt-2 inline-block">3 days ago</span>
-          </div>
-        </div>
+            <h2 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider px-6 py-4">
+              Recent Updates ({notifications.length})
+            </h2>
 
-        {/* System */}
-        <div className="bg-card border-b border-border px-6 py-5 flex gap-4 items-start relative opacity-70">
-          <div className="w-12 h-12 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground shrink-0">
-            <MapPin size={20} strokeWidth={2.5} />
+            <div className="flex flex-col">
+              {notifications.map(n => {
+                const isUnread = !n.readAt;
+                const isRescheduled = n.type === 'event_rescheduled';
+                const isRelocated = n.type === 'event_relocated';
+                const isPriceDrop = n.type === 'event_price_reduced';
+                const isCancelled = n.type === 'event_cancelled';
+
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      if (isUnread) void markRead(n.id);
+                    }}
+                    className={cn(
+                      "border-b border-border px-6 py-5 flex gap-4 items-start relative transition-colors cursor-pointer",
+                      isUnread ? "bg-[#FFF0F1]/40 hover:bg-[#FFF0F1]/70" : "bg-card hover:bg-background"
+                    )}
+                  >
+                    {isUnread && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary absolute right-6 top-6 shadow-sm" />
+                    )}
+
+                    <div className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0 border",
+                      isRescheduled && "bg-blue-50 text-blue-600 border-blue-200",
+                      isRelocated && "bg-purple-50 text-purple-600 border-purple-200",
+                      isPriceDrop && "bg-green-50 text-[#00C851] border-green-200",
+                      isCancelled && "bg-red-50 text-red-600 border-red-200",
+                      (!isRescheduled && !isRelocated && !isPriceDrop && !isCancelled) && "bg-primary/10 text-primary border-primary/20"
+                    )}>
+                      {isRescheduled && <Calendar size={20} strokeWidth={2.5} />}
+                      {isRelocated && <MapPin size={20} strokeWidth={2.5} />}
+                      {isPriceDrop && <Tag size={20} strokeWidth={2.5} />}
+                      {isCancelled && <AlertCircle size={20} strokeWidth={2.5} />}
+                      {(!isRescheduled && !isRelocated && !isPriceDrop && !isCancelled) && <Ticket size={20} />}
+                    </div>
+
+                    <div className="pr-6 flex-1">
+                      <p className="font-extrabold text-foreground text-[16px] leading-tight mb-1">
+                        {n.title}
+                      </p>
+                      <p className="text-[14px] text-muted-foreground font-medium mb-3 leading-snug">
+                        {n.body}
+                      </p>
+
+                      <div className="flex items-center gap-2 mt-1">
+                        {n.eventId && (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (isUnread) void markRead(n.id);
+                              setLocation(`/event/${n.eventId}`);
+                            }}
+                            className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
+                          >
+                            <Ticket size={12} /> View Event
+                          </button>
+                        )}
+                        {isUnread && (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              void markRead(n.id);
+                            }}
+                            className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground px-3 py-2 rounded-xl border border-border bg-white active:scale-95 transition-transform"
+                          >
+                            <Check size={12} /> Mark read
+                          </button>
+                        )}
+                      </div>
+
+                      <span className="text-xs text-muted-foreground font-medium mt-2.5 inline-block">
+                        {formatRelativeTime(n.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-foreground text-[16px] mb-1.5">New venues near you</p>
-            <p className="text-[14px] text-muted-foreground font-medium">Check out 5 new spots added in Downtown.</p>
-            <span className="text-xs text-gray-400 font-bold mt-2 inline-block">4 days ago</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
