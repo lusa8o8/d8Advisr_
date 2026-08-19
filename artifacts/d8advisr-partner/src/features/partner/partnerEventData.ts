@@ -87,7 +87,23 @@ export async function fetchPartnerEvents(userId: string): Promise<PartnerEvent[]
     .eq('partner_id', userId)
     .order('created_at', { ascending: false });
   throwIfError(error);
-  return (data ?? []).map(row => partnerEventFromRow(row as Record<string, unknown>));
+  const rows = (data ?? []) as Record<string, unknown>[];
+  if (rows.length === 0) return [];
+
+  const eventIds = rows.map(r => String(r.id));
+  const { data: pendingRevs } = await supabase
+    .from('event_revisions')
+    .select('event_id')
+    .in('event_id', eventIds)
+    .eq('status', 'pending');
+  
+  const pendingSet = new Set((pendingRevs ?? []).map(r => r.event_id));
+
+  return rows.map(row => {
+    const ev = partnerEventFromRow(row);
+    ev.hasPendingRevision = pendingSet.has(ev.id);
+    return ev;
+  });
 }
 
 export async function savePartnerEvent(

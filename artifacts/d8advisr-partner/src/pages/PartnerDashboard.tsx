@@ -374,9 +374,16 @@ export function PartnerDashboard() {
                       </p>
                     </div>
                   </div>
-                  <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full shrink-0', EVENT_STATUS_PILL[event.status].color)}>
-                    {EVENT_STATUS_PILL[event.status].label}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {event.hasPendingRevision && (
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        ⏳ In review
+                      </span>
+                    )}
+                    <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full', EVENT_STATUS_PILL[event.status].color)}>
+                      {EVENT_STATUS_PILL[event.status].label}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 mb-3 flex-wrap">

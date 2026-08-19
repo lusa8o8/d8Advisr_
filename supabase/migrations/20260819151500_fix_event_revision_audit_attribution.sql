@@ -1,0 +1,119 @@
+-- Migration to expand listing_admin_audit_log attribution constraint and fix event revision review RPC
+
+alter table public.listing_admin_audit_log
+  drop constraint if exists listing_admin_audit_log_attribution_check;
+
+alter table public.listing_admin_audit_log
+  add constraint listing_admin_audit_log_attribution_check
+  check (attribution in ('unclaimed', 'd8advisr', 'partner', 'community', 'import'));
+
+create or replace function public.admin_review_event_revision(
+  p_revision_id uuid,
+  p_decision text,
+  p_review_note text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $function$
+declare
+  actor uuid := auth.uid();
+  target_revision public.event_revisions;
+  target_event public.events;
+  prop jsonb;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Only admins can review event revisions' using errcode = '42501';
+  end if;
+
+  if p_decision not in ('approved', 'rejected') then
+    raise exception 'Decision must be either approved or rejected' using errcode = '22023';
+  end if;
+
+  select * into target_revision from public.event_revisions where id = p_revision_id for update;
+
+  if target_revision.id is null then
+    raise exception 'Event revision not found' using errcode = 'P0002';
+  end if;
+
+  if target_revision.status <> 'pending' then
+    raise exception 'Only pending event revisions can be reviewed' using errcode = '22023';
+  end if;
+
+  select * into target_event from public.events where id = target_revision.event_id for update;
+
+  if target_event.id is null then
+    raise exception 'Target event not found' using errcode = 'P0002';
+  end if;
+
+  if p_decision = 'approved' then
+    prop := target_revision.proposed_values;
+    
+    update public.events
+    set
+      title = case when prop ? 'title' then prop ->> 'title' else title end,
+      description = case when prop ? 'description' then nullif(btrim(prop ->> 'description'), '') else description end,
+      category = case when prop ? 'category' then nullif(btrim(prop ->> 'category'), '') else category end,
+      starts_at = case when prop ? 'starts_at' then (prop ->> 'starts_at')::timestamptz else starts_at end,
+      ends_at = case when prop ? 'ends_at' then nullif(prop ->> 'ends_at', '')::timestamptz else ends_at end,
+      frequency = case when prop ? 'frequency' then prop ->> 'frequency' else frequency end,
+      weekday = case when prop ? 'weekday' then nullif(btrim(prop ->> 'weekday'), '') else weekday end,
+      event_location_kind = case when prop ? 'event_location_kind' then prop ->> 'event_location_kind' else event_location_kind end,
+      venue_id = case when prop ? 'venue_id' then nullif(prop ->> 'venue_id', '')::uuid else venue_id end,
+      external_location_name = case when prop ? 'external_location_name' then nullif(btrim(prop ->> 'external_location_name'), '') else external_location_name end,
+      external_location_address = case when prop ? 'external_location_address' then nullif(btrim(prop ->> 'external_location_address'), '') else external_location_address end,
+      capacity = case when prop ? 'capacity' then nullif(prop ->> 'capacity', '')::integer else capacity end,
+      spots_total = case when prop ? 'capacity' then nullif(prop ->> 'capacity', '')::integer else spots_total end,
+      emoji = case when prop ? 'emoji' then prop ->> 'emoji' else emoji end,
+      updated_at = now()
+    where id = target_revision.event_id;
+
+    update public.event_revisions
+    set
+      status = 'approved',
+      reviewed_by = actor,
+      reviewed_at = now(),
+      review_note = nullif(btrim(p_review_note), ''),
+      updated_at = now()
+    where id = p_revision_id;
+
+    insert into public.listing_admin_audit_log (
+      event_id, action, attribution, publication_status, actor_id, metadata
+    ) values (
+      target_revision.event_id, 'updated_live', 'partner', 'live', actor,
+      jsonb_build_object(
+        'revision_id', p_revision_id,
+        'decision', 'approved',
+        'proposed_values', target_revision.proposed_values,
+        'note', p_review_note
+      )
+    );
+
+    return jsonb_build_object('status', 'approved', 'revision_id', p_revision_id);
+  else
+    update public.event_revisions
+    set
+      status = 'rejected',
+      reviewed_by = actor,
+      reviewed_at = now(),
+      review_note = nullif(btrim(p_review_note), ''),
+      updated_at = now()
+    where id = p_revision_id;
+
+    insert into public.listing_admin_audit_log (
+      event_id, action, attribution, publication_status, actor_id, metadata
+    ) values (
+      target_revision.event_id, 'updated_live', 'partner', 'live', actor,
+      jsonb_build_object(
+        'revision_id', p_revision_id,
+        'decision', 'rejected',
+        'proposed_values', target_revision.proposed_values,
+        'note', p_review_note
+      )
+    );
+
+    return jsonb_build_object('status', 'rejected', 'revision_id', p_revision_id);
+  end if;
+end;
+$function$;
