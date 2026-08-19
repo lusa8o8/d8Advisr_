@@ -138,9 +138,29 @@ export async function savePartnerEvent(
   };
 
   let eventId = editId;
+  let revisionResult: { status: 'applied' | 'pending'; revision_id?: string; message?: string } | null = null;
+
   if (eventId) {
-    const { error } = await supabase.from('events').update(payload).eq('id', editId);
-    throwIfError(error);
+    // Check if event is currently live
+    const { data: currentEvent, error: fetchError } = await supabase
+      .from('events')
+      .select('event_status, updated_at')
+      .eq('id', editId)
+      .single();
+    throwIfError(fetchError);
+
+    if (currentEvent?.event_status === 'live') {
+      const { data: revData, error: revError } = await supabase.rpc('partner_submit_event_revision', {
+        p_event_id: editId,
+        p_payload: payload,
+        p_expected_updated_at: currentEvent.updated_at,
+      });
+      throwIfError(revError);
+      revisionResult = revData as { status: 'applied' | 'pending'; revision_id?: string; message?: string };
+    } else {
+      const { error } = await supabase.from('events').update(payload).eq('id', editId);
+      throwIfError(error);
+    }
   } else {
     const { data, error } = await supabase.from('events')
       .insert({ ...payload, event_status: 'draft', spots_filled: 0, created_at: now })
@@ -164,6 +184,34 @@ export async function savePartnerEvent(
     });
     throwIfError(error);
   }
+
+  return revisionResult;
+}
+
+export async function fetchPartnerEventPendingRevision(eventId: string): Promise<PartnerEventRevision | null> {
+  const { data, error } = await supabase
+    .from('event_revisions')
+    .select('*')
+    .eq('event_id', eventId)
+    .eq('status', 'pending')
+    .maybeSingle();
+  throwIfError(error);
+  if (!data) return null;
+  return {
+    id: data.id,
+    eventId: data.event_id,
+    status: data.status as PartnerEventRevision['status'],
+    riskLevel: data.risk_level as PartnerEventRevision['riskLevel'],
+    enforcementCode: data.enforcement_code,
+    ruleCode: data.rule_code,
+    previousValues: data.previous_values as Record<string, unknown>,
+    proposedValues: data.proposed_values as Record<string, unknown>,
+    changedFields: data.changed_fields,
+    organizerReason: data.organizer_reason,
+    reviewNote: data.review_note,
+    reviewedAt: data.reviewed_at,
+    createdAt: data.created_at,
+  };
 }
 
 export async function setPartnerEventStatus(id: string, status: 'paused') {

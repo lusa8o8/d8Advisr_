@@ -291,6 +291,79 @@ export function venueLiveRevisionFromRow(row: VenueLiveRevisionRow): VenueLiveRe
   };
 }
 
+export interface AdminEventLiveRevision {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  eventCategory: string;
+  eventCity: string;
+  status: 'applied' | 'pending' | 'approved' | 'rejected' | 'blocked' | 'cancelled';
+  riskLevel: 'low' | 'high';
+  enforcementCode: string | null;
+  ruleCode: string | null;
+  previousValues: Record<string, unknown>;
+  proposedValues: Record<string, unknown>;
+  changedFields: string[];
+  submittedBy: string | null;
+  revisionSource: 'admin' | 'partner';
+  organizerReason: string | null;
+  emergencyReason: string | null;
+  reviewedBy: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventLiveRevisionRow {
+  id: string;
+  event_id: string;
+  status: AdminEventLiveRevision['status'];
+  risk_level: AdminEventLiveRevision['riskLevel'];
+  enforcement_code: string | null;
+  rule_code: string | null;
+  previous_values: Record<string, unknown>;
+  proposed_values: Record<string, unknown>;
+  changed_fields: string[];
+  submitted_by: string | null;
+  revision_source: 'admin' | 'partner';
+  organizer_reason: string | null;
+  emergency_reason: string | null;
+  reviewed_by: string | null;
+  review_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  events?: { title?: string | null; category?: string | null; city?: string | null } | { title?: string | null; category?: string | null; city?: string | null }[] | null;
+}
+
+export function adminEventLiveRevisionFromRow(row: EventLiveRevisionRow): AdminEventLiveRevision {
+  const ev = Array.isArray(row.events) ? row.events[0] : row.events;
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    eventTitle: ev?.title ?? 'Untitled Event',
+    eventCategory: ev?.category ?? 'Event',
+    eventCity: ev?.city ?? 'Lusaka',
+    status: row.status,
+    riskLevel: row.risk_level,
+    enforcementCode: row.enforcement_code,
+    ruleCode: row.rule_code,
+    previousValues: row.previous_values,
+    proposedValues: row.proposed_values,
+    changedFields: row.changed_fields ?? [],
+    submittedBy: row.submitted_by,
+    revisionSource: row.revision_source,
+    organizerReason: row.organizer_reason,
+    emergencyReason: row.emergency_reason,
+    reviewedBy: row.reviewed_by,
+    reviewNote: row.review_note,
+    reviewedAt: row.reviewed_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function partnerTypeLabel(type: PartnerApplicationType) {
   if (type === 'venue') return 'Venue';
   if (type === 'organizer') return 'Organiser';
@@ -516,5 +589,97 @@ export function adminVenueFromRow(row: AdminVenueRow): Venue {
     tier: coerceTier(row),
     health: healthFromVenue(row),
     nextInspectionDue: formatDate(row.next_verification_due_at),
+  };
+}
+
+export interface AdminEventRow {
+  id: string;
+  venue_id: string | null;
+  partner_id: string | null;
+  organizer_organization_id: string | null;
+  source: string | null;
+  title: string;
+  description: string | null;
+  category: string | null;
+  vibes: string[] | null;
+  cover_image: string | null;
+  images: string[] | null;
+  starts_at: string;
+  ends_at: string | null;
+  price_pp: number | null;
+  currency: string | null;
+  capacity: number | null;
+  is_free: boolean | null;
+  is_featured: boolean | null;
+  city: string;
+  event_location_kind: string | null;
+  external_location_name: string | null;
+  external_location_address: string | null;
+  emoji: string | null;
+  event_status: string;
+  created_at: string;
+  updated_at: string;
+  venues?: { name?: string | null } | { name?: string | null }[] | null;
+}
+
+export interface AdminEvent {
+  id: string;
+  venueId: string | null;
+  venueName: string | null;
+  partnerId: string | null;
+  organizerOrganizationId: string | null;
+  source: string | null;
+  title: string;
+  description: string | null;
+  category: string | null;
+  vibes: string[];
+  coverImage: string | null;
+  images: string[];
+  startsAt: string;
+  endsAt: string | null;
+  pricePerPerson: number | null;
+  currency: string;
+  capacity: number | null;
+  isFree: boolean;
+  isFeatured: boolean;
+  city: string;
+  eventLocationKind: 'd8_venue' | 'external' | 'undisclosed';
+  externalLocationName: string | null;
+  externalLocationAddress: string | null;
+  emoji: string;
+  eventStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function adminEventFromRow(row: AdminEventRow): AdminEvent {
+  return {
+    id: row.id,
+    venueId: row.venue_id,
+    venueName: Array.isArray(row.venues) ? row.venues[0]?.name ?? null : row.venues?.name ?? null,
+    partnerId: row.partner_id,
+    organizerOrganizationId: row.organizer_organization_id,
+    source: row.source,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    vibes: row.vibes ?? [],
+    coverImage: row.cover_image,
+    images: row.images ?? [],
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    pricePerPerson: row.price_pp,
+    currency: row.currency ?? 'ZMW',
+    capacity: row.capacity,
+    isFree: row.is_free ?? false,
+    isFeatured: row.is_featured ?? false,
+    city: row.city,
+    eventLocationKind: (row.event_location_kind as 'd8_venue' | 'external' | 'undisclosed') ?? 'undisclosed',
+    externalLocationName: row.external_location_name,
+    externalLocationAddress: row.external_location_address,
+    emoji: row.emoji ?? '✨',
+    eventStatus: row.event_status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }

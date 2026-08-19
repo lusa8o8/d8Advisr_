@@ -78,7 +78,24 @@ export function partnerEventFromRow(row: Record<string, unknown>): PartnerEvent 
     initialPublishedIsFree: row.initial_published_is_free == null ? null : Boolean(row.initial_published_is_free),
     initialPublishedPrice: row.initial_published_price == null ? null : Number(row.initial_published_price),
     initialPublishedCurrency: row.initial_published_currency ? String(row.initial_published_currency) : null,
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
   };
+}
+
+export interface PartnerEventRevision {
+  id: string;
+  eventId: string;
+  status: 'applied' | 'pending' | 'approved' | 'rejected' | 'blocked' | 'cancelled';
+  riskLevel: 'low' | 'high';
+  enforcementCode: string | null;
+  ruleCode: string | null;
+  previousValues: Record<string, unknown>;
+  proposedValues: Record<string, unknown>;
+  changedFields: string[];
+  organizerReason: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
 }
 
 export function demandSignalFromRow(row: DemandSummaryRow): DemandSignal {

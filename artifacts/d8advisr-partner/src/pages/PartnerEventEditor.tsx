@@ -7,6 +7,8 @@ import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 import { useAuth } from '@workspace/d8-core/auth';
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
+import { fetchPartnerEventPendingRevision } from '@/features/partner/partnerEventData';
+import type { PartnerEventRevision } from '@/features/partner/partnerModels';
 import {
   canPublishedPriceChange,
   EVENT_EMOJI_OPTIONS,
@@ -73,11 +75,19 @@ export function PartnerEventEditor() {
   const hydratedDraftRef = useRef<string | null>(null);
 
   const [saved, setSaved] = useState(false);
+  const [savedTitle, setSavedTitle] = useState('Event saved');
+  const [savedSubtitle, setSavedSubtitle] = useState('Redirecting to your dashboard…');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
   const [policyAccepted, setPolicyAccepted] = useState(false);
   const [publicationRequestKey, setPublicationRequestKey] = useState<string | null>(null);
+  const [pendingRevision, setPendingRevision] = useState<PartnerEventRevision | null>(null);
+
+  useEffect(() => {
+    if (!editId) return;
+    void fetchPartnerEventPendingRevision(editId).then(setPendingRevision);
+  }, [editId]);
 
   const [name, setName] = useState(existing?.name ?? '');
   const [category, setCategory] = useState(existing?.category ?? '');
@@ -261,8 +271,7 @@ export function PartnerEventEditor() {
       const imageUrls = await Promise.all(
         images.map(image => image.file ? uploadPartnerImage(image.file, 'events') : image.url)
       );
-
-      await saveEvent({
+      const result = await saveEvent({
         title: name.trim(),
         category,
         description: desc || undefined,
@@ -290,8 +299,15 @@ export function PartnerEventEditor() {
       }, editId);
       clearSessionDraft(draftKey);
       setSaving(false);
+      if (result?.status === 'pending') {
+        setSavedTitle('Changes submitted for review');
+        setSavedSubtitle('Sensitive changes were sent to D8 admins for review before taking public effect.');
+      } else {
+        setSavedTitle('Event saved');
+        setSavedSubtitle('Redirecting to your dashboard…');
+      }
       setSaved(true);
-      setTimeout(() => setLocation('/dashboard'), 1200);
+      setTimeout(() => setLocation('/dashboard'), 1500);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Failed to save event. Please try again.');
       setSaving(false);
@@ -317,9 +333,9 @@ export function PartnerEventEditor() {
       <div className="flex-1 min-h-0 bg-white flex flex-col items-center justify-center px-8 text-center">
         <div className="w-16 h-16 rounded-full bg-[#E8FFF0] flex items-center justify-center text-3xl mb-5">✅</div>
         <p className="font-black text-gray-900 text-[20px]">
-          {saving ? 'Saving…' : 'Event saved'}
+          {saving ? 'Saving…' : savedTitle}
         </p>
-        <p className="text-gray-400 text-[13px] mt-2">Redirecting to your dashboard…</p>
+        <p className="text-gray-400 text-[13px] mt-2">{savedSubtitle}</p>
       </div>
     );
   }
@@ -341,6 +357,20 @@ export function PartnerEventEditor() {
         <h1 className="text-[22px] font-black text-gray-900">{editId ? 'Edit event' : 'New event'}</h1>
         <p className="text-[13px] text-gray-400 mt-1">Saved events go live immediately or sit as a draft. Use square or portrait images so they are ready for future IG/Facebook posting.</p>
       </div>
+
+      {pendingRevision && (
+        <div className="mx-5 mt-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-amber-900 shadow-sm">
+          <div className="flex items-start gap-2.5">
+            <ShieldCheck size={18} className="mt-0.5 text-amber-600 shrink-0" />
+            <div>
+              <h4 className="font-bold text-[13px] text-amber-900">Sensitive revision in review</h4>
+              <p className="text-[12px] text-amber-700 mt-0.5 leading-relaxed">
+                You previously submitted changes ({pendingRevision.changedFields.join(', ')}) that require D8 admin review. The current public event remains live with its previous values until approved.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="px-5 pt-5 flex flex-col gap-4">
 

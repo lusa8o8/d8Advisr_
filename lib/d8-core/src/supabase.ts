@@ -300,6 +300,36 @@ export type Database = {
         };
         Update: Partial<Database['public']['Tables']['partner_notifications']['Row']>;
       };
+      event_revisions: {
+        Row: {
+          id: string;
+          event_id: string;
+          status: 'applied' | 'pending' | 'approved' | 'rejected' | 'blocked' | 'cancelled';
+          risk_level: 'low' | 'high';
+          enforcement_code: 'A' | 'C' | 'R' | 'E' | 'B' | 'N' | null;
+          rule_code: string | null;
+          previous_values: Record<string, unknown>;
+          proposed_values: Record<string, unknown>;
+          changed_fields: string[];
+          submitted_by: string | null;
+          revision_source: 'partner' | 'admin';
+          organizer_reason: string | null;
+          emergency_reason: string | null;
+          policy_id: string;
+          policy_version: string;
+          reviewed_by: string | null;
+          review_note: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['event_revisions']['Row']> & {
+          event_id: string;
+          previous_values: Record<string, unknown>;
+          proposed_values: Record<string, unknown>;
+        };
+        Update: Partial<Database['public']['Tables']['event_revisions']['Row']>;
+      };
       plan_reviews: {
         Row: {
           id: string;

@@ -34,6 +34,8 @@ export interface PartnerEvent {
   initialPublishedIsFree?: boolean | null;
   initialPublishedPrice?: number | null;
   initialPublishedCurrency?: string | null;
+  updatedAt?: string | null;
+  hasPendingRevision?: boolean;
 }
 
 export interface PartnerVenueOption {

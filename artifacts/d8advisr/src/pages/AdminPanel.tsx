@@ -3,10 +3,16 @@ import { useLocation } from 'wouter';
 import {
   ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle, Pencil,
   ClipboardList, Search, Shield, Eye,
-  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, Hourglass, LogOut
+  ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, Hourglass, LogOut, CalendarDays,
+  Send, Calendar, MapPin, Users, DollarSign, Globe, CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
 import { useAuth } from '@/context/AuthContext';
+import {
+  EVENT_PUBLISHING_POLICY_VERSION,
+  EVENT_PUBLISHING_ACKNOWLEDGEMENT,
+  EVENT_PUBLISHING_POLICY_PATH
+} from '@workspace/d8-core/event-policy';
 import {
   type AdminView,
   type Health,
@@ -18,11 +24,13 @@ import {
   type Submission,
   type Tier,
   type Venue,
+  type AdminEvent,
   type VenueChangeLogRow,
   type VenueInspectionRow,
   type VenueLiveRevision,
   type VenueListingReview,
   type VenuePlacementAdminRequest,
+  type AdminEventLiveRevision,
   actorLabel,
   formatDate,
   formatDateTime,
@@ -32,15 +40,19 @@ import {
 } from '@/features/admin/adminListingModel';
 import {
   fetchAdminVenues,
+  fetchAdminEvents,
   fetchLatestVenueInspections,
   fetchPartnerSubmissions,
   fetchReverificationTasks,
   fetchVenueChangeLog,
   fetchVenueListingReviews,
   fetchPendingVenueLiveRevisions,
+  fetchPendingEventLiveRevisions,
+  reviewAdminLiveEventRevision,
   fetchVenuePlacementRequests,
   insertVenueInspection,
   markVenueVerified,
+  publishAdminEvent,
   setPartnerApplicationStatus,
   setReverificationTaskStatus,
   setVenueListingStatus,
@@ -50,6 +62,8 @@ import {
 import { AdminListingCreate } from '@/features/admin/AdminListingCreate';
 import { AdminVenueDraftEdit } from '@/features/admin/AdminVenueDraftEdit';
 import { AdminVenueLiveEdit } from '@/features/admin/AdminVenueLiveEdit';
+import { AdminEventDraftEdit } from '@/features/admin/AdminEventDraftEdit';
+import { AdminEventLiveEdit } from '@/features/admin/AdminEventLiveEdit';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +95,7 @@ const HEALTH_LABEL: Record<Health, string> = {
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
 const NOISE_LEVELS: NoiseLevel[] = ['quiet', 'moderate', 'lively', 'loud'];
-type AdminNavTab = 'venues' | 'tracker' | 'health' | 'submissions' | 'create';
+type AdminNavTab = 'venues' | 'events' | 'tracker' | 'health' | 'submissions' | 'create';
 const PRICE_LEVEL_LABELS: Record<string, string> = {
   '$': '1 - Budget',
   '$$': '2 - Moderate',
@@ -127,6 +141,9 @@ export function AdminPanel() {
   const [venues, setVenues]   = useState<Venue[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(false);
   const [venuesError, setVenuesError] = useState<string | null>(null);
+  const [events, setEvents]   = useState<AdminEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [navTab, setNavTab]   = useState<AdminNavTab>(initialSection.tab);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -142,6 +159,13 @@ export function AdminPanel() {
   const [inspectionsError, setInspectionsError] = useState<string | null>(null);
   const [venueChangeLogs, setVenueChangeLogs] = useState<Record<string, VenueChangeLogRow[]>>({});
   const [liveVenueRevisions, setLiveVenueRevisions] = useState<VenueLiveRevision[]>([]);
+  const [liveEventRevisions, setLiveEventRevisions] = useState<AdminEventLiveRevision[]>([]);
+  const [reviewingEventRevisionId, setReviewingEventRevisionId] = useState<string | null>(null);
+  const [eventRevisionDecision, setEventRevisionDecision] = useState<'approved' | 'rejected'>('approved');
+  const [eventRevisionNote, setEventRevisionNote] = useState('');
+  const [showEventRevisionDialog, setShowEventRevisionDialog] = useState(false);
+  const [eventRevisionLoading, setEventRevisionLoading] = useState(false);
+  const [eventRevisionError, setEventRevisionError] = useState<string | null>(null);
   const [changeLogLoading, setChangeLogLoading] = useState(false);
   const [changeLogError, setChangeLogError] = useState<string | null>(null);
 
@@ -166,8 +190,31 @@ export function AdminPanel() {
     occasionFit: '',
     inspectorNotes: '',
   });
+  const [showEventPublishModal, setShowEventPublishModal] = useState(false);
+  const [eventPolicyAccepted, setEventPolicyAccepted] = useState(false);
+  const [eventPublishingLoading, setEventPublishingLoading] = useState(false);
+  const [eventPublishError, setEventPublishError] = useState<string | null>(null);
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
+  const selectedEvent = events.find(e => e.id === selectedId) ?? null;
+
+  const handlePublishEvent = async () => {
+    if (!selectedEvent || !eventPolicyAccepted || eventPublishingLoading) return;
+    setEventPublishingLoading(true);
+    setEventPublishError(null);
+    try {
+      await publishAdminEvent(selectedEvent.id);
+      await loadAdminEvents();
+      setShowEventPublishModal(false);
+      setEventPolicyAccepted(false);
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setEventPublishError(message);
+      logAdminIssue('Could not publish event', { eventId: selectedEvent.id, error: message });
+    } finally {
+      setEventPublishingLoading(false);
+    }
+  };
 
   const openAdminSection = (tab: AdminNavTab, nextView: AdminView) => {
     setNavTab(tab);
@@ -181,6 +228,18 @@ export function AdminPanel() {
     setNavTab(section.tab);
     setView(section.view);
   }, [location]);
+  const canEditSelectedEventDraft = Boolean(
+    selectedEvent &&
+    selectedEvent.source === 'd8_admin' &&
+    selectedEvent.partnerId === null &&
+    selectedEvent.eventStatus === 'draft'
+  );
+  const canEditSelectedEventLive = Boolean(
+    selectedEvent &&
+    selectedEvent.source === 'd8_admin' &&
+    selectedEvent.partnerId === null &&
+    selectedEvent.eventStatus === 'live'
+  );
   const canEditSelectedDraft = Boolean(
     selectedVenue
     && selectedVenue.source === 'd8_admin'
@@ -217,6 +276,26 @@ export function AdminPanel() {
       logAdminIssue('Could not load admin venues', message);
     }
     setVenuesLoading(false);
+  };
+
+  const loadAdminEvents = async () => {
+    setEventsLoading(true);
+    setEventsError(null);
+    try {
+      const nextEvents = await fetchAdminEvents();
+      setEvents(nextEvents);
+      if (selectedId && !nextEvents.some(event => event.id === selectedId) && navTab === 'events') {
+        setSelectedId(null);
+        setView('list');
+      }
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setEvents([]);
+      setEventsError(message);
+      logAdminIssue('Could not load admin events', message);
+    } finally {
+      setEventsLoading(false);
+    }
   };
 
   const loadSubmissions = async () => {
@@ -304,12 +383,37 @@ export function AdminPanel() {
     catch (error) { logAdminIssue('Could not load live venue revisions', adminErrorMessage(error)); }
   };
 
+  const loadLiveEventRevisions = async () => {
+    try { setLiveEventRevisions(await fetchPendingEventLiveRevisions()); }
+    catch (error) { logAdminIssue('Could not load live event revisions', adminErrorMessage(error)); }
+  };
+
+  const handleReviewEventRevision = async () => {
+    if (!reviewingEventRevisionId || eventRevisionLoading) return;
+    setEventRevisionLoading(true);
+    setEventRevisionError(null);
+    try {
+      await reviewAdminLiveEventRevision(reviewingEventRevisionId, eventRevisionDecision, eventRevisionNote);
+      setLiveEventRevisions(current => current.filter(r => r.id !== reviewingEventRevisionId));
+      await loadAdminEvents();
+      setShowEventRevisionDialog(false);
+      setReviewingEventRevisionId(null);
+      setEventRevisionNote('');
+    } catch (error) {
+      setEventRevisionError(adminErrorMessage(error));
+    } finally {
+      setEventRevisionLoading(false);
+    }
+  };
+
   useEffect(() => {
     void loadAdminVenues();
+    void loadAdminEvents();
     void loadSubmissions();
     void loadReverificationTasks();
     void loadVenueInspections();
     void loadLiveVenueRevisions();
+    void loadLiveEventRevisions();
   }, []);
 
   const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus) => {
@@ -378,6 +482,11 @@ export function AdminPanel() {
     if (filterTier !== 'All' && v.tier !== filterTier) return false;
     if (filterHealth !== 'All' && v.health !== filterHealth) return false;
     if (search && !v.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const filteredEvents = events.filter(e => {
+    if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -538,7 +647,7 @@ export function AdminPanel() {
               <span className="text-[#FF5A5F]">D8</span>Advisr Admin
             </p>
             <p className="text-white/40 text-[11px] font-medium">
-              {view === 'detail' && selectedVenue ? selectedVenue.name : 'Internal — Team Only'}
+              {view === 'detail' && selectedVenue ? selectedVenue.name : (view === 'detail' && selectedEvent) ? selectedEvent.title : 'Internal — Team Only'}
             </p>
           </div>
         </div>
@@ -564,6 +673,11 @@ export function AdminPanel() {
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'venues' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <ClipboardList size={13} /> Venues ({venues.length})
+          </button>
+          <button onClick={() => openAdminSection('events', 'list')}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+              navTab === 'events' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <CalendarDays size={13} /> Events ({events.length})
           </button>
           <button onClick={() => openAdminSection('tracker', 'tracker')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
@@ -656,9 +770,11 @@ export function AdminPanel() {
                 {venues.length === 0 ? 'No venues have been submitted yet.' : 'No venues match your filters.'}
               </div>
             )}
-            {filtered.map(v => (
-              <button key={v.id} onClick={() => openDetail(v.id)}
-                className="w-full bg-white rounded-2xl border border-gray-200 p-4 text-left active:scale-[0.98] transition-transform shadow-sm">
+            {navTab === 'venues' && (
+              <>
+              {filtered.map(v => (
+                <button key={v.id} onClick={() => openDetail(v.id)}
+                  className="w-full bg-white rounded-2xl border border-gray-200 p-4 text-left active:scale-[0.98] transition-transform shadow-sm">
                 <div className="flex items-start justify-between mb-2.5">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="font-bold text-gray-900 text-[15px] leading-tight truncate">{v.name}</p>
@@ -685,6 +801,54 @@ export function AdminPanel() {
                 </div>
               </button>
             ))}
+            </>
+          )}
+
+          {navTab === 'events' && (
+            <>
+            {eventsLoading && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center text-[13px] font-semibold text-gray-500">
+                Loading events...
+              </div>
+            )}
+            {eventsError && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-[13px] text-red-600">
+                <p className="font-bold mb-1">Could not load events</p>
+                <p>{eventsError}</p>
+              </div>
+            )}
+            {!eventsLoading && !eventsError && filteredEvents.length === 0 && (
+              <div className="text-center text-muted-foreground text-[14px] py-12">
+                {events.length === 0 ? 'No events have been submitted yet.' : 'No events match your search.'}
+              </div>
+            )}
+            {filteredEvents.map(e => (
+              <button key={e.id} onClick={() => openDetail(e.id)} className="w-full bg-white rounded-2xl border border-gray-200 p-4 text-left active:scale-[0.98] transition-transform shadow-sm">
+                <div className="flex items-start justify-between mb-2.5">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <p className="font-bold text-gray-900 text-[15px] leading-tight truncate">{e.emoji} {e.title}</p>
+                    <p className="text-[12px] text-gray-500 mt-0.5">{e.category} · {e.city}</p>
+                  </div>
+                  <div className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold ${e.eventStatus === 'draft' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'}`}>
+                    {e.eventStatus}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold text-gray-600">
+                      {e.startsAt ? new Date(e.startsAt).toISOString().slice(0, 10) : 'No date'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <span className="text-[10px] font-medium">{e.pricePerPerson ? `${e.currency} ${e.pricePerPerson}` : 'Free'}</span>
+                    <ChevronRight size={14} className="ml-1" />
+                  </div>
+                </div>
+              </button>
+            ))}
+            </>
+          )}
+
           </div>
         </div>
       )}
@@ -1160,6 +1324,260 @@ export function AdminPanel() {
       )}
 
       {/* ── INSPECTION TRACKER ──────────────────────────────────────────────── */}
+      {/* ── EVENTS DETAIL ── */}
+      {view === 'detail' && selectedEvent && (
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-100 px-5 py-4">
+            <div className="flex items-center justify-between mb-1">
+              <span className={cn(
+                "text-[11px] font-bold px-3 py-1 rounded-full border",
+                selectedEvent.eventStatus === 'live' ? "bg-[#E8FFF0] text-[#00C851] border-[#00C851]/20" :
+                selectedEvent.eventStatus === 'draft' ? "bg-gray-100 text-gray-700 border-gray-200" :
+                "bg-red-50 text-red-600 border-red-200"
+              )}>
+                {selectedEvent.eventStatus.toUpperCase()}
+              </span>
+              <span className="text-[11px] font-semibold text-gray-400">
+                {selectedEvent.eventStatus === 'live' ? 'Visible to public' : 'Internal draft'}
+              </span>
+            </div>
+            <h2 className="font-black text-gray-900 text-[20px] leading-tight mt-2 flex items-center gap-2">
+              <span>{selectedEvent.emoji}</span>
+              <span>{selectedEvent.title}</span>
+            </h2>
+            <p className="text-[13px] text-gray-500 mt-0.5">{selectedEvent.category} · {selectedEvent.city}</p>
+
+            {/* Action Bar */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {canEditSelectedEventDraft && !editingDraft && (
+                <button
+                  onClick={() => setEditingDraft(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#FF5A5F]/20 bg-[#FFF0F1] px-3.5 py-2 text-[12px] font-bold text-[#FF5A5F] active:scale-95 transition-transform"
+                >
+                  <Pencil size={13} /> Edit draft
+                </button>
+              )}
+              {canEditSelectedEventLive && !editingLive && (
+                <button
+                  onClick={() => setEditingLive(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-[12px] font-bold text-blue-600 active:scale-95 transition-transform hover:bg-blue-100"
+                >
+                  <Pencil size={13} /> Edit live event
+                </button>
+              )}
+              {selectedEvent.eventStatus === 'draft' && (
+                <button
+                  onClick={() => {
+                    setEventPolicyAccepted(false);
+                    setEventPublishError(null);
+                    setShowEventPublishModal(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#00C851] px-3.5 py-2 text-[12px] font-bold text-white shadow-sm active:scale-95 transition-transform hover:bg-[#00B248]"
+                >
+                  <Send size={13} /> Publish live
+                </button>
+              )}
+            </div>
+          </div>
+
+          {canEditSelectedEventDraft && editingDraft && (
+            <AdminEventDraftEdit
+              event={selectedEvent}
+              onCancel={() => setEditingDraft(false)}
+              onSaved={async () => {
+                await loadAdminEvents();
+                setEditingDraft(false);
+              }}
+            />
+          )}
+
+          {canEditSelectedEventLive && editingLive && (
+            <AdminEventLiveEdit
+              event={selectedEvent}
+              onCancel={() => setEditingLive(false)}
+              onSaved={async () => {
+                await loadAdminEvents();
+                setEditingLive(false);
+              }}
+            />
+          )}
+
+          {!editingDraft && !editingLive && (
+            <div className="px-4 pt-4 pb-8 space-y-4">
+              {/* Summary Cards Grid */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Entry Model</p>
+                  <p className="text-[15px] font-black text-gray-900">
+                    {selectedEvent.isFree ? 'Free Entry' : `${selectedEvent.currency} ${selectedEvent.pricePerPerson?.toFixed(2) ?? '0.00'}`}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {selectedEvent.isFree ? 'Zero entry fee' : 'Per attendee'}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Attendance</p>
+                  <p className="text-[15px] font-black text-gray-900">
+                    {selectedEvent.capacity ? `${selectedEvent.capacity} spots` : 'Open'}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {selectedEvent.capacity ? 'Limited capacity' : 'No strict limit'}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Featured</p>
+                  <p className="text-[15px] font-black text-gray-900">
+                    {selectedEvent.isFeatured ? 'Featured ⭐' : 'Standard'}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {selectedEvent.isFeatured ? 'Promoted placement' : 'Normal discovery'}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Attribution</p>
+                  <p className="text-[15px] font-black text-gray-900 truncate">
+                    {selectedEvent.source === 'd8_admin' ? 'D8 Team' : selectedEvent.partnerId ? 'Partner' : 'Community'}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
+                    {selectedEvent.source ?? 'Unclaimed'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Schedule Card */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar size={15} className="text-[#FF5A5F]" />
+                  <span className="font-bold text-gray-900 text-[13px]">Event Schedule</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-gray-50 p-3 border border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Starts</p>
+                    <p className="text-[13px] font-bold text-gray-900">
+                      {selectedEvent.startsAt ? formatDateTime(selectedEvent.startsAt) : 'Not scheduled'}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-3 border border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ends</p>
+                    <p className="text-[13px] font-bold text-gray-900">
+                      {selectedEvent.endsAt ? formatDateTime(selectedEvent.endsAt) : 'No end time specified'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Card */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin size={15} className="text-[#FF5A5F]" />
+                  <span className="font-bold text-gray-900 text-[13px]">Location & Venue</span>
+                </div>
+                {selectedEvent.eventLocationKind === 'd8_venue' ? (
+                  <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Linked D8 Venue</p>
+                    <p className="text-[14px] font-bold text-gray-900">{selectedEvent.venueName || selectedEvent.venueId || 'Attached Venue'}</p>
+                    {selectedEvent.venueId && (
+                      <p className="text-[11px] text-gray-400 mt-1 font-mono">ID: {selectedEvent.venueId}</p>
+                    )}
+                  </div>
+                ) : selectedEvent.eventLocationKind === 'external' ? (
+                  <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">External Location</p>
+                    <p className="text-[14px] font-bold text-gray-900">{selectedEvent.externalLocationName || 'Location name not set'}</p>
+                    <p className="text-[12px] text-gray-600 mt-1">{selectedEvent.externalLocationAddress || 'Address not specified'}</p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100 text-[13px] font-medium text-gray-500">
+                    Location is undisclosed to attendees prior to registration.
+                  </div>
+                )}
+              </div>
+
+              {/* Description Card */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Description</p>
+                <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {selectedEvent.description || 'No description provided.'}
+                </p>
+              </div>
+
+              {/* Media Card */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Eye size={15} className="text-[#FF5A5F]" />
+                    <span className="font-bold text-gray-900 text-[13px]">Media Gallery</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-gray-400">
+                    {selectedEvent.images.length} {selectedEvent.images.length === 1 ? 'image' : 'images'}
+                  </span>
+                </div>
+
+                {selectedEvent.coverImage ? (
+                  <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm mb-3">
+                    <img src={selectedEvent.coverImage} alt={`${selectedEvent.title} cover`} className="w-full h-44 object-cover" />
+                    <div className="px-4 py-2 bg-white flex items-center justify-between">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cover photo</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-3 text-[12px] text-amber-700 font-medium">
+                    No cover photo uploaded yet.
+                  </div>
+                )}
+
+                {selectedEvent.images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedEvent.images.map((url, index) => (
+                      <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                        <img src={url} alt={`${selectedEvent.title} photo ${index + 1}`} className="w-full h-full object-cover" />
+                        {url === selectedEvent.coverImage && (
+                          <span className="absolute left-1.5 bottom-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-white">Cover</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Vibes Card */}
+              {selectedEvent.vibes.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">Vibes & Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEvent.vibes.map(tag => (
+                      <span key={tag} className="rounded-full bg-gray-100 px-3 py-1 text-[12px] font-semibold text-gray-700">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata Card */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm text-[12px] text-gray-500 space-y-1.5">
+                <div className="flex justify-between">
+                  <span>Created</span>
+                  <span className="font-semibold text-gray-700">{formatDateTime(selectedEvent.createdAt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Last updated</span>
+                  <span className="font-semibold text-gray-700">{formatDateTime(selectedEvent.updatedAt)}</span>
+                </div>
+                <div className="flex justify-between font-mono text-[11px]">
+                  <span>Event ID</span>
+                  <span>{selectedEvent.id}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {view === 'tracker' && (() => {
         const openTasks = reverificationTasks.filter(task => task.status === 'open');
         const inProgressTasks = reverificationTasks.filter(task => task.status === 'in_progress');
@@ -1547,7 +1965,7 @@ export function AdminPanel() {
       {view === 'submissions' && (() => {
         const pending  = submissions.filter(s => s.status === 'pending' || s.status === 'needs_update');
         const resolved = submissions.filter(s => s.status !== 'pending' && s.status !== 'needs_update');
-        const totalPending = pending.length + venuePlacementRequests.length + venueListingReviews.length;
+        const totalPending = pending.length + venuePlacementRequests.length + venueListingReviews.length + liveEventRevisions.length;
 
         const approve = (id: string) => {
           void updatePartnerApplicationStatus(id, 'live');
@@ -1786,6 +2204,73 @@ export function AdminPanel() {
           );
         };
 
+        const EventRevisionCard = ({ rev }: { rev: AdminEventLiveRevision }) => (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-600">
+                  <ShieldCheck size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 text-[14px] leading-tight">{rev.eventTitle}</p>
+                  <p className="text-[12px] text-gray-400 font-medium mt-0.5">
+                    {rev.eventCategory} · {rev.eventCity}
+                  </p>
+                  <p className="text-[11px] text-amber-600 font-semibold mt-1">
+                    Sensitive revision ({rev.ruleCode ? rev.ruleCode.replace('_', ' ') : 'changes'})
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ml-2 bg-amber-50 text-amber-700 border-amber-200">
+                Pending Review
+              </span>
+            </div>
+
+            <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-100 mb-3 text-[12px] text-amber-900">
+              <p className="font-bold text-[10px] uppercase tracking-wider text-amber-700 mb-1.5">
+                Changed fields ({rev.changedFields.join(', ')})
+              </p>
+              <div className="space-y-1">
+                {Object.entries(rev.proposedValues).map(([key, val]) => (
+                  <div key={key} className="flex items-baseline gap-1.5 text-[11px] flex-wrap">
+                    <span className="font-mono text-gray-500 font-semibold">{key}:</span>
+                    <span className="text-red-500 line-through truncate max-w-[120px]">{String(rev.previousValues[key] ?? 'none')}</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-green-600 font-bold truncate max-w-[140px]">{String(val ?? 'none')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setReviewingEventRevisionId(rev.id);
+                  setEventRevisionDecision('approved');
+                  setEventRevisionNote('');
+                  setEventRevisionError(null);
+                  setShowEventRevisionDialog(true);
+                }}
+                className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle size={14} /> Approve revision
+              </button>
+              <button
+                onClick={() => {
+                  setReviewingEventRevisionId(rev.id);
+                  setEventRevisionDecision('rejected');
+                  setEventRevisionNote('');
+                  setEventRevisionError(null);
+                  setShowEventRevisionDialog(true);
+                }}
+                className="flex-1 bg-gray-100 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              >
+                <XCircle size={14} /> Reject
+              </button>
+            </div>
+          </div>
+        );
+
         return (
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-8">
             {/* Stats row */}
@@ -1826,6 +2311,17 @@ export function AdminPanel() {
               </>
             )}
 
+            {liveEventRevisions.length > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Event sensitive revisions ({liveEventRevisions.length})
+                </p>
+                <div className="flex flex-col gap-3 mb-6">
+                  {liveEventRevisions.map(rev => <EventRevisionCard key={rev.id} rev={rev} />)}
+                </div>
+              </>
+            )}
+
             {venueListingReviews.length > 0 && (
               <>
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -1859,13 +2355,165 @@ export function AdminPanel() {
               </>
             )}
 
-            {submissions.length === 0 && venuePlacementRequests.length === 0 && venueListingReviews.length === 0 && (
+            {submissions.length === 0 && venuePlacementRequests.length === 0 && venueListingReviews.length === 0 && liveEventRevisions.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <p className="text-4xl mb-4">📥</p>
                 <p className="font-bold text-gray-700 text-[16px]">No submissions yet</p>
                 <p className="text-[13px] text-gray-400 mt-1">Venue and event submissions will appear here</p>
               </div>
             )}
+          </div>
+        );
+      })()}
+
+      {/* ── Event Publication Confirmation Modal ── */}
+      {showEventPublishModal && selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#E8FFF0] text-[#00C851]">
+                <Send size={20} />
+              </div>
+              <div>
+                <h2 className="text-[18px] font-black text-gray-900">Publish event listing</h2>
+                <p className="mt-1 text-[12px] text-gray-500">Commercial policy v{EVENT_PUBLISHING_POLICY_VERSION}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2 rounded-2xl bg-gray-50 p-4 text-[12px] text-gray-700">
+              <p><strong>Title:</strong> {selectedEvent.title}</p>
+              <p><strong>Starts:</strong> {formatDateTime(selectedEvent.startsAt)}</p>
+              <p><strong>Region:</strong> {selectedEvent.city}</p>
+              <p><strong>Entry:</strong> {selectedEvent.isFree ? 'Free entry' : `${selectedEvent.currency} ${selectedEvent.pricePerPerson?.toFixed(2) ?? '0.00'}`}</p>
+              <p><strong>Attendance:</strong> {selectedEvent.capacity ? `Up to ${selectedEvent.capacity} spots` : 'Open attendance'}</p>
+            </div>
+
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4 hover:border-gray-300 transition-colors">
+              <input
+                type="checkbox"
+                checked={eventPolicyAccepted}
+                onChange={e => setEventPolicyAccepted(e.target.checked)}
+                className="mt-1 accent-[#00C851]"
+              />
+              <span className="text-[12px] font-medium leading-5 text-gray-700">
+                {EVENT_PUBLISHING_ACKNOWLEDGEMENT}
+              </span>
+            </label>
+
+            <a
+              className="mt-3 inline-block text-[12px] font-bold text-[#FF5A5F] hover:underline"
+              href={EVENT_PUBLISHING_POLICY_PATH}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the Event Publishing Policy
+            </a>
+
+            {eventPublishError && (
+              <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">
+                {eventPublishError}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEventPublishModal(false)}
+                disabled={eventPublishingLoading}
+                className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600 active:scale-95 transition-transform"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!eventPolicyAccepted || eventPublishingLoading}
+                onClick={() => void handlePublishEvent()}
+                className="flex-1 rounded-xl bg-[#00C851] px-4 py-3 text-[13px] font-bold text-white shadow-sm disabled:opacity-40 active:scale-95 transition-transform"
+              >
+                {eventPublishingLoading ? 'Publishing...' : 'Confirm and publish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Event Revision Review Modal ── */}
+      {showEventRevisionDialog && reviewingEventRevisionId && (() => {
+        const rev = liveEventRevisions.find(r => r.id === reviewingEventRevisionId);
+        if (!rev) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                  eventRevisionDecision === 'approved' ? "bg-[#E8FFF0] text-[#00C851]" : "bg-red-50 text-red-500"
+                )}>
+                  {eventRevisionDecision === 'approved' ? <CheckCircle size={20} /> : <XCircle size={20} />}
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-black text-gray-900">
+                    {eventRevisionDecision === 'approved' ? 'Approve event revision' : 'Reject event revision'}
+                  </h2>
+                  <p className="mt-0.5 text-[12px] text-gray-500">{rev.eventTitle}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2 rounded-2xl bg-amber-50/70 p-4 text-[12px] text-amber-900 border border-amber-200/50">
+                <p className="font-bold text-[11px] uppercase tracking-wider text-amber-800 mb-1">
+                  Proposed changes ({rev.changedFields.join(', ')})
+                </p>
+                {Object.entries(rev.proposedValues).map(([key, val]) => (
+                  <div key={key} className="flex items-baseline gap-1.5 text-xs flex-wrap">
+                    <span className="font-mono text-gray-500 font-semibold">{key}:</span>
+                    <span className="text-red-500 line-through truncate max-w-[120px]">{String(rev.previousValues[key] ?? 'none')}</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-green-600 font-bold truncate max-w-[140px]">{String(val ?? 'none')}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                  Review note {eventRevisionDecision === 'rejected' ? '(reason for partner)' : '(optional)'}
+                </label>
+                <textarea
+                  value={eventRevisionNote}
+                  onChange={e => setEventRevisionNote(e.target.value)}
+                  placeholder={eventRevisionDecision === 'approved' ? 'Optional review note...' : 'Explain why this revision cannot be accepted...'}
+                  rows={3}
+                  className="w-full rounded-xl border border-gray-200 p-3 text-[13px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                />
+              </div>
+
+              {eventRevisionError && (
+                <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">
+                  {eventRevisionError}
+                </div>
+              )}
+
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEventRevisionDialog(false)}
+                  disabled={eventRevisionLoading}
+                  className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600 active:scale-95 transition-transform"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={eventRevisionLoading}
+                  onClick={() => void handleReviewEventRevision()}
+                  className={cn(
+                    "flex-1 rounded-xl px-4 py-3 text-[13px] font-bold text-white shadow-sm disabled:opacity-40 active:scale-95 transition-transform",
+                    eventRevisionDecision === 'approved' ? "bg-[#00C851]" : "bg-red-500 hover:bg-red-600"
+                  )}
+                >
+                  {eventRevisionLoading ? 'Processing...' : eventRevisionDecision === 'approved' ? 'Confirm approval' : 'Confirm rejection'}
+                </button>
+              </div>
+            </div>
           </div>
         );
       })()}

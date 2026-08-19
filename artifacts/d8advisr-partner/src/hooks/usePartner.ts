@@ -111,8 +111,9 @@ export function usePartner() {
 
   const saveEvent = useCallback(async (eventData: PartnerEventInput, editId?: string) => {
     const userId = await getAuthenticatedPartnerUserId();
-    await savePartnerEvent(userId, await fetchPartnerApplication(userId), venueOptions, eventData, editId);
+    const result = await savePartnerEvent(userId, await fetchPartnerApplication(userId), venueOptions, eventData, editId);
     await load();
+    return result;
   }, [load, venueOptions]);
 
   const pauseEvent = useCallback(async (id: string) => {

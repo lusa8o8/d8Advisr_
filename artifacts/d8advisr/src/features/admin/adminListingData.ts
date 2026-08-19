@@ -1,6 +1,10 @@
 import { supabase } from '@/lib/supabase';
+import { EVENT_PUBLISHING_POLICY_ID, EVENT_PUBLISHING_POLICY_VERSION } from '@workspace/d8-core/event-policy';
 import {
   type AdminVenueRow,
+  type AdminEventRow,
+  type AdminEvent,
+  adminEventFromRow,
   type PartnerApplicationRow,
   type PartnerApplicationStatus,
   type ReverificationTask,
@@ -17,6 +21,9 @@ import {
   type VenueLiveRevisionRow,
   type VenuePlacementAdminRequest,
   type VenuePlacementAdminRow,
+  type AdminEventLiveRevision,
+  type EventLiveRevisionRow,
+  adminEventLiveRevisionFromRow,
   adminVenueFromRow,
   partnerApplicationToSubmission,
   reverificationTaskFromRow,
@@ -267,3 +274,82 @@ export async function insertVenueInspection(input: {
   });
   throwIfError(error);
 }
+
+export async function fetchAdminEvents(): Promise<AdminEvent[]> {
+  const { data, error } = await supabase
+    .from('events')
+    .select('id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,emoji,event_status,created_at,updated_at,venues(name)')
+    .order('updated_at', { ascending: false });
+  throwIfError(error);
+  return ((data ?? []) as unknown as AdminEventRow[]).map(adminEventFromRow);
+}
+
+export async function updateAdminDraftEvent(
+  eventId: string,
+  payload: Record<string, unknown>,
+  expectedUpdatedAt: string
+): Promise<AdminEvent> {
+  const { data, error } = await supabase.rpc('admin_update_draft_event', {
+    p_event_id: eventId,
+    p_payload: payload,
+    p_expected_updated_at: expectedUpdatedAt,
+  });
+  throwIfError(error);
+  if (!data) throw new Error('Update failed');
+  return adminEventFromRow(data as unknown as AdminEventRow);
+}
+
+export async function publishAdminEvent(eventId: string): Promise<AdminEvent> {
+  const requestKey = crypto.randomUUID();
+  const { data, error } = await supabase.rpc('publish_event_with_policy', {
+    p_event_id: eventId,
+    p_policy_id: EVENT_PUBLISHING_POLICY_ID,
+    p_policy_version: EVENT_PUBLISHING_POLICY_VERSION,
+    p_acknowledged: true,
+    p_request_key: requestKey,
+  });
+  throwIfError(error);
+  if (!data) throw new Error('Publish failed');
+  return adminEventFromRow(data as unknown as AdminEventRow);
+}
+
+export async function updateAdminLiveEvent(
+  eventId: string,
+  payload: Record<string, unknown>,
+  expectedUpdatedAt: string
+): Promise<AdminEvent> {
+  const { data, error } = await supabase.rpc('admin_update_live_event', {
+    p_event_id: eventId,
+    p_payload: payload,
+    p_expected_updated_at: expectedUpdatedAt,
+  });
+  throwIfError(error);
+  if (!data) throw new Error('Update failed');
+  return adminEventFromRow(data as unknown as AdminEventRow);
+}
+
+export async function fetchPendingEventLiveRevisions(): Promise<AdminEventLiveRevision[]> {
+  const { data, error } = await supabase
+    .from('event_revisions')
+    .select('*, events(title, category, city)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  throwIfError(error);
+  return ((data ?? []) as unknown as EventLiveRevisionRow[]).map(adminEventLiveRevisionFromRow);
+}
+
+export async function reviewAdminLiveEventRevision(
+  revisionId: string,
+  decision: 'approved' | 'rejected',
+  reviewNote?: string
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_review_event_revision', {
+    p_revision_id: revisionId,
+    p_decision: decision,
+    p_review_note: reviewNote?.trim() || null,
+  });
+  throwIfError(error);
+}
+
+
+
