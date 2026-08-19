@@ -166,9 +166,28 @@ export async function savePartnerEvent(
     throwIfError(fetchError);
 
     if (currentEvent?.event_status === 'live') {
+      const revisionPayload = {
+        title: eventData.title,
+        category: eventData.category,
+        description: eventData.description ?? null,
+        frequency: eventData.frequency,
+        weekday: eventData.weekday ?? null,
+        starts_at: buildNextStartsAt(eventData),
+        event_location_kind: locationKind,
+        venue_id: selectedVenue?.id ?? null,
+        external_location_name: locationKind === 'external' ? eventData.externalLocationName?.trim() || null : null,
+        external_location_address: locationKind === 'external' ? eventData.externalLocationAddress?.trim() || null : null,
+        is_free: eventData.isFree,
+        price_pp: pricePp,
+        capacity: spotsTotal,
+        emoji: eventData.emoji ?? '📅',
+        cover_image: eventData.coverImage ?? eventData.images?.[0] ?? null,
+        images: eventData.images ?? [],
+        vibes: eventData.vibes,
+      };
       const { data: revData, error: revError } = await supabase.rpc('partner_submit_event_revision', {
         p_event_id: editId,
-        p_payload: payload,
+        p_payload: revisionPayload,
         p_expected_updated_at: currentEvent.updated_at,
       });
       throwIfError(revError);

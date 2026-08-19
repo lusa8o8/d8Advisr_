@@ -6,6 +6,10 @@ const migration = readFileSync(
   resolve(root, 'supabase/migrations/20260819163000_consumer_interests_and_notifications.sql'),
   'utf8'
 );
+const fixMigration = readFileSync(
+  resolve(root, 'supabase/migrations/20260819173000_fix_event_revisions_diff_and_notifications.sql'),
+  'utf8'
+);
 
 const requiredFragments = [
   'create table if not exists public.event_interests',
@@ -24,6 +28,19 @@ const requiredFragments = [
 for (const fragment of requiredFragments) {
   if (!migration.includes(fragment)) {
     throw new Error(`Missing required migration fragment: "${fragment}"`);
+  }
+}
+
+const requiredFixFragments = [
+  'Event renamed:',
+  'price_pp = case when prop ?',
+  'is_free = case when prop ?',
+  'jsonb_object_keys(previous_snapshot)',
+];
+
+for (const fragment of requiredFixFragments) {
+  if (!fixMigration.includes(fragment)) {
+    throw new Error(`Missing required fix migration fragment: "${fragment}"`);
   }
 }
 
