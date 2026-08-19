@@ -1,6 +1,7 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document - Phase 4.5 complete; Phase 4.6A automated staging verification complete and browser acceptance pending
+Status: active planning document - Phase 4.5 complete; Phase 4.6A automated
+staging verification and browser groups 1-3 complete; focused admin retest pending
 
 Created: 2026-08-11
 
@@ -384,6 +385,20 @@ country/region admin-assignment foundation additively during the first database
 slice, but defer regional enforcement and the read-only Events directory until
 operational staffing requires them.
 
+Delivery state on 19 August 2026:
+
+| Slice | Scope | Status |
+| --- | --- | --- |
+| 4.6A | Commercial baseline, decimal prices, policy acknowledgement, public policy routes, admin-scope foundation | Implemented and staging-automated; browser groups 1-3 passed; focused admin retest pending after `e2de756` |
+| 4.6B | Event revision table, deterministic classifier, partner submission, sensitive admin review, history and optimistic concurrency | Next implementation slice; fresh discovery required |
+| 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
+| 4.6D | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
+| 4.6E | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
+
+Phase 4.6B must not add admin approval to ordinary first publication. Approved
+partners continue to publish directly. Permanently blocked commercial changes
+never enter an approval queue; only reviewable sensitive revisions do.
+
 ### Phase 5 — Claim submission and approval
 
 Outcome: a real user claims an existing listing and receives approved access.
@@ -536,9 +551,9 @@ Primary references:
 
 ## Immediate Next Step
 
-Run the Phase 4.6A local browser checklist against staging. Decimal event
-prices, immutable first-publication history, versioned acknowledgements,
-database commercial protections, shared policy routes, and the additive admin
-assignment foundation have passed automated staging verification. After the
-browser gate, begin Phase 4.6B event revision discovery. Production promotion
-of accumulated migrations remains a separate explicit decision.
+Run the focused Phase 4.6A admin browser retest recorded in
+`docs/testing/phase-4-6a-local-browser-checklist.md`. All automated staging
+checks and browser groups 1-3 pass. Once the admin draft/publish and migration
+exception observations are recorded, close 4.6A and begin fresh Phase 4.6B
+event revision discovery. Production promotion of accumulated migrations
+remains a separate explicit decision.

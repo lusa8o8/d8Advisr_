@@ -1,7 +1,8 @@
 # Phase 4.6A Event Commercial Foundation
 
 Status: database, shared policy UI, client integration, and automated staging
-verification complete; local browser acceptance pending
+verification complete; browser groups 1-3 passed on 19 August 2026; admin
+browser acceptance requires one focused retest after commit `e2de756`
 
 Date: 18 August 2026
 

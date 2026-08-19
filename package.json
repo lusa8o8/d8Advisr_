@@ -30,6 +30,9 @@
     "test:phase46a:static": "node scripts/check-phase46a-migrations.mjs",
     "test:phase46a:clients": "node scripts/check-phase46a-clients.mjs",
     "test:staging:phase46a": "node scripts/staging-phase46a-commercial-smoke.mjs",
+    "check:phase46a": "pnpm run test:phase46a:static && pnpm run test:phase46a:clients && pnpm run test:session-lifecycle:static && pnpm run typecheck",
+    "check:phase46a:staging": "pnpm run test:staging:phase46a",
+    "check:phase46a:release": "pnpm run check:phase46a && pnpm run build:staging",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",
     "test:staging:phase45:media": "node scripts/staging-phase45-media-smoke.mjs",
     "test:staging:phase45:partner-revision": "node scripts/staging-phase45-partner-revision-smoke.mjs",
@@ -37,7 +40,7 @@
     "staging:identities:create": "node scripts/staging-create-identities.mjs --confirm-staging",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm --workspace-concurrency=1 -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
   "devDependencies": {
