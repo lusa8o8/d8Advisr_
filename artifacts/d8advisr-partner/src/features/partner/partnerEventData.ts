@@ -1,7 +1,7 @@
 import { EVENT_CLIENT_SELECT, supabase } from '@workspace/d8-core/supabase';
 import { canManageEvents, type PartnerType } from '@workspace/d8-core/partner-capabilities';
 import type { PartnerEvent, PartnerVenueOption } from '@workspace/d8-core/types';
-import type { PartnerApplicationRow } from './partnerModels';
+import type { PartnerApplicationRow, PartnerEventRevision } from './partnerModels';
 import { partnerEventFromRow } from './partnerModels';
 import {
   EVENT_PUBLISHING_POLICY_ID,

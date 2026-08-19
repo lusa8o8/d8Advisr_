@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   ArrowLeft, ChevronRight, CheckCircle, AlertCircle, XCircle, Pencil,
-  ClipboardList, Search, Shield, Eye,
+  ClipboardList, Search, Shield, ShieldCheck, Eye,
   ChevronDown, Clock, RotateCcw, Plus, Lock, Activity, Hourglass, LogOut, CalendarDays,
   Send, Calendar, MapPin, Users, DollarSign, Globe, CheckCircle2
 } from 'lucide-react';
