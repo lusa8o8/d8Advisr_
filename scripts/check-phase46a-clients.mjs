@@ -24,7 +24,7 @@ const adminCreate = read('artifacts/d8advisr/src/features/admin/AdminListingCrea
 const migration = read('supabase/migrations/20260818100000_event_commercial_foundation.sql');
 const hash = createHash('sha256').update(policyDoc).digest('hex');
 
-requireText(policy, [hash, "EVENT_PUBLISHING_POLICY_ID = 'partner-event-publishing-v1.0'", "EVENT_PUBLISHING_POLICY_VERSION = '1.0'", 'parseEventPriceInput', 'canPublishedPriceChange'], 'shared event policy');
+requireText(policy, [hash, "EVENT_PUBLISHING_POLICY_ID = 'partner-event-publishing-v1.0'", "EVENT_PUBLISHING_POLICY_VERSION = '1.0'", 'parseEventPriceInput', 'parseEventCapacityInput', 'EVENT_EMOJI_OPTIONS', 'canPublishedPriceChange'], 'shared event policy');
 requireText(migration, [hash], 'database policy hash');
 requireText(legal, ['PartnerPoliciesPage', 'EventPublishingPolicyPage', 'EVENT_PUBLISHING_ACKNOWLEDGEMENT'], 'public policy pages');
 for (const routes of [partnerRoutes, consumerRoutes]) requireText(routes, ['/partner-policies', '/partner-policies/event-publishing'], 'public policy routes');
@@ -42,7 +42,7 @@ forbidText(partnerData, [
 ], 'direct partner publication');
 requireText(partnerEditor, ['Confirm event publication', 'EVENT_PUBLISHING_ACKNOWLEDGEMENT', 'canPublishedPriceChange', 'Review and publish'], 'partner publication confirmation');
 requireText(dashboard, ['Review &amp; publish', 'Review &amp; resume'], 'dashboard publication routing');
-requireText(adminData, ['policy_id: EVENT_PUBLISHING_POLICY_ID', 'policy_acknowledged: Boolean(input.policyAcknowledged)'], 'admin publication payload');
-requireText(adminCreate, ['parseEventPriceInput(event.price, event.isFree)', 'Confirm event publication', 'EVENT_PUBLISHING_ACKNOWLEDGEMENT'], 'admin publication confirmation');
+requireText(adminData, ['policy_id: EVENT_PUBLISHING_POLICY_ID', 'policy_acknowledged: Boolean(input.policyAcknowledged)', 'throw new Error(error.message)'], 'admin publication payload');
+requireText(adminCreate, ['parseEventPriceInput(event.price, event.isFree)', 'parseEventCapacityInput(event.capacity)', 'EVENT_EMOJI_OPTIONS', 'selectedRegion?.currency_code ?? event.currency', 'Confirm event publication', 'EVENT_PUBLISHING_ACKNOWLEDGEMENT'], 'admin publication confirmation');
 
 console.log('Phase 4.6A client and policy contract checks passed.');

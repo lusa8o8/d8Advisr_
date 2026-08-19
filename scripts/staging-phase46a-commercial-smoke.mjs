@@ -138,4 +138,21 @@ const adminEvent = await one(`/rest/v1/events?select=event_status,price_pp,first
 assert(adminEvent.event_status === 'live' && Number(adminEvent.price_pp) === 25.5 && adminEvent.first_published_at, 'Admin event did not use decimal publication contract');
 console.log('PASS admin publication uses the shared acknowledged contract');
 
+const adminDraftPayload = {
+  request_key: '46a00000-0000-4000-8000-000000000008', title: 'Phase 4.6A admin draft browser fixture',
+  city: 'Lusaka', category: 'Community Event', description: 'Matches the admin browser payload shape.',
+  starts_at: '2030-08-26T10:17:00.000Z', ends_at: null, attribution: 'd8advisr',
+  publication_status: 'draft', event_location_kind: 'undisclosed', venue_id: null,
+  external_location_name: null, external_location_address: null, price_pp: 0, currency: 'K',
+  capacity: 0, is_free: true, is_featured: false, cover_image: null, images: [], vibes: [], emoji: '📅',
+  frequency: 'one-off', policy_id: 'partner-event-publishing-v1.0', policy_version: '1.0',
+  policy_acknowledged: false,
+};
+const adminDraftCreated = await request('/rest/v1/rpc/admin_create_event', admin.token, 'POST', { p_payload: adminDraftPayload });
+assert(adminDraftCreated.response.ok && typeof adminDraftCreated.data === 'string', `Admin draft creation failed: HTTP ${adminDraftCreated.response.status} ${JSON.stringify(adminDraftCreated.data)}`);
+const adminDraft = await one(`/rest/v1/events?select=event_status,is_free,price_pp,spots_total,currency,first_published_at&id=eq.${adminDraftCreated.data}`, admin.token, 'Admin draft event');
+assert(adminDraft.event_status === 'draft' && adminDraft.is_free && Number(adminDraft.price_pp) === 0, 'Admin free draft did not preserve draft/free state');
+assert(Number(adminDraft.spots_total) === 0 && adminDraft.currency === 'ZMW' && adminDraft.first_published_at === null, 'Admin open-attendance draft did not apply canonical region or publication state');
+console.log('PASS admin free/open-attendance draft matches the browser payload contract');
+
 console.log('Phase 4.6A staging commercial checks completed successfully.');

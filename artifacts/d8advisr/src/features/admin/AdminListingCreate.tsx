@@ -6,9 +6,11 @@ import { AdminListingMediaEditor } from './AdminListingMediaEditor';
 import { useAuth } from '@/context/AuthContext';
 import { useSessionDraft } from '@workspace/d8-core/use-session-draft';
 import {
+  EVENT_EMOJI_OPTIONS,
   EVENT_PUBLISHING_ACKNOWLEDGEMENT,
   EVENT_PUBLISHING_POLICY_PATH,
   EVENT_PUBLISHING_POLICY_VERSION,
+  parseEventCapacityInput,
   parseEventPriceInput,
 } from '@workspace/d8-core/event-policy';
 import {
@@ -114,6 +116,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         if (event.locationKind === 'd8_venue' && !event.venueId) throw new Error('Choose a live D8 venue.');
         if (event.locationKind === 'external' && !event.externalLocationName.trim()) throw new Error('Enter the external location name.');
         const eventPrice = parseEventPriceInput(event.price, event.isFree);
+        const eventCapacity = parseEventCapacityInput(event.capacity);
         id = await createAdminEvent({
           requestKey,
           title: event.title, city: event.city, category: event.category,
@@ -123,7 +126,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           venueId: event.venueId, externalLocationName: event.externalLocationName,
           externalLocationAddress: event.externalLocationAddress,
           pricePerPerson: eventPrice,
-          currency: event.currency, capacity: event.capacity ? Number(event.capacity) : undefined,
+          currency: selectedRegion?.currency_code ?? event.currency, capacity: eventCapacity,
           isFree: event.isFree, isFeatured: event.isFeatured, coverImage: event.coverImage, images: event.images,
           vibes: tags(event.vibes), emoji: event.emoji,
           policyAcknowledged,
@@ -154,6 +157,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
     if (kind === 'event' && publicationStatus === 'live') {
       try {
         parseEventPriceInput(event.price, event.isFree);
+        parseEventCapacityInput(event.capacity);
         setError(null);
         setEventPolicyAccepted(false);
         setShowEventPublishConfirmation(true);
@@ -190,9 +194,9 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center gap-2"><ShieldCheck size={16} className="text-[#FF5A5F]" /><h2 className="text-[13px] font-black">Ownership and publication</h2></div>
+          <div className="mb-3 flex items-center gap-2"><ShieldCheck size={16} className="text-[#FF5A5F]" /><h2 className="text-[13px] font-black">{kind === 'venue' ? 'Ownership and publication' : 'Organizer and publication'}</h2></div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Attribution"><select className={inputClass} value={attribution} onChange={e => setAttribution(e.target.value as AdminListingAttribution)}><option value="unclaimed">Unclaimed listing</option><option value="d8advisr">Operated by D8Advisr</option></select></Field>
+            <Field label={kind === 'venue' ? 'Attribution' : 'Organizer attribution'}><select className={inputClass} value={attribution} onChange={e => setAttribution(e.target.value as AdminListingAttribution)}><option value="unclaimed">{kind === 'venue' ? 'Unclaimed listing' : 'Unclaimed organizer'}</option><option value="d8advisr">{kind === 'venue' ? 'Operated by D8Advisr' : 'Organized by D8Advisr'}</option></select></Field>
             {kind === 'venue' ? (
               <Field label="Publication"><div className={`${inputClass} bg-gray-50 text-gray-600`}>Draft - approval required</div></Field>
             ) : (
@@ -231,7 +235,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
                 <Field label="Event title"><input required className={inputClass} value={event.title} onChange={e => setEvent(v => ({ ...v, title: e.target.value }))} /></Field>
                 <Field label="Region"><select required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
                 <Field label="Category"><select required className={inputClass} value={event.category} onChange={e => setEvent(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
-                <Field label="Emoji"><input className={inputClass} value={event.emoji} onChange={e => setEvent(v => ({ ...v, emoji: e.target.value }))} /></Field>
+                <Field label="Event icon"><div className="flex flex-wrap gap-2">{EVENT_EMOJI_OPTIONS.map(icon => <button key={icon} type="button" aria-label={`Use ${icon} as the event icon`} onClick={() => setEvent(value => ({ ...value, emoji: icon }))} className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition ${event.emoji === icon ? 'bg-[#FFF0F1] ring-2 ring-[#FF5A5F]' : 'bg-gray-50 hover:bg-gray-100'}`}>{icon}</button>)}</div></Field>
                 <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value }))} /></Field>
                 <Field label="Ends"><input type="datetime-local" className={inputClass} value={event.endsAt} onChange={e => setEvent(v => ({ ...v, endsAt: e.target.value }))} /></Field>
               </div>
@@ -242,7 +246,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Entry price / person"><input min="0.01" step="0.01" inputMode="decimal" disabled={event.isFree} type="number" className={inputClass} value={event.price} onChange={e => setEvent(v => ({ ...v, price: e.target.value }))} /></Field>
                 <Field label="Currency"><div className={`${inputClass} bg-gray-50 text-gray-600`}>{selectedRegion?.currency_code ?? 'Choose region'}</div></Field>
-                <Field label="Maximum attendance"><input min="0" step="1" type="number" className={inputClass} value={event.capacity} onChange={e => setEvent(v => ({ ...v, capacity: e.target.value }))} /></Field>
+                <Field label="Attendance limit (optional)"><><input min="1" step="1" inputMode="numeric" type="number" placeholder="Leave blank for open attendance" className={inputClass} value={event.capacity} onChange={e => setEvent(v => ({ ...v, capacity: e.target.value }))} /><span className="mt-1 block text-[10px] text-gray-400">Blank means open attendance; zero is not a capacity.</span></></Field>
               </div>
               <div className="flex gap-5 text-[12px] font-semibold"><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFree} onChange={e => setEvent(v => ({ ...v, isFree: e.target.checked, price: e.target.checked ? '' : v.price }))} />Free entry</label><label className="flex items-center gap-2"><input type="checkbox" checked={event.isFeatured} onChange={e => setEvent(v => ({ ...v, isFeatured: e.target.checked }))} />Featured</label></div>
               <Field label="Event images"><AdminListingMediaEditor scope="events" images={event.images} onChange={images => setEvent(v => ({ ...v, images, coverImage: images[0] ?? '' }))} /></Field>

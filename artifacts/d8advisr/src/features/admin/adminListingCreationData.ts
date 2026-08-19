@@ -49,7 +49,7 @@ export interface AdminEventCreationInput {
 }
 
 function throwIfError(error: { message: string } | null) {
-  if (error) throw error;
+  if (error) throw new Error(error.message);
 }
 
 export async function createAdminVenue(input: AdminVenueCreationInput): Promise<string> {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +14,7 @@ export function SignIn() {
   const [, setLocation] = useLocation();
   const { clearPasswordRecovery, signIn, signInWithGoogle } = useAuth();
   const nextPath = getSafeNextPath();
+  const isAdminSignIn = nextPath === '/admin' || nextPath?.startsWith('/admin?') === true;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +31,8 @@ export function SignIn() {
     }
   }, [clearPasswordRecovery]);
 
-  const handleSignIn = async () => {
+  const handleSignIn = async (formEvent?: FormEvent) => {
+    formEvent?.preventDefault();
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) { setError('Please enter your email and password.'); return; }
     setLoading(true);
@@ -40,7 +42,9 @@ export function SignIn() {
     setLoading(false);
     if (error) {
       if (error.message === 'Invalid login credentials') {
-        setError('We could not sign you in with those details. Check your password, continue with Google, or reset your password.');
+        setError(isAdminSignIn
+          ? 'We could not sign you in with those admin credentials. Check your password or reset it.'
+          : 'We could not sign you in with those details. Check your password, continue with Google, or reset your password.');
         setShowCreateAccountPrompt(true);
       } else {
         setError(error.message);
@@ -60,7 +64,7 @@ export function SignIn() {
 
   return (
     <AuthLayout>
-      <div className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border mt-4">
+      <form onSubmit={handleSignIn} className="w-full bg-card rounded-3xl p-8 shadow-sm border border-border mt-4">
         <h1 className="text-2xl font-bold text-foreground mb-2 text-center">Welcome back</h1>
         <p className="text-sm text-muted-foreground text-center mb-8">Sign in to your account</p>
 
@@ -69,21 +73,23 @@ export function SignIn() {
             <p>{error}</p>
             {showCreateAccountPrompt && (
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleGoogle}
-                  disabled={googleLoading}
-                  className="text-sm font-semibold underline underline-offset-4 disabled:opacity-60"
-                >
-                  Continue with Google
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLocation(authPathWithNext('/signup', nextPath))}
-                  className="text-sm font-semibold underline underline-offset-4"
-                >
-                  Create an account
-                </button>
+                {!isAdminSignIn && <>
+                  <button
+                    type="button"
+                    onClick={handleGoogle}
+                    disabled={googleLoading}
+                    className="text-sm font-semibold underline underline-offset-4 disabled:opacity-60"
+                  >
+                    Continue with Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocation(authPathWithNext('/signup', nextPath))}
+                    className="text-sm font-semibold underline underline-offset-4"
+                  >
+                    Create an account
+                  </button>
+                </>}
                 <button
                   type="button"
                   onClick={() => setLocation('/password/reset')}
@@ -101,9 +107,9 @@ export function SignIn() {
             <label className="text-sm font-medium text-muted-foreground">Email Address</label>
             <input
               type="email"
+              autoComplete="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSignIn()}
               placeholder="name@example.com"
               className="w-full px-4 py-3.5 rounded-xl border border-border bg-background focus:bg-card focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground placeholder:text-gray-400"
             />
@@ -114,9 +120,9 @@ export function SignIn() {
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSignIn()}
                 placeholder="Your password"
                 className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-border bg-background focus:bg-card focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground placeholder:text-gray-400"
               />
@@ -139,7 +145,7 @@ export function SignIn() {
         </div>
 
         <button
-          onClick={handleSignIn}
+          type="submit"
           disabled={loading}
           className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all mb-6 hover:bg-primary/90 disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
         >
@@ -147,13 +153,14 @@ export function SignIn() {
           {loading ? 'Signing in…' : 'Sign In'}
         </button>
 
-        <div className="flex items-center gap-4 mb-6">
+        {!isAdminSignIn && <><div className="flex items-center gap-4 mb-6">
           <div className="h-[1px] flex-1 bg-border" />
           <span className="text-sm text-gray-400 font-medium">OR</span>
           <div className="h-[1px] flex-1 bg-border" />
         </div>
 
         <button
+          type="button"
           onClick={handleGoogle}
           disabled={googleLoading}
           className="w-full bg-card text-foreground border-2 border-border py-3.5 rounded-xl font-semibold text-[16px] flex items-center justify-center gap-3 active:scale-[0.98] transition-all hover:bg-gray-50 disabled:opacity-60"
@@ -170,17 +177,17 @@ export function SignIn() {
             )
           }
           {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-        </button>
-      </div>
+        </button></>}
+      </form>
 
-      <div className="mt-8 pb-5">
+      {!isAdminSignIn && <div className="mt-8 pb-5">
         <p className="text-muted-foreground font-medium text-[15px]">
           Don't have an account?{' '}
           <button onClick={() => setLocation(authPathWithNext('/signup', nextPath))} className="text-primary font-semibold hover:underline">
             Sign Up
           </button>
         </p>
-      </div>
+      </div>}
       <LegalLinks className="pb-4" />
     </AuthLayout>
   );

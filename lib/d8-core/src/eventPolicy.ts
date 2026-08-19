@@ -7,6 +7,8 @@ export const EVENT_PUBLISHING_POLICY_PATH = '/partner-policies/event-publishing'
 export const EVENT_PUBLISHING_ACKNOWLEDGEMENT =
   "I confirm that the event's commercial details are correct. I understand that a free event cannot later become paid and that a published mandatory price cannot be increased.";
 
+export const EVENT_EMOJI_OPTIONS = ['📅', '🎷', '🍳', '🎤', '🏃', '🎵', '🍷', '🎭', '🏋️', '🎨', '🎪', '🌟'] as const;
+
 const DECIMAL_PRICE = /^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/;
 
 export function parseEventPriceInput(value: string, isFree: boolean): number {
@@ -21,6 +23,19 @@ export function parseEventPriceInput(value: string, isFree: boolean): number {
   }
   if (parsed > 9_999_999_999.99) {
     throw new Error('Entry price is above the supported maximum.');
+  }
+  return parsed;
+}
+
+export function parseEventCapacityInput(value: string): number | undefined {
+  const normalized = value.trim();
+  if (!normalized) return undefined;
+  if (!/^\d+$/.test(normalized) || Number(normalized) <= 0) {
+    throw new Error('Leave attendance blank for open attendance, or enter a whole number greater than zero.');
+  }
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new Error('Attendance is above the supported maximum.');
   }
   return parsed;
 }

@@ -9,6 +9,7 @@ import { useAuth } from '@workspace/d8-core/auth';
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
 import {
   canPublishedPriceChange,
+  EVENT_EMOJI_OPTIONS,
   EVENT_PUBLISHING_ACKNOWLEDGEMENT,
   EVENT_PUBLISHING_POLICY_PATH,
   EVENT_PUBLISHING_POLICY_VERSION,
@@ -40,8 +41,6 @@ const CATEGORIES = [
 ];
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-const EMOJI_OPTIONS = ['📅', '🎷', '🍳', '🎤', '🏃', '🎵', '🍷', '🎭', '🏋️', '🎨', '🎪', '🌟'];
 
 const INPUT = 'w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-[14px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all';
 const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5';
@@ -359,7 +358,7 @@ export function PartnerEventEditor() {
           <div>
             <label className={LABEL}>Event icon</label>
             <div className="flex flex-wrap gap-2">
-              {EMOJI_OPTIONS.map(e => (
+              {EVENT_EMOJI_OPTIONS.map(e => (
                 <button
                   key={e}
                   onClick={() => setEmoji(e)}

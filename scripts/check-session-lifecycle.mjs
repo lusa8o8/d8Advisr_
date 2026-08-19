@@ -16,6 +16,8 @@ requireText('artifacts/d8advisr/src/App.tsx', 'user?.id', 'consumer guard identi
 requireText('artifacts/d8advisr-partner/src/App.tsx', 'user?.id', 'partner guard identity dependency');
 requireText('artifacts/d8advisr/src/pages/AdminPanel.tsx', "searchParams.get('section')", 'URL-addressable admin section');
 requireText('artifacts/d8advisr/src/features/admin/AdminListingCreate.tsx', 'useSessionDraft', 'admin create recovery');
+requireText('artifacts/d8advisr/src/pages/SignIn.tsx', "isAdminSignIn = nextPath === '/admin'", 'admin email/password-only sign-in');
+requireText('artifacts/d8advisr/src/pages/SignIn.tsx', '<form onSubmit={handleSignIn}', 'semantic sign-in form');
 requireText('artifacts/d8advisr/src/pages/InitialPreferences.tsx', 'useSessionDraft', 'consumer onboarding recovery');
 requireText('artifacts/d8advisr-partner/src/pages/PartnerVenueEditor.tsx', 'readSessionDraft', 'partner venue recovery');
 requireText('artifacts/d8advisr-partner/src/pages/PartnerEventEditor.tsx', 'readSessionDraft', 'partner event recovery');
