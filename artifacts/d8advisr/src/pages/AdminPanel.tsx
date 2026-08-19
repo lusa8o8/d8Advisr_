@@ -698,9 +698,9 @@ export function AdminPanel() {
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
               navTab === 'submissions' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Plus size={13} /> Submissions
-            {(submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length) > 0 && (
+            {(submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length + liveEventRevisions.length) > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-black flex items-center justify-center">
-                {submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length}
+                {submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length + liveEventRevisions.length}
               </span>
             )}
           </button>

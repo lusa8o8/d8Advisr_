@@ -7,7 +7,7 @@ import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 import { useAuth } from '@workspace/d8-core/auth';
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
-import { fetchPartnerEventPendingRevision } from '@/features/partner/partnerEventData';
+import { fetchPartnerEventLatestRevision, fetchPartnerEventPendingRevision } from '@/features/partner/partnerEventData';
 import type { PartnerEventRevision } from '@/features/partner/partnerModels';
 import {
   canPublishedPriceChange,
@@ -82,11 +82,11 @@ export function PartnerEventEditor() {
   const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
   const [policyAccepted, setPolicyAccepted] = useState(false);
   const [publicationRequestKey, setPublicationRequestKey] = useState<string | null>(null);
-  const [pendingRevision, setPendingRevision] = useState<PartnerEventRevision | null>(null);
+  const [latestRevision, setLatestRevision] = useState<PartnerEventRevision | null>(null);
 
   useEffect(() => {
     if (!editId) return;
-    void fetchPartnerEventPendingRevision(editId).then(setPendingRevision);
+    void fetchPartnerEventLatestRevision(editId).then(setLatestRevision);
   }, [editId]);
 
   const [name, setName] = useState(existing?.name ?? '');
@@ -358,14 +358,33 @@ export function PartnerEventEditor() {
         <p className="text-[13px] text-gray-400 mt-1">Saved events go live immediately or sit as a draft. Use square or portrait images so they are ready for future IG/Facebook posting.</p>
       </div>
 
-      {pendingRevision && (
+      {latestRevision?.status === 'pending' && (
         <div className="mx-5 mt-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-amber-900 shadow-sm">
           <div className="flex items-start gap-2.5">
             <ShieldCheck size={18} className="mt-0.5 text-amber-600 shrink-0" />
             <div>
               <h4 className="font-bold text-[13px] text-amber-900">Sensitive revision in review</h4>
               <p className="text-[12px] text-amber-700 mt-0.5 leading-relaxed">
-                You previously submitted changes ({pendingRevision.changedFields.join(', ')}) that require D8 admin review. The current public event remains live with its previous values until approved.
+                You previously submitted changes ({latestRevision.changedFields.join(', ')}) that require D8 admin review. The current public event remains live with its previous values until approved.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {latestRevision?.status === 'rejected' && (
+        <div className="mx-5 mt-4 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-900 shadow-sm">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle size={18} className="mt-0.5 text-red-600 shrink-0" />
+            <div>
+              <h4 className="font-bold text-[13px] text-red-900">Previous revision was not accepted</h4>
+              {latestRevision.reviewNote && (
+                <p className="text-[12px] font-semibold text-red-800 mt-0.5 bg-red-100/70 rounded-lg p-2 border border-red-200/60">
+                  D8 Admin Note: {latestRevision.reviewNote}
+                </p>
+              )}
+              <p className="text-[12px] text-red-700 mt-1 leading-relaxed">
+                Your event remains live with its original details. You can adjust the information below and save to submit a new revision.
               </p>
             </div>
           </div>

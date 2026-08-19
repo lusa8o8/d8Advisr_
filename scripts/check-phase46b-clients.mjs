@@ -33,9 +33,10 @@ requireText(partnerEventData, [
 ], 'partner event data');
 
 requireText(partnerEditor, [
-  'fetchPartnerEventPendingRevision',
-  'pendingRevision',
+  'fetchPartnerEventLatestRevision',
+  'latestRevision',
   'Sensitive revision in review',
+  'Previous revision was not accepted',
 ], 'partner event editor');
 
 requireText(adminModel, [

@@ -230,6 +230,33 @@ export async function fetchPartnerEventPendingRevision(eventId: string): Promise
   };
 }
 
+export async function fetchPartnerEventLatestRevision(eventId: string): Promise<PartnerEventRevision | null> {
+  const { data, error } = await supabase
+    .from('event_revisions')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  throwIfError(error);
+  if (!data) return null;
+  return {
+    id: data.id,
+    eventId: data.event_id,
+    status: data.status as PartnerEventRevision['status'],
+    riskLevel: data.risk_level as PartnerEventRevision['riskLevel'],
+    enforcementCode: data.enforcement_code,
+    ruleCode: data.rule_code,
+    previousValues: data.previous_values as Record<string, unknown>,
+    proposedValues: data.proposed_values as Record<string, unknown>,
+    changedFields: data.changed_fields,
+    organizerReason: data.organizer_reason,
+    reviewNote: data.review_note,
+    reviewedAt: data.reviewed_at,
+    createdAt: data.created_at,
+  };
+}
+
 export async function setPartnerEventStatus(id: string, status: 'paused') {
   const { error } = await supabase
     .from('events')
