@@ -21,12 +21,6 @@ const TYPE_OPTIONS: { value: PartnerType; label: string; desc: string; emoji: st
     desc: 'Concerts, markets, conferences, fitness — we create the experience',
     emoji: '🎟️',
   },
-  {
-    value: 'both',
-    label: 'Both',
-    desc: 'We run a venue and also organise our own events or activities',
-    emoji: '🔗',
-  },
 ];
 
 export function PartnerPortal() {
@@ -111,7 +105,10 @@ export function PartnerPortal() {
               <button
                 type="button"
                 onClick={() => {
-                  setType(profile.partner_type);
+                  // `both` remains a legacy database value. Venue operators
+                  // already receive event tools, so a corrected legacy
+                  // application is normalized to the venue option.
+                  setType(profile.partner_type === 'both' ? 'venue' : profile.partner_type);
                   setName(profile.name);
                   setCity(profile.region_id ?? regions.find(region => region.name === profile.city)?.id ?? '');
                   setContact(profile.contact);

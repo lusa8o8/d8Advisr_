@@ -59,6 +59,11 @@ if (applicationData.includes(".from('partner_applications')\n      .update")) {
   failures.push('partner application client still performs a direct update');
 }
 
+const partnerPortal = read('artifacts/d8advisr-partner/src/pages/PartnerPortal.tsx');
+if (partnerPortal.includes("value: 'both'")) {
+  failures.push('new partner onboarding still offers the redundant both option');
+}
+
 if (failures.length) {
   console.error(failures.join('\n'));
   process.exit(1);

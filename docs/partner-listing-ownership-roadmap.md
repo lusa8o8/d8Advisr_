@@ -392,7 +392,7 @@ Delivery state on 19 August 2026:
 | 4.6A | Commercial baseline, decimal prices, policy acknowledgement, public policy routes, admin-scope foundation | Implemented and staging-automated; browser groups 1-3 passed; focused admin retest pending after `e2de756` |
 | 4.6B | Event revision table, deterministic classifier, partner submission, sensitive admin review, history and optimistic concurrency | Next implementation slice; fresh discovery required |
 | 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
-| 4.6D1 | Partner admission, capability, and dual-client session closure | Implemented and staging-automated on 20 August 2026; three browser journeys pending |
+| 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Next slice after 4.6D1 browser acceptance; required before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |

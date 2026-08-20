@@ -10,6 +10,10 @@ const repairMigration = readFileSync(
   resolve(root, 'supabase/migrations/20260820120000_repair_event_revision_schema_contract.sql'),
   'utf8',
 );
+const partnerTypeMigration = readFileSync(
+  resolve(root, 'supabase/migrations/20260820130000_retire_new_both_partner_applications.sql'),
+  'utf8',
+);
 
 const required = [
   "when capability = 'events' then public.live_partner_type(user_uuid) in ('venue', 'organizer', 'both')",
@@ -49,6 +53,17 @@ for (const fragment of [
 ]) {
   if (!repairMigration.includes(fragment)) {
     throw new Error(`Missing event revision compatibility repair: ${fragment}`);
+  }
+}
+
+for (const fragment of [
+  'create or replace function public.prevent_new_both_partner_type()',
+  "new.partner_type = 'both'",
+  "old.partner_type is distinct from 'both'",
+  'before insert or update of partner_type on public.partner_applications',
+]) {
+  if (!partnerTypeMigration.includes(fragment)) {
+    throw new Error(`Missing legacy partner-type boundary: ${fragment}`);
   }
 }
 
