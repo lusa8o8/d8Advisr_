@@ -84,6 +84,7 @@ export interface Submission {
   status: SubmissionStatus;
   appStatus?: PartnerApplicationStatus;
   partnerType?: PartnerApplicationType;
+  reviewReason?: string | null;
   note?: string;
   extra?: string;
 }
@@ -93,8 +94,12 @@ export interface PartnerApplicationRow {
   name: string;
   partner_type: PartnerApplicationType;
   city: string;
+  region_id: string | null;
   contact: string;
   status: PartnerApplicationStatus;
+  review_reason: string | null;
+  reviewed_at: string | null;
+  submitted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -383,11 +388,14 @@ export function partnerApplicationToSubmission(row: PartnerApplicationRow): Subm
     category: partnerTypeLabel(row.partner_type),
     contact: row.name,
     phone: row.contact,
-    submittedAt: new Date(row.created_at).toISOString().slice(0, 10),
+    submittedAt: new Date(row.submitted_at ?? row.created_at).toISOString().slice(0, 10),
     status: submissionStatusFromApp(row.status),
     appStatus: row.status,
     partnerType: row.partner_type,
-    note: row.status === 'live' ? 'Approved by D8 Team' : row.status === 'needs_update' ? 'Needs more information' : undefined,
+    reviewReason: row.review_reason,
+    note: row.status === 'live'
+      ? 'Partner tools approved by D8'
+      : row.review_reason ?? undefined,
     extra: `Partner application · ${partnerTypeLabel(row.partner_type)}`,
   };
 }

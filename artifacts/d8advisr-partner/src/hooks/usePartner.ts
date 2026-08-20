@@ -91,9 +91,9 @@ export function usePartner() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const applyAsPartner = useCallback(async (data: { name: string; partner_type: PartnerType; city: string; contact: string }) => {
-    const userId = await getAuthenticatedPartnerUserId();
-    await savePartnerApplication(userId, data);
+  const applyAsPartner = useCallback(async (data: { name: string; partner_type: PartnerType; region_id: string; contact: string }) => {
+    await getAuthenticatedPartnerUserId();
+    await savePartnerApplication(data);
     await load();
   }, [load]);
 

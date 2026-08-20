@@ -149,6 +149,8 @@ export function AdminPanel() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [submissionsError, setSubmissionsError] = useState<string | null>(null);
+  const [partnerReviewReasons, setPartnerReviewReasons] = useState<Record<string, string>>({});
+  const [partnerReviewLoading, setPartnerReviewLoading] = useState<string | null>(null);
   const [venuePlacementRequests, setVenuePlacementRequests] = useState<VenuePlacementAdminRequest[]>([]);
   const [venueListingReviews, setVenueListingReviews] = useState<VenueListingReview[]>([]);
   const [reverificationTasks, setReverificationTasks] = useState<ReverificationTask[]>([]);
@@ -416,8 +418,10 @@ export function AdminPanel() {
     void loadLiveEventRevisions();
   }, []);
 
-  const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus) => {
+  const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus, reason?: string) => {
     const previous = submissions;
+    setPartnerReviewLoading(`${id}:${status}`);
+    setSubmissionsError(null);
     setSubmissions(current =>
       current.map(sub =>
         sub.id === id
@@ -425,19 +429,23 @@ export function AdminPanel() {
               ...sub,
               status: submissionStatusFromApp(status),
               appStatus: status,
-              note: status === 'live' ? 'Approved by D8 Team' : status === 'rejected' ? 'Rejected by D8 Team' : sub.note,
+              reviewReason: reason?.trim() || null,
+              note: status === 'live' ? 'Partner tools approved by D8' : reason?.trim() || sub.note,
             }
           : sub
       )
     );
 
     try {
-      await setPartnerApplicationStatus(id, status);
+      await setPartnerApplicationStatus(id, status, reason);
+      setPartnerReviewReasons(current => ({ ...current, [id]: '' }));
     } catch (error) {
       const message = adminErrorMessage(error);
       setSubmissions(previous);
       setSubmissionsError(message);
       logAdminIssue('Could not update partner application status', { id, status, error: message });
+    } finally {
+      setPartnerReviewLoading(null);
     }
   };
 
@@ -1970,9 +1978,6 @@ export function AdminPanel() {
         const approve = (id: string) => {
           void updatePartnerApplicationStatus(id, 'live');
         };
-        const reject = (id: string) =>
-          setSubmissions(ss => ss.map(s => s.id === id ? { ...s, status: 'rejected' as const, note: 'Rejected — needs more info' } : s));
-
         const Card = ({ sub }: { sub: Submission }) => (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-start justify-between mb-3">
@@ -1998,7 +2003,13 @@ export function AdminPanel() {
                 sub.status === 'needs_update' ? "bg-blue-50 text-blue-600 border-blue-200" :
                 "bg-red-50 text-red-600 border-red-200"
               )}>
-                {sub.status === 'pending' ? '⏳ Pending' : sub.status === 'approved' ? '✓ Approved' : '✕ Rejected'}
+                {sub.status === 'pending'
+                  ? 'Pending'
+                  : sub.status === 'approved'
+                    ? 'Approved'
+                    : sub.status === 'needs_update'
+                      ? 'Needs update'
+                      : 'Rejected'}
               </span>
             </div>
 
@@ -2010,29 +2021,46 @@ export function AdminPanel() {
               <span>{sub.submittedAt}</span>
             </div>
 
-            {sub.note && sub.status !== 'pending' && (
+            {(sub.reviewReason || sub.note) && sub.status !== 'pending' && (
               <p className={cn(
                 "text-[12px] font-medium px-3 py-2 rounded-xl mb-3",
                 sub.status === 'approved' ? "bg-green-50 text-[#00C851]" : "bg-red-50 text-red-600"
               )}>
-                {sub.note}
+                {sub.reviewReason || sub.note}
               </p>
             )}
 
             {sub.status === 'pending' && (
-              <div className="flex gap-2">
+              <div className="space-y-2">
+                <textarea
+                  value={partnerReviewReasons[sub.id] ?? ''}
+                  onChange={event => setPartnerReviewReasons(current => ({ ...current, [sub.id]: event.target.value }))}
+                  placeholder="Reason shown when requesting changes or rejecting"
+                  className="min-h-20 w-full resize-y rounded-xl border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-primary"
+                />
+                <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => approve(sub.id)}
+                  disabled={partnerReviewLoading !== null}
                   className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle size={14} /> Approve
                 </button>
                 <button
-                  onClick={() => updatePartnerApplicationStatus(sub.id, 'rejected')}
-                  className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  onClick={() => void updatePartnerApplicationStatus(sub.id, 'needs_update', partnerReviewReasons[sub.id])}
+                  disabled={partnerReviewLoading !== null || !(partnerReviewReasons[sub.id] ?? '').trim()}
+                  className="rounded-xl bg-amber-50 py-2.5 text-[12px] font-bold text-amber-700 disabled:opacity-40"
+                >
+                  Needs update
+                </button>
+                <button
+                  onClick={() => void updatePartnerApplicationStatus(sub.id, 'rejected', partnerReviewReasons[sub.id])}
+                  disabled={partnerReviewLoading !== null || !(partnerReviewReasons[sub.id] ?? '').trim()}
+                  className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
                 >
                   <XCircle size={14} /> Reject
                 </button>
+                </div>
               </div>
             )}
           </div>

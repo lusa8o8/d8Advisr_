@@ -6,8 +6,12 @@ export interface PartnerProfile {
   name: string;
   partner_type: PartnerType;
   city: string;
+  region_id: string | null;
   contact: string;
   status: ListingStatus;
+  review_reason: string | null;
+  reviewed_at: string | null;
+  submitted_at: string | null;
 }
 
 export interface PartnerApplicationRow extends PartnerProfile {}
@@ -43,7 +47,18 @@ export interface VenuePlacementRequestRow {
 }
 
 export function partnerProfileFromRow(row: PartnerApplicationRow): PartnerProfile {
-  return { id: row.id, name: row.name, partner_type: row.partner_type, city: row.city, contact: row.contact, status: row.status };
+  return {
+    id: row.id,
+    name: row.name,
+    partner_type: row.partner_type,
+    city: row.city,
+    region_id: row.region_id,
+    contact: row.contact,
+    status: row.status,
+    review_reason: row.review_reason,
+    reviewed_at: row.reviewed_at,
+    submitted_at: row.submitted_at,
+  };
 }
 
 export function partnerEventFromRow(row: Record<string, unknown>): PartnerEvent {

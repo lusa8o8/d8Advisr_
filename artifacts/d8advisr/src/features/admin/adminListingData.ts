@@ -48,7 +48,7 @@ export async function fetchAdminVenues(): Promise<Venue[]> {
 export async function fetchPartnerSubmissions(): Promise<Submission[]> {
   const { data, error } = await supabase
     .from('partner_applications')
-    .select('id,name,partner_type,city,contact,status,created_at,updated_at')
+    .select('id,name,partner_type,city,region_id,contact,status,review_reason,reviewed_at,submitted_at,created_at,updated_at')
     .order('created_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as PartnerApplicationRow[]).map(partnerApplicationToSubmission);
@@ -115,10 +115,12 @@ export async function fetchPendingVenueLiveRevisions(): Promise<VenueLiveRevisio
   return ((data ?? []) as VenueLiveRevisionRow[]).map(venueLiveRevisionFromRow);
 }
 
-export async function setPartnerApplicationStatus(id: string, status: PartnerApplicationStatus) {
+export async function setPartnerApplicationStatus(id: string, status: PartnerApplicationStatus, reason?: string) {
   const { error } = await supabase.rpc('admin_update_partner_application_status', {
     application_id: id,
     new_status: status,
+    p_review_reason: reason?.trim() || null,
+    p_internal_note: null,
   });
   throwIfError(error);
 }

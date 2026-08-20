@@ -201,9 +201,15 @@ export type Database = {
           name: string;
           partner_type: 'venue' | 'organizer' | 'both';
           city: string;
+          region_id: string | null;
           contact: string;
           status: 'pending' | 'live' | 'needs_update' | 'rejected';
           organization_id: string | null;
+          review_reason: string | null;
+          internal_review_note: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          submitted_at: string | null;
           created_at: string;
           updated_at: string;
         };

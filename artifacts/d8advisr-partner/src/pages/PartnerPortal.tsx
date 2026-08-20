@@ -40,6 +40,7 @@ export function PartnerPortal() {
   const [contact, setContact] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [editingApplication, setEditingApplication] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -62,7 +63,7 @@ export function PartnerPortal() {
     return null;
   }
 
-  if (profile) {
+  if (profile && !editingApplication) {
     const isRejected = profile.status === 'rejected';
     const title = isRejected
       ? 'Application not approved'
@@ -98,8 +99,30 @@ export function PartnerPortal() {
                 <p className="text-[11px] text-gray-400 mt-3 uppercase font-bold tracking-wider">
                   Status: {profile.status.replace('_', ' ')}
                 </p>
+                {profile.review_reason && (
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-white p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">D8 review note</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-gray-700">{profile.review_reason}</p>
+                  </div>
+                )}
               </div>
             </div>
+            {(profile.status === 'needs_update' || profile.status === 'rejected') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setType(profile.partner_type);
+                  setName(profile.name);
+                  setCity(profile.region_id ?? regions.find(region => region.name === profile.city)?.id ?? '');
+                  setContact(profile.contact);
+                  setStep(1);
+                  setEditingApplication(true);
+                }}
+                className="mt-4 w-full rounded-xl bg-primary py-3.5 text-[14px] font-bold text-white"
+              >
+                Update and resubmit
+              </button>
+            )}
           </div>
         </div>
       </AuthLayout>
@@ -114,7 +137,7 @@ export function PartnerPortal() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await applyAsPartner({ name: name.trim(), partner_type: type, city, contact: contact.trim() });
+      await applyAsPartner({ name: name.trim(), partner_type: type, region_id: city, contact: contact.trim() });
       setLocation('/');
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
@@ -144,7 +167,7 @@ export function PartnerPortal() {
           <p className="text-[13px] text-gray-400 mt-1.5 leading-relaxed text-center">
             {step === 1
               ? 'This determines what tools and fields are most relevant to you.'
-              : 'We\'ll review your submission within 48 hours before your listing goes live.'}
+              : 'We\'ll review your partner account before management tools are unlocked.'}
           </p>
         </div>
 
@@ -254,7 +277,7 @@ export function PartnerPortal() {
 
             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mt-1">
               <p className="text-[12px] text-gray-500 leading-relaxed">
-                Our team reviews every new partner. You'll hear back within 48 hours. Once approved, your listing is live and you can manage everything from your dashboard.
+                Our team reviews every new partner. Approval unlocks the relevant management tools; venue listings remain private until their separate listing review is complete.
               </p>
             </div>
 

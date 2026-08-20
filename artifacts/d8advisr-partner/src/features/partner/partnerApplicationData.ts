@@ -27,30 +27,17 @@ export async function fetchPartnerApplication(userId: string): Promise<PartnerAp
   return data as PartnerApplicationRow | null;
 }
 
-export async function savePartnerApplication(userId: string, data: {
+export async function savePartnerApplication(data: {
   name: string;
   partner_type: PartnerType;
-  city: string;
+  region_id: string;
   contact: string;
 }) {
-  const { data: existing, error: lookupError } = await supabase
-    .from('partner_applications')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
-  throwIfError(lookupError);
-
-  if (existing) {
-    const { error } = await supabase
-      .from('partner_applications')
-      .update({ ...data, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
-    throwIfError(error);
-    return;
-  }
-
-  const { error } = await supabase
-    .from('partner_applications')
-    .insert({ ...data, user_id: userId, status: 'pending' });
+  const { error } = await supabase.rpc('submit_partner_application', {
+    p_name: data.name,
+    p_partner_type: data.partner_type,
+    p_region_id: data.region_id,
+    p_contact: data.contact,
+  });
   throwIfError(error);
 }
