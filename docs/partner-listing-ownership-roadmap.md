@@ -392,12 +392,34 @@ Delivery state on 19 August 2026:
 | 4.6A | Commercial baseline, decimal prices, policy acknowledgement, public policy routes, admin-scope foundation | Implemented and staging-automated; browser groups 1-3 passed; focused admin retest pending after `e2de756` |
 | 4.6B | Event revision table, deterministic classifier, partner submission, sensitive admin review, history and optimistic concurrency | Next implementation slice; fresh discovery required |
 | 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
-| 4.6D | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
-| 4.6E | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
+| 4.6D | Partner admission, capability, dual-client session, and event-policy closure | In discovery; implement before Phase 5 |
+| 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
+| 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
-Phase 4.6B must not add admin approval to ordinary first publication. Approved
-partners continue to publish directly. Permanently blocked commercial changes
-never enter an approval queue; only reviewable sensitive revisions do.
+Phase 4.6D supersedes the speculative pre-approval portions of the v1.0 event
+policy. Approved partners continue to publish directly. Published event edits
+are validated, confirmed when material, audited, and applied without a routine
+admin queue. D8 investigates from consumer reports, reviews, complaints, or
+other operational signals. See the versioned v1.1 policy and matrix; v1.0 is
+retained as historical policy evidence and must not be silently rewritten.
+
+Phase 4.6D also closes partner admission before claims are introduced:
+
+- partner approval is additive and never removes consumer access;
+- the consumer and partner clients make independent routing decisions and keep
+  origin-local sessions;
+- venue operators receive venue and event tools, event organizers receive only
+  event tools, and `both` remains a descriptive compatibility value with venue
+  and event tools;
+- applicants cannot grant themselves capabilities by editing an approved
+  application type;
+- correction and rejection reasons are durable and visible to the applicant;
+- partner review does not collect identity or business documents for MVP; and
+- account approval, venue verification, and venue publication remain separate
+  decisions.
+
+The implementation contract is
+`docs/implementation/phase-4-6d-partner-admission-access-closure.md`.
 
 ### Phase 5 — Claim submission and approval
 
