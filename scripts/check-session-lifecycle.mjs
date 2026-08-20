@@ -14,6 +14,7 @@ requireText('lib/d8-core/src/auth.tsx', "event === 'TOKEN_REFRESHED' || event ==
 requireText('lib/d8-core/src/auth.tsx', 'current?.id === session.user.id ? current : session.user', 'stable auth identity');
 requireText('lib/d8-core/src/auth.tsx', "supabase.auth.signOut({ scope: 'local' })", 'origin-local portal logout');
 requireText('artifacts/d8advisr/src/App.tsx', 'user?.id', 'consumer guard identity dependency');
+requireText('artifacts/d8advisr/src/App.tsx', "setCheckingScope(false);\n        setLocation('/preferences');", 'consumer onboarding redirect settles guard');
 requireText('artifacts/d8advisr-partner/src/App.tsx', 'user?.id', 'partner guard identity dependency');
 requireText('artifacts/d8advisr/src/pages/AdminPanel.tsx', "searchParams.get('section')", 'URL-addressable admin section');
 requireText('artifacts/d8advisr/src/features/admin/AdminListingCreate.tsx', 'useSessionDraft', 'admin create recovery');

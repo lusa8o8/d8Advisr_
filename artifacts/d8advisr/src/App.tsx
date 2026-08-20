@@ -109,6 +109,12 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
       if (!active) return;
 
       if (!completedOnboarding && location !== '/preferences') {
+        // Wouter can reconcile protected routes through the same ConsumerGuard
+        // instance. Clear the current check before navigating so an account
+        // without consumer preferences cannot remain behind the loading screen
+        // while the guard instance is reused for /preferences.
+        setAllowed(true);
+        setCheckingScope(false);
         setLocation('/preferences');
         return;
       }
