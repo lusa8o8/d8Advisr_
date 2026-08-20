@@ -1,6 +1,11 @@
 # Event Commercial Integrity, Revisions, and Notifications
 
-Status: implementation plan; no schema or UI changes applied by this document
+Status: historical v1.0 implementation plan; superseded for MVP enforcement by Phase 4.6D2 and policy v1.1
+
+> Do not use the permanent commercial locks, time-window classifier, or routine
+> admin-review queue below as the current MVP contract. The current contract is
+> documented in `phase-4-6d2-event-policy-v1-1-cutover.md`. This file remains
+> unchanged historical design context except for this notice.
 
 Decision date: 18 August 2026
 

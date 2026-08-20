@@ -2,7 +2,7 @@
 
 Status: required delivery framework
 
-Updated: 19 August 2026
+Updated: 20 August 2026
 
 ## Purpose
 
@@ -127,6 +127,15 @@ pnpm run check:phase46a:release
 
 Future phase scripts must preserve this split so a local check never silently
 mutates staging and a staging check can never target production accidentally.
+
+Phase 4.6D2 follows the same split:
+
+```powershell
+Set-Location H:\d8Advisr_
+pnpm run check:phase46d2
+pnpm run check:phase46d2:staging
+pnpm run check:phase46d2:release
+```
 
 ## Migration checklist
 

@@ -6,7 +6,7 @@ Version: `1.1`
 
 Approved: 20 August 2026
 
-Status: approved MVP product policy; implementation pending Phase 4.6D
+Status: approved and implemented on staging in Phase 4.6D2; browser acceptance pending
 
 Owner: D8Advisr
 

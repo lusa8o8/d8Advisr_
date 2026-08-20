@@ -393,7 +393,7 @@ Delivery state on 19 August 2026:
 | 4.6B | Event revision table, deterministic classifier, partner submission, sensitive admin review, history and optimistic concurrency | Next implementation slice; fresh discovery required |
 | 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
-| 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Next slice after 4.6D1 browser acceptance; required before Phase 5 |
+| 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Implemented on staging; automated gates complete; three browser journeys pending before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
@@ -438,6 +438,19 @@ staging builds, and migration parity pass. Database lint has no errors; one
 pre-existing text-to-`text[]` initialization warning remains in the legacy
 `partner_submit_event_revision` function and will disappear when 4.6D2
 replaces that v1.0 function.
+
+Phase 4.6D2 delivery evidence:
+
+- `4d84066` adds the v1.1 apply/audit/notify database boundary and cancellation;
+- `ce83ed5` adds partner material-change confirmation and public v1.1 policy copy;
+- `243db0e` removes the routine admin event queue and adds read-only event history;
+- `c5ecc87` adds immediate cancellation and recent-cancelled consumer surfaces; and
+- the D2 automated and browser gates are defined in the phase implementation
+  and testing documents.
+
+Phase 5 remains blocked only by the three D2 browser journeys and any defects
+they reveal. Ticket-aware restrictions, occurrence normalization, delivery
+outboxes, and speculative analytics are not Phase 5 prerequisites.
 
 ### Phase 5 — Claim submission and approval
 
