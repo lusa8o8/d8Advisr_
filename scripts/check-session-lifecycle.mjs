@@ -12,6 +12,7 @@ function requireText(path, expected, label) {
 
 requireText('lib/d8-core/src/auth.tsx', "event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN'", 'same-user auth refresh');
 requireText('lib/d8-core/src/auth.tsx', 'current?.id === session.user.id ? current : session.user', 'stable auth identity');
+requireText('lib/d8-core/src/auth.tsx', "supabase.auth.signOut({ scope: 'local' })", 'origin-local portal logout');
 requireText('artifacts/d8advisr/src/App.tsx', 'user?.id', 'consumer guard identity dependency');
 requireText('artifacts/d8advisr-partner/src/App.tsx', 'user?.id', 'partner guard identity dependency');
 requireText('artifacts/d8advisr/src/pages/AdminPanel.tsx', "searchParams.get('section')", 'URL-addressable admin section');
@@ -21,6 +22,16 @@ requireText('artifacts/d8advisr/src/pages/SignIn.tsx', '<form onSubmit={handleSi
 requireText('artifacts/d8advisr/src/pages/InitialPreferences.tsx', 'useSessionDraft', 'consumer onboarding recovery');
 requireText('artifacts/d8advisr-partner/src/pages/PartnerVenueEditor.tsx', 'readSessionDraft', 'partner venue recovery');
 requireText('artifacts/d8advisr-partner/src/pages/PartnerEventEditor.tsx', 'readSessionDraft', 'partner event recovery');
+
+const consumerApp = read('artifacts/d8advisr/src/App.tsx');
+if (consumerApp.includes('redirectToPartner(')) {
+  failures.push('consumer routing: partner status must not redirect away from the consumer client');
+}
+
+const capabilities = read('lib/d8-core/src/partnerCapabilities.ts');
+if (!capabilities.includes("partnerType === 'venue' || partnerType === 'organizer' || partnerType === 'both'")) {
+  failures.push('partner capabilities: venue operators must receive event tools');
+}
 
 for (const path of [
   'artifacts/d8advisr/src/pages/SignIn.tsx',

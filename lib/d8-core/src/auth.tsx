@@ -202,7 +202,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     clearPasswordRecovery();
-    await supabase.auth.signOut();
+    // The consumer and partner portals intentionally keep independent
+    // origin-local sessions. Normal logout must not revoke the user's other
+    // D8 portal sessions or devices.
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   return (

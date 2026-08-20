@@ -88,7 +88,7 @@ export function PasswordUpdate() {
     const { error } = await updatePassword(password);
     if (!error && isRecoveryFlow) {
       clearPasswordRecovery();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
     }
     setLoading(false);
 

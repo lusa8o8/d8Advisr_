@@ -45,7 +45,6 @@ import { Settings } from "@/pages/Settings";
 import { authPathWithNext, getPostAuthRedirectPath, storeOAuthError } from "@/lib/authRedirect";
 import { getCurrentAccountContext } from "@workspace/d8-core/account-scope";
 import { EventPublishingPolicyPage, PartnerPoliciesPage, PrivacyPolicyPage, TermsOfServicePage } from "@workspace/d8-core/legal";
-import { redirectToPartner } from "@/lib/clientOrigins";
 
 const queryClient = new QueryClient();
 const PASSWORD_RECOVERY_KEY = 'd8advisr_password_recovery';
@@ -103,11 +102,6 @@ function ConsumerGuard({ children }: { children: ReactNode }) {
 
       if (context.scope === 'admin') {
         setLocation('/admin');
-        return;
-      }
-
-      if (context.scope === 'partner') {
-        redirectToPartner(context.partnerStatus);
         return;
       }
 
@@ -170,8 +164,6 @@ function AdminGuard({ children }: { children: ReactNode }) {
       if (context.scope === 'admin') {
         setAllowed(true);
         setChecking(false);
-      } else if (context.scope === 'partner') {
-        redirectToPartner(context.partnerStatus);
       } else {
         setLocation('/home');
       }
@@ -298,8 +290,6 @@ function PublicOnlyRoute({ children }: { children: ReactNode }) {
         if (!active) return;
         if (context.scope === 'admin') {
           setLocation('/admin');
-        } else if (context.scope === 'partner') {
-          redirectToPartner(context.partnerStatus);
         } else {
           setLocation('/home');
         }
