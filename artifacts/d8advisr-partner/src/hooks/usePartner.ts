@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { DemandSignal, PartnerEvent, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@workspace/d8-core/types';
 import type { PartnerType } from '@workspace/d8-core/partner-capabilities';
 import { fetchPartnerApplication, getAuthenticatedPartnerUserId, getOptionalPartnerUserId, savePartnerApplication } from '@/features/partner/partnerApplicationData';
-import { fetchPartnerEvents, savePartnerEvent, setPartnerEventStatus, type EventRevisionConfirmation, type PartnerEventInput } from '@/features/partner/partnerEventData';
+import { cancelPartnerEvent, fetchPartnerEvents, savePartnerEvent, setPartnerEventStatus, type EventRevisionConfirmation, type PartnerEventInput } from '@/features/partner/partnerEventData';
 import { fetchPartnerDemandSignals } from '@/features/partner/partnerDemandData';
 import { fetchPartnerReviewInsights } from '@/features/partner/partnerReviewData';
 import { partnerProfileFromRow, type PartnerProfile } from '@/features/partner/partnerModels';
@@ -121,6 +121,15 @@ export function usePartner() {
     setEvents(current => current.map(event => event.id === id ? { ...event, status: 'paused' } : event));
   }, []);
 
+  const cancelEvent = useCallback(async (event: PartnerEvent, confirmed: boolean, reason?: string) => {
+    if (!event.updatedAt) throw new Error('Refresh this event before cancelling it.');
+    const result = await cancelPartnerEvent(event.id, event.updatedAt, confirmed, reason);
+    if (result.status === 'applied') {
+      setEvents(current => current.map(item => item.id === event.id ? { ...item, status: 'cancelled' } : item));
+    }
+    return result;
+  }, []);
+
   const saveVenue = useCallback(async (venueData: PartnerVenueInput) => {
     const userId = await getAuthenticatedPartnerUserId();
     await savePartnerVenue(userId, await fetchPartnerApplication(userId), venueData);
@@ -129,7 +138,7 @@ export function usePartner() {
 
   return {
     profile, events, venueListing, venueOptions, venuePlacementRequests, demandSignals, reviewInsights,
-    loading, error, reload: load, applyAsPartner, saveEvent, pauseEvent, saveVenue,
+    loading, error, reload: load, applyAsPartner, saveEvent, pauseEvent, cancelEvent, saveVenue,
     updateVenuePlacementStatus,
   };
 }

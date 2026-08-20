@@ -75,7 +75,7 @@ export function NotificationsCenter() {
                 const isUnread = !n.readAt;
                 const isRescheduled = n.type === 'event_rescheduled';
                 const isRelocated = n.type === 'event_relocated';
-                const isPriceDrop = n.type === 'event_price_reduced';
+                const isPriceDrop = n.type === 'event_price_reduced' || n.type === 'event_price_changed';
                 const isCancelled = n.type === 'event_cancelled';
 
                 return (

@@ -291,6 +291,22 @@ export async function setPartnerEventStatus(id: string, status: 'paused') {
   throwIfError(error);
 }
 
+export async function cancelPartnerEvent(
+  eventId: string,
+  expectedUpdatedAt: string,
+  confirmed: boolean,
+  reason?: string,
+): Promise<EventRevisionResult> {
+  const { data, error } = await supabase.rpc('partner_cancel_event_v11', {
+    p_event_id: eventId,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_confirmed: confirmed,
+    p_reason: reason?.trim() || null,
+  });
+  throwIfError(error);
+  return data as EventRevisionResult;
+}
+
 export async function publishPartnerEvent(id: string, requestKey: string) {
   const { error } = await supabase.rpc('publish_event_with_policy', {
     p_event_id: id,

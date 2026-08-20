@@ -40,6 +40,7 @@ interface EventData {
   organizer: string;
   organizerVerified: boolean;
   highlights: string[];
+  eventStatus?: 'live' | 'cancelled';
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -113,6 +114,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
       row.is_free ? 'Free entry' : 'Paid entry',
       row.frequency && row.frequency !== 'one-off' ? 'Recurring event' : 'One-off event',
     ],
+    eventStatus: row.event_status === 'cancelled' ? 'cancelled' : 'live',
   };
 }
 
@@ -309,7 +311,7 @@ export function EventDetail() {
         .from('events')
         .select(`${EVENT_CLIENT_SELECT},venues(id,name,address,area,city,rating,review_count)`)
         .eq('id', eventId)
-        .eq('event_status', 'live')
+        .in('event_status', ['live', 'cancelled'])
         .maybeSingle();
 
       if (!active) return;
@@ -386,6 +388,7 @@ export function EventDetail() {
   }
 
   const hasCapacity = event.hasCapacity !== false;
+  const isCancelled = event.eventStatus === 'cancelled';
   const displayedPrice = event.isFree
     ? 'Free entry'
     : event.priceAmount != null ? formatPrice(event.priceAmount) : event.price;
@@ -426,6 +429,13 @@ export function EventDetail() {
           </div>
         </div>
       </div>
+
+      {isCancelled && (
+        <div className="mx-5 mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+          <p className="text-[14px] font-black">This event has been cancelled</p>
+          <p className="mt-1 text-[12px] leading-5">It remains visible temporarily so people can confirm what changed. Planning and reminder actions are unavailable.</p>
+        </div>
+      )}
 
       <div className="px-5 pt-5 flex flex-col gap-4">
 
@@ -554,7 +564,7 @@ export function EventDetail() {
         </div>
 
         {/* Notify toggle */}
-        <div className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+        {!isCancelled && <div className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               {notifyOn ? <Bell size={18} /> : <BellOff size={18} />}
@@ -589,7 +599,7 @@ export function EventDetail() {
               notifyOn ? 'translate-x-[18px]' : 'translate-x-0'
             )} />
           </button>
-        </div>
+        </div>}
 
         {/* Location */}
         <button
@@ -628,6 +638,7 @@ export function EventDetail() {
           <p className="font-black text-primary text-[18px] leading-tight">{displayedPrice}</p>
         </div>
         <button
+          disabled={isCancelled}
           onClick={() => {
             void recordEventAddToPlan(eventId);
             if (user?.id && isPersistedEvent) {
@@ -639,9 +650,9 @@ export function EventDetail() {
             }
             setLocation(planParams ? `/plan/generate?${planParams.toString()}` : '/plan/generate');
           }}
-          className="flex-1 bg-primary text-white rounded-xl font-bold text-[16px] py-4 shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2"
+          className="flex-1 bg-primary text-white rounded-xl font-bold text-[16px] py-4 shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
         >
-          <Ticket size={17} /> Add to Plan
+          <Ticket size={17} /> {isCancelled ? 'Event cancelled' : 'Add to Plan'}
         </button>
       </div>
     </div>

@@ -149,7 +149,7 @@ export interface ConsumerNotification {
   id: string;
   userId: string;
   eventId: string | null;
-  type: 'event_rescheduled' | 'event_relocated' | 'event_price_reduced' | 'event_cancelled' | 'system' | 'vibe_match';
+  type: 'event_rescheduled' | 'event_relocated' | 'event_price_reduced' | 'event_price_changed' | 'event_cancelled' | 'system' | 'vibe_match';
   title: string;
   body: string;
   metadata: Record<string, unknown>;

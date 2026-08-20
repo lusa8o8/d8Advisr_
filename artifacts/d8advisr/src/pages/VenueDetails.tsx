@@ -271,6 +271,7 @@ export function VenueDetails() {
         hasCapacity: event.spots_total > 0,
         recurrence: event.frequency === 'weekly' || event.frequency === 'monthly' || event.frequency === 'annual' ? event.frequency : null,
         recurrenceLabel: event.next_occurrence,
+        cancelled: event.event_status === 'cancelled',
       }))
     : VENUE_EVENTS;
 
@@ -620,7 +621,7 @@ export function VenueDetails() {
                 <div
                   key={event.id}
                   onClick={() => setLocation(`/event/${event.id}`)}
-                  className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+                  className={cn("bg-card border border-border rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform", 'cancelled' in event && event.cancelled && "opacity-65")}
                 >
                   <div className="h-24 relative overflow-hidden">
                     <img src={event.image} alt={event.name} className="w-full h-full object-cover" />
@@ -634,7 +635,7 @@ export function VenueDetails() {
                         </p>
                       </div>
                       <span className="text-xs font-bold px-2.5 py-1.5 rounded-xl shrink-0 bg-white/20 text-white backdrop-blur-sm border border-white/20">
-                        {event.hasCapacity === false ? 'Open attendance' : 'Limited capacity'}
+                        {'cancelled' in event && event.cancelled ? 'Cancelled' : event.hasCapacity === false ? 'Open attendance' : 'Limited capacity'}
                       </span>
                     </div>
                   </div>

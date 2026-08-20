@@ -97,6 +97,7 @@ export function HomeDiscovery() {
     emoji: categoryEmoji(ev.category ?? ''),
     image: ev.cover_image ?? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=480&h=200&fit=crop&auto=format',
     urgency: null as string | null,
+    cancelled: ev.event_status === 'cancelled',
   }));
 
   const tabs = ['All', 'Date Night', 'Adventure', 'Foodie', 'Group'];
@@ -222,18 +223,20 @@ export function HomeDiscovery() {
                 <div
                   key={exp.id}
                   onClick={() => openEvent(exp.id)}
-                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group"
+                  className={cn("bg-white rounded-2xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:border-gray-200 transition-all group", exp.cancelled && "opacity-65")}
                 >
                   <div className="h-36 relative overflow-hidden">
                     <img src={exp.image} alt={exp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
                     <span className="absolute inset-0 flex items-center justify-center text-5xl drop-shadow-lg">{exp.emoji}</span>
-                    {exp.urgency && (
+                    {exp.cancelled ? (
+                      <span className="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">Cancelled</span>
+                    ) : exp.urgency && (
                       <span className="absolute top-3 right-3 bg-white/90 text-[#FF9500] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
                         {exp.urgency}
                       </span>
                     )}
-                    {exp.price === 'Free entry' && (
+                    {!exp.cancelled && exp.price === 'Free entry' && (
                       <span className="absolute top-3 right-3 bg-[#E8FFF0] text-[#00C851] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
                         Free entry
                       </span>
@@ -581,18 +584,20 @@ export function HomeDiscovery() {
               <div
                 key={exp.id}
                 onClick={() => openEvent(exp.id)}
-                className="snap-start shrink-0 w-60 bg-card rounded-2xl border border-border shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
+                className={cn("snap-start shrink-0 w-60 bg-card rounded-2xl border border-border shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-transform", exp.cancelled && "opacity-65")}
               >
                 <div className="h-24 relative overflow-hidden">
                   <img src={exp.image} alt={exp.name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
                   <span className="absolute inset-0 flex items-center justify-center text-4xl drop-shadow-lg">{exp.emoji}</span>
-                  {exp.urgency && (
+                  {exp.cancelled ? (
+                    <span className="absolute top-2.5 right-2.5 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Cancelled</span>
+                  ) : exp.urgency && (
                     <span className="absolute top-2.5 right-2.5 bg-white/90 text-[#FF9500] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       {exp.urgency}
                     </span>
                   )}
-                  {exp.price === 'Free entry' && (
+                  {!exp.cancelled && exp.price === 'Free entry' && (
                     <span className="absolute top-2.5 right-2.5 bg-[#E8FFF0] text-[#00C851] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       Free entry
                     </span>

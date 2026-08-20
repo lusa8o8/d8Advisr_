@@ -79,11 +79,11 @@ export function useEvents(city?: string, limit = 10) {
       const query = supabase
         .from('events')
         .select(EVENT_CLIENT_SELECT)
-        .eq('event_status', 'live')
+        .in('event_status', ['live', 'cancelled'])
         .gte('starts_at', now)
         .order('is_featured', { ascending: false })
         .order('starts_at', { ascending: true })
-        .limit(limit);
+        .limit(limit * 2);
 
       if (city) query.eq('city', city);
 
@@ -94,7 +94,9 @@ export function useEvents(city?: string, limit = 10) {
           setError(error.message);
           logDataIssue('events', 'Supabase query failed', { city, from: now, limit, error: error.message });
         } else {
-          const rows = data ?? [];
+          const rows = [...(data ?? [])]
+            .sort((left, right) => Number(left.event_status === 'cancelled') - Number(right.event_status === 'cancelled'))
+            .slice(0, limit);
           setError(null);
           setEvents(rows);
           if (rows.length === 0) {
@@ -142,7 +144,7 @@ export function useVenueEvents(venueId?: string, limit = 10) {
           .from('events')
           .select(EVENT_CLIENT_SELECT)
           .eq('venue_id', venueId)
-          .eq('event_status', 'live')
+          .in('event_status', ['live', 'cancelled'])
           .eq('venue_page_status', 'approved')
           .gte('starts_at', now)
           .order('starts_at', { ascending: true })
@@ -154,7 +156,8 @@ export function useVenueEvents(venueId?: string, limit = 10) {
           logDataIssue('venue-events', 'Supabase query failed', { venueId, from: now, limit, error: error.message });
         } else {
           setError(null);
-          setEvents(data ?? []);
+          setEvents([...(data ?? [])]
+            .sort((left, right) => Number(left.event_status === 'cancelled') - Number(right.event_status === 'cancelled')));
         }
       } catch (error) {
         if (!active) return;

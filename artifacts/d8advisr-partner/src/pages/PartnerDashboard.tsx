@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   Plus, ChevronRight, AlertCircle, CheckCircle,
-  Clock, Pause, Edit3, Bell, Loader2, LogOut,
+  Clock, Pause, Edit3, Bell, Loader2, LogOut, Ban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PartnerEvent } from '@workspace/d8-core/types';
@@ -29,10 +29,16 @@ export function PartnerDashboard() {
     loading,
     error,
     pauseEvent,
+    cancelEvent,
     updateVenuePlacementStatus,
   } = usePartner();
   const { unreadCount } = usePartnerNotifications();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [cancellingEvent, setCancellingEvent] = useState<PartnerEvent | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [cancellationAccepted, setCancellationAccepted] = useState(false);
+  const [cancellationInterestedCount, setCancellationInterestedCount] = useState(0);
+  const [cancellationLoading, setCancellationLoading] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -55,6 +61,36 @@ export function PartnerDashboard() {
   const handlePublish = async (id: string) => {
     setActionError(null);
     setLocation(`/event/${id}/edit`);
+  };
+
+  const requestCancellation = async (event: PartnerEvent) => {
+    setActionError(null);
+    setCancellationLoading(true);
+    try {
+      const preview = await cancelEvent(event, false);
+      setCancellingEvent(event);
+      setCancellationInterestedCount(preview.interested_count ?? 0);
+      setCancellationReason('');
+      setCancellationAccepted(false);
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : 'Could not prepare cancellation.');
+    } finally {
+      setCancellationLoading(false);
+    }
+  };
+
+  const confirmCancellation = async () => {
+    if (!cancellingEvent || !cancellationAccepted || cancellationLoading) return;
+    setCancellationLoading(true);
+    setActionError(null);
+    try {
+      await cancelEvent(cancellingEvent, true, cancellationReason);
+      setCancellingEvent(null);
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : 'Could not cancel the event.');
+    } finally {
+      setCancellationLoading(false);
+    }
   };
 
   const handleVenuePlacement = async (eventId: string, status: 'approved' | 'rejected') => {
@@ -375,11 +411,6 @@ export function PartnerDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {event.hasPendingRevision && (
-                      <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                        ⏳ In review
-                      </span>
-                    )}
                     <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full', EVENT_STATUS_PILL[event.status].color)}>
                       {EVENT_STATUS_PILL[event.status].label}
                     </span>
@@ -436,12 +467,21 @@ export function PartnerDashboard() {
                       </button>
                     )}
                     {event.status === 'live' && (
-                      <button
-                        onClick={() => handleToggle(event)}
-                        className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
-                      >
-                        <Pause size={13} /> Pause
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleToggle(event)}
+                          className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
+                        >
+                          <Pause size={13} /> Pause
+                        </button>
+                        <button
+                          onClick={() => void requestCancellation(event)}
+                          disabled={cancellationLoading}
+                          className="flex items-center gap-1.5 bg-red-50 text-red-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+                        >
+                          <Ban size={13} /> Cancel event
+                        </button>
+                      </>
                     )}
                     {event.status === 'paused' && (
                       <button
@@ -466,6 +506,41 @@ export function PartnerDashboard() {
             ))}
           </div>
         </div>
+        )}
+
+        {cancellingEvent && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-50 text-red-600"><Ban size={20} /></div>
+                <div>
+                  <h2 className="text-[18px] font-black text-gray-900">Cancel {cancellingEvent.name}?</h2>
+                  <p className="mt-1 text-[12px] text-gray-500">This takes effect immediately and cannot be undone from the partner portal.</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-2xl bg-red-50 p-4 text-[12px] leading-5 text-red-700">
+                The event will be marked as cancelled for about 24 hours, then removed from ordinary discovery. {cancellationInterestedCount > 0
+                  ? `${cancellationInterestedCount} interested ${cancellationInterestedCount === 1 ? 'person' : 'people'} will be notified.`
+                  : 'No interested people need to be notified right now.'}
+              </div>
+              <label className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-gray-500">Reason <span className="normal-case text-gray-400">(optional)</span></label>
+              <textarea
+                value={cancellationReason}
+                onChange={event => setCancellationReason(event.target.value)}
+                rows={3}
+                placeholder="Weather, venue unavailable, organizer decision…"
+                className="mt-1.5 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[13px] outline-none focus:border-primary"
+              />
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-red-100 p-4">
+                <input type="checkbox" checked={cancellationAccepted} onChange={event => setCancellationAccepted(event.target.checked)} className="mt-1" />
+                <span className="text-[12px] font-medium leading-5 text-gray-700">I confirm this event is cancelled and understand that interested people will be informed.</span>
+              </label>
+              <div className="mt-5 flex gap-2">
+                <button type="button" onClick={() => setCancellingEvent(null)} disabled={cancellationLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Keep event</button>
+                <button type="button" onClick={() => void confirmCancellation()} disabled={!cancellationAccepted || cancellationLoading} className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40">{cancellationLoading ? 'Cancelling…' : 'Confirm cancellation'}</button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Social channels */}
