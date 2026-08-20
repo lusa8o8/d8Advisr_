@@ -392,7 +392,8 @@ Delivery state on 19 August 2026:
 | 4.6A | Commercial baseline, decimal prices, policy acknowledgement, public policy routes, admin-scope foundation | Implemented and staging-automated; browser groups 1-3 passed; focused admin retest pending after `e2de756` |
 | 4.6B | Event revision table, deterministic classifier, partner submission, sensitive admin review, history and optimistic concurrency | Next implementation slice; fresh discovery required |
 | 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
-| 4.6D | Partner admission, capability, dual-client session, and event-policy closure | In discovery; implement before Phase 5 |
+| 4.6D1 | Partner admission, capability, and dual-client session closure | Implemented and staging-automated on 20 August 2026; three browser journeys pending |
+| 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Next slice after 4.6D1 browser acceptance; required before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
@@ -420,6 +421,23 @@ Phase 4.6D also closes partner admission before claims are introduced:
 
 The implementation contract is
 `docs/implementation/phase-4-6d-partner-admission-access-closure.md`.
+
+Phase 4.6D1 delivery evidence:
+
+- `2e87f74` versions the policy and implementation contract;
+- `54be390` closes application type escalation and aligns PostgreSQL
+  capabilities;
+- `4ab8941` removes consumer-to-partner routing and uses origin-local logout;
+- `8087383` adds durable reasons and applicant resubmission;
+- `0d72489` adds focused automated and browser acceptance gates; and
+- `ec04741` repairs schema references in the existing event revision fallback.
+
+The linked staging database contains migrations `20260820110000` and
+`20260820120000`. Automated admission/capability smoke, TypeScript, both
+staging builds, and migration parity pass. Database lint has no errors; one
+pre-existing text-to-`text[]` initialization warning remains in the legacy
+`partner_submit_event_revision` function and will disappear when 4.6D2
+replaces that v1.0 function.
 
 ### Phase 5 — Claim submission and approval
 

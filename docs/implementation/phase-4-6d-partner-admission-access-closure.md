@@ -1,6 +1,7 @@
 # Phase 4.6D Partner Admission and Access Closure
 
-Status: implementation plan
+Status: D1 implemented and staging-automated; browser acceptance pending; D2
+event-policy enforcement cutover pending
 
 Date: 20 August 2026
 
@@ -50,3 +51,15 @@ Date: 20 August 2026
 3. **Capability isolation:** venue and `both` partners can use venue and event
    tools; organizers can use event tools but cannot reach or mutate venue tools,
    including through direct database requests.
+
+## Delivery record
+
+The partner admission and dual-client slices were implemented on 20 August
+2026. Migrations `20260820110000` and `20260820120000` are applied to the linked
+staging project with local/remote migration parity. The Phase 4.6D static,
+client, session-lifecycle, type, staging role/capability, and dual-build gates
+pass.
+
+Phase 4.6D is not closed until the three browser journeys pass and D2 replaces
+the v1.0 event revision review classifier with the v1.1 confirm/apply/audit
+contract. Phase 5 must not start before those gates are complete.
