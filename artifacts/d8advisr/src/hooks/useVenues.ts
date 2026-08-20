@@ -73,13 +73,14 @@ export function useEvents(city?: string, limit = 10) {
   useEffect(() => {
     let active = true;
     const now = new Date().toISOString();
+    const cancelledSince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     setLoading(true);
 
     async function loadEvents() {
       const query = supabase
         .from('events')
         .select(EVENT_CLIENT_SELECT)
-        .in('event_status', ['live', 'cancelled'])
+        .or(`event_status.eq.live,and(event_status.eq.cancelled,cancelled_at.gte.${cancelledSince})`)
         .gte('starts_at', now)
         .order('is_featured', { ascending: false })
         .order('starts_at', { ascending: true })
@@ -129,6 +130,7 @@ export function useVenueEvents(venueId?: string, limit = 10) {
   useEffect(() => {
     let active = true;
     const now = new Date().toISOString();
+    const cancelledSince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     setLoading(true);
 
     async function loadVenueEvents() {
@@ -144,7 +146,7 @@ export function useVenueEvents(venueId?: string, limit = 10) {
           .from('events')
           .select(EVENT_CLIENT_SELECT)
           .eq('venue_id', venueId)
-          .in('event_status', ['live', 'cancelled'])
+          .or(`event_status.eq.live,and(event_status.eq.cancelled,cancelled_at.gte.${cancelledSince})`)
           .eq('venue_page_status', 'approved')
           .gte('starts_at', now)
           .order('starts_at', { ascending: true })

@@ -44,6 +44,14 @@ const login = await request(url, key, '/auth/v1/token?grant_type=password', key,
 assert(login.response.ok && login.body?.access_token, 'Partner staging sign-in failed');
 const token = login.body.access_token;
 const userId = login.body.user.id;
+const cancelledSince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+const discoveryFilter = await request(
+  url,
+  key,
+  `/rest/v1/events?select=id,event_status,cancelled_at&or=(event_status.eq.live,and(event_status.eq.cancelled,cancelled_at.gte.${cancelledSince}))&limit=1`,
+  token,
+);
+assert(discoveryFilter.response.ok, `Recent-cancelled discovery filter is not accepted by PostgREST: ${JSON.stringify(discoveryFilter.body)}`);
 
 const events = await request(url, key, `/rest/v1/events?select=id,title,description,event_status,is_free,price_pp,updated_at&event_status=eq.live&partner_id=eq.${userId}&order=updated_at.desc&limit=1`, token);
 assert(events.response.ok && events.body?.length === 1, 'A live staging partner event is required');

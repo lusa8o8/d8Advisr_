@@ -2,10 +2,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const migration = readFileSync(
+const migration = [readFileSync(
   resolve(root, 'supabase/migrations/20260820140000_event_policy_v11_apply_audit_notify.sql'),
   'utf8',
-);
+), readFileSync(
+  resolve(root, 'supabase/migrations/20260820141000_preserve_cancelled_event_direct_history.sql'),
+  'utf8',
+), readFileSync(
+  resolve(root, 'supabase/migrations/20260820142000_grant_cancelled_event_visibility_column.sql'),
+  'utf8',
+)].join('\n');
 
 const required = [
   'partner_apply_event_revision_v11',
@@ -19,7 +25,8 @@ const required = [
   "'event_price_changed'",
   'partner_cancel_event_v11',
   "event_status = 'cancelled'",
-  "cancelled_at >= now() - interval '24 hours'",
+  'Public can view live and cancelled event history',
+  'grant select (cancelled_at)',
   "status = 'cancelled'",
   'revoke execute on function public.admin_review_event_revision',
   'drop function if exists public.partner_submit_event_revision',

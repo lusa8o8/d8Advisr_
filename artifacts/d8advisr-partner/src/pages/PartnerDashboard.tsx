@@ -494,12 +494,14 @@ export function PartnerDashboard() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setLocation(`/event/${event.id}/edit`)}
-                      className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
-                    >
-                      <Edit3 size={13} /> Edit
-                    </button>
+                    {event.status !== 'cancelled' && (
+                      <button
+                        onClick={() => setLocation(`/event/${event.id}/edit`)}
+                        className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-[12px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform hover:bg-gray-200"
+                      >
+                        <Edit3 size={13} /> Edit
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

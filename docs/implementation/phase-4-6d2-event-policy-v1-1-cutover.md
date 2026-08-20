@@ -38,6 +38,13 @@ Migration `20260820140000_event_policy_v11_apply_audit_notify.sql`:
 - adds `partner_cancel_event_v11`; and
 - revokes the legacy administrator event-review RPC from browser roles.
 
+Forward migration
+`20260820141000_preserve_cancelled_event_direct_history.sql` keeps cancelled
+event history readable from notifications and direct links. Explicit consumer
+discovery queries enforce the approximately 24-hour discovery window and
+derank cancelled rows behind live events. Migration `20260820142000` adds the
+matching read-only column grant required by the project's explicit-grant model.
+
 The partner editor renders the material before/after preview and reuses staged
 media between preview and confirmation. The partner dashboard exposes a strong
 cancellation flow. The administrator submission queue no longer includes

@@ -16,7 +16,7 @@ requireText('artifacts/d8advisr-partner/src/features/partner/partnerEventData.ts
 requireText('artifacts/d8advisr-partner/src/pages/PartnerDashboard.tsx', 'Confirm cancellation', 'strong cancellation confirmation');
 requireText('artifacts/d8advisr/src/pages/AdminPanel.tsx', 'Event change history', 'admin read-only event history');
 requireText('artifacts/d8advisr/src/pages/EventDetail.tsx', 'This event has been cancelled', 'consumer cancellation state');
-requireText('artifacts/d8advisr/src/hooks/useVenues.ts', ".in('event_status', ['live', 'cancelled'])", 'recent cancellation discovery');
+requireText('artifacts/d8advisr/src/hooks/useVenues.ts', 'cancelled_at.gte.${cancelledSince}', '24-hour cancellation discovery window');
 requireText('artifacts/d8advisr/src/pages/NotificationsCenter.tsx', "n.type === 'event_price_changed'", 'price change notification UI');
 requireText('lib/d8-core/src/legal.tsx', 'D8 does not routinely pre-review event publication or edits', 'public v1.1 policy');
 
