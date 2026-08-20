@@ -39,6 +39,15 @@ requireText(
   'Reason shown when requesting changes or rejecting',
   'durable reason input',
 );
+requireText(
+  'artifacts/d8advisr/src/pages/AdminPanel.tsx',
+  'pending.map(renderApplicationCard)',
+  'stable application-card render path',
+);
+
+if (read('artifacts/d8advisr/src/pages/AdminPanel.tsx').includes('const Card = ({ sub }')) {
+  failures.push('admin application card is declared as a remounting nested component');
+}
 
 const consumerApp = read('artifacts/d8advisr/src/App.tsx');
 if (consumerApp.includes('redirectToPartner(')) {

@@ -1978,8 +1978,8 @@ export function AdminPanel() {
         const approve = (id: string) => {
           void updatePartnerApplicationStatus(id, 'live');
         };
-        const Card = ({ sub }: { sub: Submission }) => (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        const renderApplicationCard = (sub: Submission) => (
+          <div key={sub.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <div className={cn(
@@ -2367,7 +2367,7 @@ export function AdminPanel() {
                   Needs review ({pending.length})
                 </p>
                 <div className="flex flex-col gap-3 mb-6">
-                  {pending.map(s => <Card key={s.id} sub={s} />)}
+                  {pending.map(renderApplicationCard)}
                 </div>
               </>
             )}
@@ -2378,7 +2378,7 @@ export function AdminPanel() {
                   Resolved ({resolved.length})
                 </p>
                 <div className="flex flex-col gap-3">
-                  {resolved.map(s => <Card key={s.id} sub={s} />)}
+                  {resolved.map(renderApplicationCard)}
                 </div>
               </>
             )}
