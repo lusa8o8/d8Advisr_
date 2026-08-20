@@ -330,27 +330,14 @@ export async function updateAdminLiveEvent(
   return adminEventFromRow(data as unknown as AdminEventRow);
 }
 
-export async function fetchPendingEventLiveRevisions(): Promise<AdminEventLiveRevision[]> {
+export async function fetchEventRevisionHistory(eventId: string): Promise<AdminEventLiveRevision[]> {
   const { data, error } = await supabase
     .from('event_revisions')
     .select('*, events(title, category, city)')
-    .eq('status', 'pending')
+    .eq('event_id', eventId)
     .order('created_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as unknown as EventLiveRevisionRow[]).map(adminEventLiveRevisionFromRow);
-}
-
-export async function reviewAdminLiveEventRevision(
-  revisionId: string,
-  decision: 'approved' | 'rejected',
-  reviewNote?: string
-): Promise<void> {
-  const { error } = await supabase.rpc('admin_review_event_revision', {
-    p_revision_id: revisionId,
-    p_decision: decision,
-    p_review_note: reviewNote?.trim() || null,
-  });
-  throwIfError(error);
 }
 
 

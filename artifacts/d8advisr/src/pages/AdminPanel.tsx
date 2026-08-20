@@ -47,8 +47,7 @@ import {
   fetchVenueChangeLog,
   fetchVenueListingReviews,
   fetchPendingVenueLiveRevisions,
-  fetchPendingEventLiveRevisions,
-  reviewAdminLiveEventRevision,
+  fetchEventRevisionHistory,
   fetchVenuePlacementRequests,
   insertVenueInspection,
   markVenueVerified,
@@ -161,13 +160,9 @@ export function AdminPanel() {
   const [inspectionsError, setInspectionsError] = useState<string | null>(null);
   const [venueChangeLogs, setVenueChangeLogs] = useState<Record<string, VenueChangeLogRow[]>>({});
   const [liveVenueRevisions, setLiveVenueRevisions] = useState<VenueLiveRevision[]>([]);
-  const [liveEventRevisions, setLiveEventRevisions] = useState<AdminEventLiveRevision[]>([]);
-  const [reviewingEventRevisionId, setReviewingEventRevisionId] = useState<string | null>(null);
-  const [eventRevisionDecision, setEventRevisionDecision] = useState<'approved' | 'rejected'>('approved');
-  const [eventRevisionNote, setEventRevisionNote] = useState('');
-  const [showEventRevisionDialog, setShowEventRevisionDialog] = useState(false);
-  const [eventRevisionLoading, setEventRevisionLoading] = useState(false);
-  const [eventRevisionError, setEventRevisionError] = useState<string | null>(null);
+  const [eventRevisionHistory, setEventRevisionHistory] = useState<Record<string, AdminEventLiveRevision[]>>({});
+  const [eventHistoryLoading, setEventHistoryLoading] = useState(false);
+  const [eventHistoryError, setEventHistoryError] = useState<string | null>(null);
   const [changeLogLoading, setChangeLogLoading] = useState(false);
   const [changeLogError, setChangeLogError] = useState<string | null>(null);
 
@@ -385,26 +380,17 @@ export function AdminPanel() {
     catch (error) { logAdminIssue('Could not load live venue revisions', adminErrorMessage(error)); }
   };
 
-  const loadLiveEventRevisions = async () => {
-    try { setLiveEventRevisions(await fetchPendingEventLiveRevisions()); }
-    catch (error) { logAdminIssue('Could not load live event revisions', adminErrorMessage(error)); }
-  };
-
-  const handleReviewEventRevision = async () => {
-    if (!reviewingEventRevisionId || eventRevisionLoading) return;
-    setEventRevisionLoading(true);
-    setEventRevisionError(null);
+  const loadEventRevisionHistory = async (eventId: string) => {
+    setEventHistoryLoading(true);
+    setEventHistoryError(null);
     try {
-      await reviewAdminLiveEventRevision(reviewingEventRevisionId, eventRevisionDecision, eventRevisionNote);
-      setLiveEventRevisions(current => current.filter(r => r.id !== reviewingEventRevisionId));
-      await loadAdminEvents();
-      setShowEventRevisionDialog(false);
-      setReviewingEventRevisionId(null);
-      setEventRevisionNote('');
+      const history = await fetchEventRevisionHistory(eventId);
+      setEventRevisionHistory(current => ({ ...current, [eventId]: history }));
     } catch (error) {
-      setEventRevisionError(adminErrorMessage(error));
+      setEventRevisionHistory(current => ({ ...current, [eventId]: [] }));
+      setEventHistoryError(adminErrorMessage(error));
     } finally {
-      setEventRevisionLoading(false);
+      setEventHistoryLoading(false);
     }
   };
 
@@ -415,7 +401,6 @@ export function AdminPanel() {
     void loadReverificationTasks();
     void loadVenueInspections();
     void loadLiveVenueRevisions();
-    void loadLiveEventRevisions();
   }, []);
 
   const updatePartnerApplicationStatus = async (id: string, status: PartnerApplicationStatus, reason?: string) => {
@@ -513,7 +498,8 @@ export function AdminPanel() {
       occasionFit: '',
       inspectorNotes: '',
     });
-    void loadVenueChangeLog(id);
+    if (events.some(event => event.id === id)) void loadEventRevisionHistory(id);
+    else void loadVenueChangeLog(id);
   };
 
 
@@ -706,9 +692,9 @@ export function AdminPanel() {
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
               navTab === 'submissions' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
             <Plus size={13} /> Submissions
-            {(submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length + liveEventRevisions.length) > 0 && (
+            {(submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length) > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-black flex items-center justify-center">
-                {submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length + liveEventRevisions.length}
+                {submissions.filter(s => s.status === 'pending').length + venuePlacementRequests.length + venueListingReviews.length}
               </span>
             )}
           </button>
@@ -1406,6 +1392,7 @@ export function AdminPanel() {
               onCancel={() => setEditingLive(false)}
               onSaved={async () => {
                 await loadAdminEvents();
+                await loadEventRevisionHistory(selectedEvent.id);
                 setEditingLive(false);
               }}
             />
@@ -1579,6 +1566,49 @@ export function AdminPanel() {
                 <div className="flex justify-between font-mono text-[11px]">
                   <span>Event ID</span>
                   <span>{selectedEvent.id}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={15} className="text-[#FF5A5F]" />
+                    <p className="font-bold text-gray-900 text-[13px]">Event change history</p>
+                  </div>
+                  {eventHistoryLoading && <span className="text-[10px] font-bold text-gray-400">Loading…</span>}
+                </div>
+                {eventHistoryError && (
+                  <div className="mb-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">{eventHistoryError}</div>
+                )}
+                {!eventHistoryLoading && (eventRevisionHistory[selectedEvent.id]?.length ?? 0) === 0 && !eventHistoryError && (
+                  <p className="text-[12px] text-gray-500">No published-event changes have been recorded yet.</p>
+                )}
+                <div className="space-y-3">
+                  {(eventRevisionHistory[selectedEvent.id] ?? []).map(revision => (
+                    <div key={revision.id} className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[12px] font-bold text-gray-900 capitalize">
+                            {revision.changedFields.map(field => field.replaceAll('_', ' ')).join(', ') || 'Event update'}
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-gray-400 capitalize">
+                            {revision.revisionSource} · {revision.status} · {revision.ruleCode?.replaceAll('_', ' ') ?? 'recorded change'}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[10px] font-semibold text-gray-400">{formatDateTime(revision.createdAt)}</span>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        {revision.changedFields.map(field => (
+                          <div key={field} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2 text-[10px]">
+                            <span className="truncate text-red-500 line-through">{String(revision.previousValues[field] ?? 'Not set')}</span>
+                            <span className="text-gray-300">→</span>
+                            <span className="truncate font-bold text-green-700">{String(revision.proposedValues[field] ?? 'Not set')}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {revision.organizerReason && <p className="mt-2 text-[11px] italic text-gray-500">Reason: {revision.organizerReason}</p>}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1973,7 +2003,7 @@ export function AdminPanel() {
       {view === 'submissions' && (() => {
         const pending  = submissions.filter(s => s.status === 'pending' || s.status === 'needs_update');
         const resolved = submissions.filter(s => s.status !== 'pending' && s.status !== 'needs_update');
-        const totalPending = pending.length + venuePlacementRequests.length + venueListingReviews.length + liveEventRevisions.length;
+        const totalPending = pending.length + venuePlacementRequests.length + venueListingReviews.length;
 
         const approve = (id: string) => {
           void updatePartnerApplicationStatus(id, 'live');
@@ -2232,73 +2262,6 @@ export function AdminPanel() {
           );
         };
 
-        const EventRevisionCard = ({ rev }: { rev: AdminEventLiveRevision }) => (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-600">
-                  <ShieldCheck size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-[14px] leading-tight">{rev.eventTitle}</p>
-                  <p className="text-[12px] text-gray-400 font-medium mt-0.5">
-                    {rev.eventCategory} · {rev.eventCity}
-                  </p>
-                  <p className="text-[11px] text-amber-600 font-semibold mt-1">
-                    Sensitive revision ({rev.ruleCode ? rev.ruleCode.replace('_', ' ') : 'changes'})
-                  </p>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ml-2 bg-amber-50 text-amber-700 border-amber-200">
-                Pending Review
-              </span>
-            </div>
-
-            <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-100 mb-3 text-[12px] text-amber-900">
-              <p className="font-bold text-[10px] uppercase tracking-wider text-amber-700 mb-1.5">
-                Changed fields ({rev.changedFields.join(', ')})
-              </p>
-              <div className="space-y-1">
-                {Object.entries(rev.proposedValues).map(([key, val]) => (
-                  <div key={key} className="flex items-baseline gap-1.5 text-[11px] flex-wrap">
-                    <span className="font-mono text-gray-500 font-semibold">{key}:</span>
-                    <span className="text-red-500 line-through truncate max-w-[120px]">{String(rev.previousValues[key] ?? 'none')}</span>
-                    <span className="text-gray-400">→</span>
-                    <span className="text-green-600 font-bold truncate max-w-[140px]">{String(val ?? 'none')}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setReviewingEventRevisionId(rev.id);
-                  setEventRevisionDecision('approved');
-                  setEventRevisionNote('');
-                  setEventRevisionError(null);
-                  setShowEventRevisionDialog(true);
-                }}
-                className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle size={14} /> Approve revision
-              </button>
-              <button
-                onClick={() => {
-                  setReviewingEventRevisionId(rev.id);
-                  setEventRevisionDecision('rejected');
-                  setEventRevisionNote('');
-                  setEventRevisionError(null);
-                  setShowEventRevisionDialog(true);
-                }}
-                className="flex-1 bg-gray-100 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
-              >
-                <XCircle size={14} /> Reject
-              </button>
-            </div>
-          </div>
-        );
-
         return (
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-8">
             {/* Stats row */}
@@ -2339,17 +2302,6 @@ export function AdminPanel() {
               </>
             )}
 
-            {liveEventRevisions.length > 0 && (
-              <>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Event sensitive revisions ({liveEventRevisions.length})
-                </p>
-                <div className="flex flex-col gap-3 mb-6">
-                  {liveEventRevisions.map(rev => <EventRevisionCard key={rev.id} rev={rev} />)}
-                </div>
-              </>
-            )}
-
             {venueListingReviews.length > 0 && (
               <>
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -2383,7 +2335,7 @@ export function AdminPanel() {
               </>
             )}
 
-            {submissions.length === 0 && venuePlacementRequests.length === 0 && venueListingReviews.length === 0 && liveEventRevisions.length === 0 && (
+            {submissions.length === 0 && venuePlacementRequests.length === 0 && venueListingReviews.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <p className="text-4xl mb-4">📥</p>
                 <p className="font-bold text-gray-700 text-[16px]">No submissions yet</p>
@@ -2465,86 +2417,6 @@ export function AdminPanel() {
         </div>
       )}
 
-      {/* ── Event Revision Review Modal ── */}
-      {showEventRevisionDialog && reviewingEventRevisionId && (() => {
-        const rev = liveEventRevisions.find(r => r.id === reviewingEventRevisionId);
-        if (!rev) return null;
-        return (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
-            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-start gap-3">
-                <div className={cn(
-                  "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-                  eventRevisionDecision === 'approved' ? "bg-[#E8FFF0] text-[#00C851]" : "bg-red-50 text-red-500"
-                )}>
-                  {eventRevisionDecision === 'approved' ? <CheckCircle size={20} /> : <XCircle size={20} />}
-                </div>
-                <div>
-                  <h2 className="text-[18px] font-black text-gray-900">
-                    {eventRevisionDecision === 'approved' ? 'Approve event revision' : 'Reject event revision'}
-                  </h2>
-                  <p className="mt-0.5 text-[12px] text-gray-500">{rev.eventTitle}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-2 rounded-2xl bg-amber-50/70 p-4 text-[12px] text-amber-900 border border-amber-200/50">
-                <p className="font-bold text-[11px] uppercase tracking-wider text-amber-800 mb-1">
-                  Proposed changes ({rev.changedFields.join(', ')})
-                </p>
-                {Object.entries(rev.proposedValues).map(([key, val]) => (
-                  <div key={key} className="flex items-baseline gap-1.5 text-xs flex-wrap">
-                    <span className="font-mono text-gray-500 font-semibold">{key}:</span>
-                    <span className="text-red-500 line-through truncate max-w-[120px]">{String(rev.previousValues[key] ?? 'none')}</span>
-                    <span className="text-gray-400">→</span>
-                    <span className="text-green-600 font-bold truncate max-w-[140px]">{String(val ?? 'none')}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-                  Review note {eventRevisionDecision === 'rejected' ? '(reason for partner)' : '(optional)'}
-                </label>
-                <textarea
-                  value={eventRevisionNote}
-                  onChange={e => setEventRevisionNote(e.target.value)}
-                  placeholder={eventRevisionDecision === 'approved' ? 'Optional review note...' : 'Explain why this revision cannot be accepted...'}
-                  rows={3}
-                  className="w-full rounded-xl border border-gray-200 p-3 text-[13px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                />
-              </div>
-
-              {eventRevisionError && (
-                <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">
-                  {eventRevisionError}
-                </div>
-              )}
-
-              <div className="mt-5 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEventRevisionDialog(false)}
-                  disabled={eventRevisionLoading}
-                  className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600 active:scale-95 transition-transform"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={eventRevisionLoading}
-                  onClick={() => void handleReviewEventRevision()}
-                  className={cn(
-                    "flex-1 rounded-xl px-4 py-3 text-[13px] font-bold text-white shadow-sm disabled:opacity-40 active:scale-95 transition-transform",
-                    eventRevisionDecision === 'approved' ? "bg-[#00C851]" : "bg-red-500 hover:bg-red-600"
-                  )}
-                >
-                  {eventRevisionLoading ? 'Processing...' : eventRevisionDecision === 'approved' ? 'Confirm approval' : 'Confirm rejection'}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
