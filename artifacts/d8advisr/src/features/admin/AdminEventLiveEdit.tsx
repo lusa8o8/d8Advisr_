@@ -5,7 +5,7 @@ import type { AdminEvent } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
 import { AdminListingMediaEditor } from './AdminListingMediaEditor';
-import { canPublishedPriceChange, EVENT_EMOJI_OPTIONS } from '@workspace/d8-core/event-policy';
+import { EVENT_EMOJI_OPTIONS } from '@workspace/d8-core/event-policy';
 
 interface Props {
   event: AdminEvent;
@@ -56,19 +56,6 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (saving) return;
-
-    const priceCheck = canPublishedPriceChange({
-      previouslyPublished: true,
-      currentIsFree: event.isFree,
-      currentPrice: event.pricePerPerson ?? 0,
-      proposedIsFree: draft.isFree,
-      proposedPrice: draft.isFree ? 0 : Number(draft.price),
-    });
-
-    if (!priceCheck.allowed) {
-      setError(priceCheck.reason);
-      return;
-    }
 
     setSaving(true);
     setError(null);
@@ -136,7 +123,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
         <p className="leading-relaxed">
           {event.isFree
             ? 'This event was published as Free Entry and cannot be converted to a paid event.'
-            : `This event was published at ${event.currency} ${event.pricePerPerson?.toFixed(2)}. The price can be discounted or made free, but cannot increase above ${event.currency} ${event.pricePerPerson?.toFixed(2)}.`}
+            : `This event was published at ${event.currency} ${event.pricePerPerson?.toFixed(2)}. Material changes take effect immediately and remain in its event history.`}
         </p>
       </div>
 
@@ -320,7 +307,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
             checked={draft.isFree}
             onChange={e => setDraft(c => ({ ...c, isFree: e.target.checked, price: e.target.checked ? '' : c.price }))}
           />
-          Free entry {event.isFree && <span className="text-[10px] text-gray-400 font-normal">(Locked: published free events cannot become paid)</span>}
+          Free entry
         </label>
         <label className="flex items-center gap-2">
           <input

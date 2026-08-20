@@ -7,10 +7,8 @@ import { useListingReferences, useRegion } from '@workspace/d8-core/use-region';
 import { isPartnerImageUrl, uploadPartnerImage, validatePartnerImage } from '@/lib/partnerMedia';
 import { useAuth } from '@workspace/d8-core/auth';
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '@workspace/d8-core/use-session-draft';
-import { fetchPartnerEventLatestRevision, fetchPartnerEventPendingRevision } from '@/features/partner/partnerEventData';
-import type { PartnerEventRevision } from '@/features/partner/partnerModels';
+import type { EventRevisionResult, PartnerEventInput } from '@/features/partner/partnerEventData';
 import {
-  canPublishedPriceChange,
   EVENT_EMOJI_OPTIONS,
   EVENT_PUBLISHING_ACKNOWLEDGEMENT,
   EVENT_PUBLISHING_POLICY_PATH,
@@ -49,6 +47,31 @@ const LABEL = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wide
 
 const MAX_IMAGES = 3;
 
+const MATERIAL_FIELD_LABELS: Record<string, string> = {
+  price_pp: 'Entry price',
+  is_free: 'Free or paid entry',
+  currency: 'Currency',
+  starts_at: 'Start date or time',
+  ends_at: 'End date or time',
+  venue_id: 'Venue',
+  external_location_name: 'Location name',
+  external_location_address: 'Location address',
+  attendance_mode: 'Attendance mode',
+  capacity: 'Attendance limit',
+};
+
+function revisionValue(value: unknown, currencySymbol: string) {
+  if (value === null || value === undefined || value === '') return 'Not set';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toLocaleString();
+  }
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value).replace(/^ZMW\s*/i, currencySymbol);
+}
+
 function localSchedule(startsAt?: string | null) {
   if (!startsAt) return { date: '', time: '' };
   const value = new Date(startsAt);
@@ -82,12 +105,10 @@ export function PartnerEventEditor() {
   const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
   const [policyAccepted, setPolicyAccepted] = useState(false);
   const [publicationRequestKey, setPublicationRequestKey] = useState<string | null>(null);
-  const [latestRevision, setLatestRevision] = useState<PartnerEventRevision | null>(null);
-
-  useEffect(() => {
-    if (!editId) return;
-    void fetchPartnerEventLatestRevision(editId).then(setLatestRevision);
-  }, [editId]);
+  const [materialPreview, setMaterialPreview] = useState<EventRevisionResult | null>(null);
+  const [materialAccepted, setMaterialAccepted] = useState(false);
+  const [organizerReason, setOrganizerReason] = useState('');
+  const pendingMaterialInputRef = useRef<PartnerEventInput | null>(null);
 
   const [name, setName] = useState(existing?.name ?? '');
   const [category, setCategory] = useState(existing?.category ?? '');
@@ -246,14 +267,6 @@ export function PartnerEventEditor() {
   let parsedPrice = 0;
   try {
     parsedPrice = parseEventPriceInput(price, isFree);
-    const commercialChange = canPublishedPriceChange({
-      previouslyPublished: Boolean(existing?.firstPublishedAt),
-      currentIsFree: Boolean(existing?.isFree),
-      currentPrice: existing?.priceAmount ?? 0,
-      proposedIsFree: isFree,
-      proposedPrice: parsedPrice,
-    });
-    if (!commercialChange.allowed) priceError = commercialChange.reason;
   } catch (error) {
     priceError = error instanceof Error ? error.message : 'Enter a valid entry price.';
   }
@@ -262,51 +275,65 @@ export function PartnerEventEditor() {
   ));
   const needsPublicationAction = !existing || existing.status !== 'live';
 
-  const save = async (publishNow: boolean) => {
+  const save = async (
+    publishNow: boolean,
+    revisionConfirmation?: { confirmed: boolean; organizerReason?: string },
+  ) => {
     if (!canSave && publishNow) return;
     if (!name.trim()) return;
     setSaving(true);
     setSaveError(null);
     try {
-      const imageUrls = await Promise.all(
-        images.map(image => image.file ? uploadPartnerImage(image.file, 'events') : image.url)
-      );
-      const effectiveIsFree = isFree || parsedPrice === 0;
-      const result = await saveEvent({
-        title: name.trim(),
-        category,
-        description: desc || undefined,
-        frequency,
-        weekday: weekday || undefined,
-        date: date || undefined,
-        time,
-        price: effectiveIsFree ? '0' : price,
-        isFree: effectiveIsFree,
-        hasCapacity,
-        capacity: capacity || undefined,
-        emoji,
-        publishNow,
-        locationKind: locationChoice,
-        venueId: venueId || undefined,
-        externalLocationName,
-        externalLocationAddress,
-        coverImage: imageUrls[0] ?? null,
-        images: imageUrls,
-        vibes: selectedVibes,
-        publicationAcknowledgement: publishNow ? {
-          requestKey: publicationRequestKey ?? crypto.randomUUID(),
-          acknowledged: policyAccepted,
-        } : undefined,
-      }, editId);
+      let eventInput = revisionConfirmation?.confirmed ? pendingMaterialInputRef.current : null;
+      if (!eventInput) {
+        const imageUrls = await Promise.all(
+          images.map(image => image.file ? uploadPartnerImage(image.file, 'events') : image.url)
+        );
+        const effectiveIsFree = isFree || parsedPrice === 0;
+        eventInput = {
+          title: name.trim(),
+          category,
+          description: desc || undefined,
+          frequency,
+          weekday: weekday || undefined,
+          date: date || undefined,
+          time,
+          price: effectiveIsFree ? '0' : price,
+          isFree: effectiveIsFree,
+          hasCapacity,
+          capacity: capacity || undefined,
+          emoji,
+          publishNow,
+          locationKind: locationChoice,
+          venueId: venueId || undefined,
+          externalLocationName,
+          externalLocationAddress,
+          coverImage: imageUrls[0] ?? null,
+          images: imageUrls,
+          vibes: selectedVibes,
+          publicationAcknowledgement: publishNow ? {
+            requestKey: publicationRequestKey ?? crypto.randomUUID(),
+            acknowledged: policyAccepted,
+          } : undefined,
+        };
+      }
+      const result = await saveEvent(eventInput, editId, revisionConfirmation);
+      if (result?.status === 'confirmation_required') {
+        pendingMaterialInputRef.current = eventInput;
+        setMaterialPreview(result);
+        setMaterialAccepted(false);
+        setOrganizerReason('');
+        setSaving(false);
+        return;
+      }
+      pendingMaterialInputRef.current = null;
+      setMaterialPreview(null);
       clearSessionDraft(draftKey);
       setSaving(false);
-      if (result?.status === 'pending') {
-        setSavedTitle('Changes submitted for review');
-        setSavedSubtitle('Sensitive changes were sent to D8 admins for review before taking public effect.');
-      } else {
-        setSavedTitle('Event saved');
-        setSavedSubtitle('Redirecting to your dashboard…');
-      }
+      setSavedTitle('Event saved');
+      setSavedSubtitle(result?.notification_count
+        ? `Changes are live and ${result.notification_count} interested ${result.notification_count === 1 ? 'person was' : 'people were'} notified.`
+        : 'Changes are live. Redirecting to your dashboard…');
       setSaved(true);
       setTimeout(() => setLocation('/dashboard'), 1500);
     } catch (e) {
@@ -327,6 +354,11 @@ export function PartnerEventEditor() {
     if (!policyAccepted) return;
     setShowPublishConfirmation(false);
     await save(true);
+  };
+
+  const confirmMaterialRevision = async () => {
+    if (!materialAccepted) return;
+    await save(false, { confirmed: true, organizerReason });
   };
 
   if (saved) {
@@ -358,39 +390,6 @@ export function PartnerEventEditor() {
         <h1 className="text-[22px] font-black text-gray-900">{editId ? 'Edit event' : 'New event'}</h1>
         <p className="text-[13px] text-gray-400 mt-1">Saved events go live immediately or sit as a draft. Use square or portrait images so they are ready for future IG/Facebook posting.</p>
       </div>
-
-      {latestRevision?.status === 'pending' && (
-        <div className="mx-5 mt-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-amber-900 shadow-sm">
-          <div className="flex items-start gap-2.5">
-            <ShieldCheck size={18} className="mt-0.5 text-amber-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-[13px] text-amber-900">Sensitive revision in review</h4>
-              <p className="text-[12px] text-amber-700 mt-0.5 leading-relaxed">
-                You previously submitted changes ({latestRevision.changedFields.join(', ')}) that require D8 admin review. The current public event remains live with its previous values until approved.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {latestRevision?.status === 'rejected' && (
-        <div className="mx-5 mt-4 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-red-900 shadow-sm">
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle size={18} className="mt-0.5 text-red-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-[13px] text-red-900">Previous revision was not accepted</h4>
-              {latestRevision.reviewNote && (
-                <p className="text-[12px] font-semibold text-red-800 mt-0.5 bg-red-100/70 rounded-lg p-2 border border-red-200/60">
-                  D8 Admin Note: {latestRevision.reviewNote}
-                </p>
-              )}
-              <p className="text-[12px] text-red-700 mt-1 leading-relaxed">
-                Your event remains live with its original details. You can adjust the information below and save to submit a new revision.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="px-5 pt-5 flex flex-col gap-4">
 
@@ -774,7 +773,7 @@ export function PartnerEventEditor() {
             {existing?.firstPublishedAt && (
               <p className="mt-2 flex items-start gap-1.5 text-[11px] font-semibold text-amber-700">
                 <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-                Published prices may decrease or become free, but can never increase or change from free to paid.
+                Price changes to a published event require confirmation, are recorded, and may notify interested people.
               </p>
             )}
           </div>
@@ -876,6 +875,76 @@ export function PartnerEventEditor() {
             <div className="mt-5 flex gap-2">
               <button type="button" onClick={() => setShowPublishConfirmation(false)} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Cancel</button>
               <button type="button" disabled={!policyAccepted || saving} onClick={() => void confirmPublication()} className="flex-1 rounded-xl bg-primary px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40">Confirm and publish</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {materialPreview?.status === 'confirmation_required' && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700"><AlertTriangle size={20} /></div>
+              <div>
+                <h2 className="text-[18px] font-black text-gray-900">Confirm material event changes</h2>
+                <p className="mt-1 text-[12px] text-gray-500">Policy version {EVENT_PUBLISHING_POLICY_VERSION}</p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-[13px] leading-5 text-gray-600">
+              These changes affect information people may rely on. They will go live immediately after you confirm and will be recorded in the event history.
+            </p>
+
+            <div className="mt-4 space-y-2">
+              {materialPreview.material_fields?.map(field => (
+                <div key={field} className="rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-wide text-gray-500">{MATERIAL_FIELD_LABELS[field] ?? field.replaceAll('_', ' ')}</p>
+                  <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px] text-gray-700">
+                    <span className="break-words">{revisionValue(materialPreview.previous_values?.[field], currencySymbol)}</span>
+                    <span className="text-gray-300">→</span>
+                    <span className="break-words font-bold">{revisionValue(materialPreview.proposed_values?.[field], currencySymbol)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-blue-50 p-4 text-[12px] text-blue-800">
+              {(materialPreview.interested_count ?? 0) > 0
+                ? `${materialPreview.interested_count} interested ${materialPreview.interested_count === 1 ? 'person' : 'people'} will be notified after this change is applied.`
+                : 'No interested people need to be notified right now.'}
+            </div>
+
+            <div className="mt-4">
+              <label className={LABEL}>Reason for the change <span className="normal-case text-gray-400">(optional)</span></label>
+              <textarea
+                value={organizerReason}
+                onChange={event => setOrganizerReason(event.target.value)}
+                rows={3}
+                placeholder="Add context for the event history"
+                className={cn(INPUT, 'resize-none')}
+              />
+            </div>
+
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4">
+              <input type="checkbox" checked={materialAccepted} onChange={event => setMaterialAccepted(event.target.checked)} className="mt-1" />
+              <span className="text-[12px] font-medium leading-5 text-gray-700">
+                I confirm these changes are accurate and understand that interested people may be notified.
+              </span>
+            </label>
+
+            <a className="mt-3 inline-block text-[12px] font-bold text-primary hover:underline" href={EVENT_PUBLISHING_POLICY_PATH} target="_blank" rel="noreferrer">Read the Event Publishing Policy</a>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setMaterialPreview(null); setMaterialAccepted(false); pendingMaterialInputRef.current = null; }}
+                className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600"
+              >Keep editing</button>
+              <button
+                type="button"
+                disabled={!materialAccepted || saving}
+                onClick={() => void confirmMaterialRevision()}
+                className="flex-1 rounded-xl bg-primary px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40"
+              >{saving ? 'Applying…' : 'Confirm and apply'}</button>
             </div>
           </div>
         </div>

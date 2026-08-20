@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { DemandSignal, PartnerEvent, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@workspace/d8-core/types';
 import type { PartnerType } from '@workspace/d8-core/partner-capabilities';
 import { fetchPartnerApplication, getAuthenticatedPartnerUserId, getOptionalPartnerUserId, savePartnerApplication } from '@/features/partner/partnerApplicationData';
-import { fetchPartnerEvents, savePartnerEvent, setPartnerEventStatus, type PartnerEventInput } from '@/features/partner/partnerEventData';
+import { fetchPartnerEvents, savePartnerEvent, setPartnerEventStatus, type EventRevisionConfirmation, type PartnerEventInput } from '@/features/partner/partnerEventData';
 import { fetchPartnerDemandSignals } from '@/features/partner/partnerDemandData';
 import { fetchPartnerReviewInsights } from '@/features/partner/partnerReviewData';
 import { partnerProfileFromRow, type PartnerProfile } from '@/features/partner/partnerModels';
@@ -109,10 +109,10 @@ export function usePartner() {
     setEvents(current => current.map(event => event.id === eventId ? { ...event, venuePageStatus: status } : event));
   }, [venuePlacementRequests]);
 
-  const saveEvent = useCallback(async (eventData: PartnerEventInput, editId?: string) => {
+  const saveEvent = useCallback(async (eventData: PartnerEventInput, editId?: string, revisionConfirmation?: EventRevisionConfirmation) => {
     const userId = await getAuthenticatedPartnerUserId();
-    const result = await savePartnerEvent(userId, await fetchPartnerApplication(userId), venueOptions, eventData, editId);
-    await load();
+    const result = await savePartnerEvent(userId, await fetchPartnerApplication(userId), venueOptions, eventData, editId, revisionConfirmation);
+    if (result?.status !== 'confirmation_required') await load();
     return result;
   }, [load, venueOptions]);
 

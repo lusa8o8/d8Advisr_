@@ -556,8 +556,8 @@ export function PartnerPoliciesPage({ homeHref = '/' }: LegalPageProps) {
         <p>
           This policy protects the event details consumers rely on while allowing organizers to make
           genuine operational corrections. Approved partners may publish without routine admin
-          approval, but publication and later changes remain subject to database rules, audit, and
-          review where the change is sensitive.
+          approval. Material changes require explicit confirmation, are recorded, and notify
+          interested consumers.
         </p>
         <a
           className="inline-flex rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground transition-opacity hover:opacity-90"
@@ -607,41 +607,38 @@ export function EventPublishingPolicyPage({ homeHref = '/' }: LegalPageProps) {
         <p>D8 stores the accepted policy version, publisher, event, commercial snapshot, and server timestamp.</p>
       </LegalSection>
 
-      <LegalSection title="3. Permanent commercial protections">
+      <LegalSection title="3. Published event changes">
+        <p>Published history remains permanent even if an event is later paused or returned to draft.</p>
         <LegalList>
-          <li>A published free event cannot later become paid.</li>
-          <li>A published mandatory entry price cannot be increased.</li>
-          <li>Every permitted reduction becomes the new permanent maximum.</li>
-          <li>The currency cannot change after first publication.</li>
-          <li>A required fee, deposit, minimum spend, package, door charge, or external payment cannot be added or increased to evade these rules.</li>
+          <li>Description, vibe, emoji, image, and minor display changes apply after validation and are recorded.</li>
+          <li>Price, currency, free/paid state, date, time, venue, address, attendance mode, and capacity changes require a before/after confirmation.</li>
+          <li>Confirmed material changes apply immediately, are recorded, and notify interested consumers.</li>
         </LegalList>
-        <p>Pausing, unpublishing, returning to draft, changing ownership, or transferring a listing does not reset this history.</p>
       </LegalSection>
 
-      <LegalSection title="4. Permitted commercial improvements">
-        <p>A paid event may reduce its entry price or become free. The organizer must confirm the before/after values, the change is audited, and interested consumers are notified. Refund reconciliation becomes mandatory when D8 supports paid registrations.</p>
+      <LegalSection title="4. Commercial changes">
+        <p>While D8 does not sell tickets or registrations, a published event may change between free and paid or change its price after explicit confirmation. The before/after values are recorded and interested consumers are notified. This policy will be reviewed before D8 introduces ticketing or registration rights.</p>
       </LegalSection>
 
-      <LegalSection title="5. Operational changes">
+      <LegalSection title="5. Validation and blocking">
         <LegalList>
-          <li>More than 72 hours before start, low-risk corrections may apply automatically; material changes may require review.</li>
-          <li>Between 72 and 24 hours, material changes require a reason, expedited review, and immediate consumer notice.</li>
-          <li>Inside 24 hours, only cancellation, postponement, and documented emergency operational changes are permitted.</li>
-          <li>After start, the public event is historical and cannot be rewritten as if different terms originally applied.</li>
+          <li>Only an authorized organizer or D8 administrator may change an event.</li>
+          <li>Prices cannot be negative, and a limited event must have a capacity greater than zero.</li>
+          <li>An end time must be after the start time, and an event cannot be moved into the past.</li>
+          <li>Currency and required location details must be valid.</li>
         </LegalList>
-        <p>Time windows use the event location&apos;s timezone.</p>
       </LegalSection>
 
       <LegalSection title="6. Capacity, schedule, and location">
-        <p>Zero capacity means open attendance, not zero available places. Capacity may not fall below confirmed registrations. Material date, time, venue, address, eligibility, accessibility, or core-experience changes require consumer notice and may require reconfirmation.</p>
+        <p>Open attendance means no maximum has been listed; it is not a reservation count. Material capacity, date, time, venue, or address changes require confirmation and consumer notice.</p>
       </LegalSection>
 
-      <LegalSection title="7. Cancellation and recurring events">
-        <p>Organizers may cancel or postpone when necessary but must provide an accurate reason. D8 preserves the change history and notifies interested consumers. A recurring series cannot use a later occurrence to change from free to paid or increase the series price; a different commercial model requires a new series.</p>
+      <LegalSection title="7. Cancellation">
+        <p>Cancellation applies immediately after a strong confirmation and is recorded. Interested consumers are notified. The event remains visibly marked and lower in discovery for approximately 24 hours, then leaves ordinary discovery while remaining available through notifications, direct links, and history.</p>
       </LegalSection>
 
       <LegalSection title="8. Review and enforcement">
-        <p>D8 uses three lanes: deterministic blocks, automatic low-risk changes, and admin review for sensitive operational changes. Admin review is not a route around a blocked price increase or free-to-paid change. Repeated evasion may lead to restricted publishing, suspension, or removal.</p>
+        <p>D8 does not routinely pre-review event publication or edits. D8 may inspect event history in response to a review, report, complaint, support request, or another operational concern, and may warn, restrict, suspend, correct, or remove deceptive listings or partners.</p>
       </LegalSection>
 
       <LegalSection title="9. Questions and policy versions">

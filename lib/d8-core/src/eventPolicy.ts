@@ -1,11 +1,11 @@
-export const EVENT_PUBLISHING_POLICY_ID = 'partner-event-publishing-v1.0';
-export const EVENT_PUBLISHING_POLICY_VERSION = '1.0';
-export const EVENT_PUBLISHING_POLICY_APPROVED_DATE = '18 August 2026';
-export const EVENT_PUBLISHING_POLICY_CONTENT_HASH = '749f2d5c230588a3b540c5b69e774d816cfb79810ebc58d899b697a7d6fd226e';
+export const EVENT_PUBLISHING_POLICY_ID = 'partner-event-publishing-v1.1';
+export const EVENT_PUBLISHING_POLICY_VERSION = '1.1';
+export const EVENT_PUBLISHING_POLICY_APPROVED_DATE = '20 August 2026';
+export const EVENT_PUBLISHING_POLICY_CONTENT_HASH = 'e3933f5bc2fdb5679e56a72e1393b79c457d4fa007a354ba2f94545c6438c71a';
 export const EVENT_PUBLISHING_POLICY_PATH = '/partner-policies/event-publishing';
 
 export const EVENT_PUBLISHING_ACKNOWLEDGEMENT =
-  "I confirm that the event's commercial details are correct. I understand that a free event cannot later become paid and that a published mandatory price cannot be increased.";
+  "I confirm that these event details are accurate. Material changes after publication require another confirmation and may notify interested consumers.";
 
 export const EVENT_EMOJI_OPTIONS = ['📅', '🎷', '🍳', '🎤', '🏃', '🎵', '🍷', '🎭', '🏋️', '🎨', '🎪', '🌟'] as const;
 
@@ -50,12 +50,11 @@ export function canPublishedPriceChange(args: {
   proposedIsFree: boolean;
   proposedPrice: number;
 }) {
-  if (!args.previouslyPublished) return { allowed: true as const };
-  if (args.currentIsFree && !args.proposedIsFree) {
-    return { allowed: false as const, reason: 'A published free event cannot become paid.' };
-  }
-  if (!args.currentIsFree && !args.proposedIsFree && args.proposedPrice > args.currentPrice) {
-    return { allowed: false as const, reason: 'A published event price cannot be increased.' };
-  }
-  return { allowed: true as const };
+  const changed = args.currentIsFree !== args.proposedIsFree
+    || args.currentPrice !== args.proposedPrice;
+  return {
+    allowed: true as const,
+    requiresConfirmation: args.previouslyPublished && changed,
+    reason: undefined,
+  };
 }

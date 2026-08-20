@@ -36,6 +36,23 @@ export interface PartnerEventInput {
   };
 }
 
+export interface EventRevisionConfirmation {
+  confirmed: boolean;
+  organizerReason?: string;
+}
+
+export interface EventRevisionResult {
+  status: 'applied' | 'confirmation_required';
+  revision_id?: string;
+  changed_fields?: string[];
+  material_fields?: string[];
+  previous_values?: Record<string, unknown>;
+  proposed_values?: Record<string, unknown>;
+  interested_count?: number;
+  notification_count?: number;
+  message?: string;
+}
+
 const WEEKDAY_INDEX: Record<string, number> = {
   Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,
 };
@@ -88,22 +105,7 @@ export async function fetchPartnerEvents(userId: string): Promise<PartnerEvent[]
     .order('created_at', { ascending: false });
   throwIfError(error);
   const rows = (data ?? []) as Record<string, unknown>[];
-  if (rows.length === 0) return [];
-
-  const eventIds = rows.map(r => String(r.id));
-  const { data: pendingRevs } = await supabase
-    .from('event_revisions')
-    .select('event_id')
-    .in('event_id', eventIds)
-    .eq('status', 'pending');
-  
-  const pendingSet = new Set((pendingRevs ?? []).map(r => r.event_id));
-
-  return rows.map(row => {
-    const ev = partnerEventFromRow(row);
-    ev.hasPendingRevision = pendingSet.has(ev.id);
-    return ev;
-  });
+  return rows.map(partnerEventFromRow);
 }
 
 export async function savePartnerEvent(
@@ -112,7 +114,8 @@ export async function savePartnerEvent(
   venueOptions: PartnerVenueOption[],
   eventData: PartnerEventInput,
   editId?: string,
-) {
+  revisionConfirmation?: EventRevisionConfirmation,
+): Promise<EventRevisionResult | null> {
   if (application?.status !== 'live') {
     throw new Error('Partner application must be approved before publishing events');
   }
@@ -154,7 +157,7 @@ export async function savePartnerEvent(
   };
 
   let eventId = editId;
-  let revisionResult: { status: 'applied' | 'pending'; revision_id?: string; message?: string } | null = null;
+  let revisionResult: EventRevisionResult | null = null;
 
   if (eventId) {
     // Check if event is currently live
@@ -184,14 +187,18 @@ export async function savePartnerEvent(
         cover_image: eventData.coverImage ?? eventData.images?.[0] ?? null,
         images: eventData.images ?? [],
         vibes: eventData.vibes,
+        venue_page_status: venuePageStatus,
+        next_occurrence: nextOccurrence,
       };
-      const { data: revData, error: revError } = await supabase.rpc('partner_submit_event_revision', {
+      const { data: revData, error: revError } = await supabase.rpc('partner_apply_event_revision_v11', {
         p_event_id: editId,
         p_payload: revisionPayload,
         p_expected_updated_at: currentEvent.updated_at,
+        p_confirmed: revisionConfirmation?.confirmed ?? false,
+        p_organizer_reason: revisionConfirmation?.organizerReason?.trim() || null,
       });
       throwIfError(revError);
-      revisionResult = revData as { status: 'applied' | 'pending'; revision_id?: string; message?: string };
+      revisionResult = revData as EventRevisionResult;
     } else {
       const { error } = await supabase.from('events').update(payload).eq('id', editId);
       throwIfError(error);
