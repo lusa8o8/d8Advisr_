@@ -6,6 +6,10 @@ const migration = readFileSync(
   resolve(root, 'supabase/migrations/20260820110000_partner_admission_access_closure.sql'),
   'utf8',
 );
+const repairMigration = readFileSync(
+  resolve(root, 'supabase/migrations/20260820120000_repair_event_revision_schema_contract.sql'),
+  'utf8',
+);
 
 const required = [
   "when capability = 'events' then public.live_partner_type(user_uuid) in ('venue', 'organizer', 'both')",
@@ -35,6 +39,16 @@ const forbidden = [
 for (const fragment of forbidden) {
   if (migration.includes(fragment)) {
     throw new Error(`Unsafe Phase 4.6D migration contract remains: ${fragment}`);
+  }
+}
+
+for (const fragment of [
+  'add column if not exists blocked_reason text',
+  'add column if not exists event_id uuid references public.events(id)',
+  "'revision_decision'",
+]) {
+  if (!repairMigration.includes(fragment)) {
+    throw new Error(`Missing event revision compatibility repair: ${fragment}`);
   }
 }
 
