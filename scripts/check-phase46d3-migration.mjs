@@ -2,10 +2,13 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const migration = readFileSync(
+const migration = [readFileSync(
   resolve(root, 'supabase/migrations/20260821120000_admin_event_policy_v11_parity.sql'),
   'utf8',
-);
+), readFileSync(
+  resolve(root, 'supabase/migrations/20260821121000_normalize_admin_event_revision_timestamps.sql'),
+  'utf8',
+)].join('\n');
 
 const required = [
   'create or replace function public.publish_event_with_policy',
@@ -20,6 +23,8 @@ const required = [
   'create or replace function public.admin_cancel_event_v11',
   "new.event_status = 'cancelled'",
   'revoke execute on function public.admin_update_live_event',
+  'admin_apply_event_revision_v11_core',
+  "to_jsonb((normalized_payload ->> 'starts_at')::timestamptz)",
 ];
 
 for (const fragment of required) {

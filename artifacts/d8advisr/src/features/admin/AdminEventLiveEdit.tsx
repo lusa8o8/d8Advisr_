@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { AlertCircle, Lock, Save, ShieldCheck, X } from 'lucide-react';
-import { updateAdminLiveEvent } from './adminListingData';
+import { AlertCircle, AlertTriangle, Ban, Lock, Save, ShieldCheck, X } from 'lucide-react';
+import { cancelAdminEvent, updateAdminLiveEvent, type AdminEventPolicyResult } from './adminListingData';
 import type { AdminEvent } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
 import { AdminListingMediaEditor } from './AdminListingMediaEditor';
-import { EVENT_EMOJI_OPTIONS } from '@workspace/d8-core/event-policy';
+import { EVENT_EMOJI_OPTIONS, EVENT_PUBLISHING_POLICY_PATH, EVENT_PUBLISHING_POLICY_VERSION } from '@workspace/d8-core/event-policy';
 
 interface Props {
   event: AdminEvent;
@@ -18,6 +18,21 @@ const inputClass = 'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-
 
 function tags(value: string) {
   return value.split(',').map(item => item.trim()).filter(Boolean);
+}
+
+const materialFieldLabels: Record<string, string> = {
+  city: 'Region', starts_at: 'Start date or time', ends_at: 'End date or time',
+  event_location_kind: 'Location type', venue_id: 'D8 venue',
+  external_location_name: 'Location name', external_location_address: 'Location address',
+  is_free: 'Free or paid entry', price_pp: 'Entry price', capacity: 'Attendance limit',
+};
+
+function revisionValue(value: unknown, currency: string) {
+  if (value == null || value === '') return 'Not set';
+  if (typeof value === 'boolean') return value ? 'Free entry' : 'Paid entry';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value).toLocaleString();
+  if (typeof value === 'object') return JSON.stringify(value);
+  return typeof value === 'number' ? `${currency} ${value}` : String(value);
 }
 
 function initialDraft(event: AdminEvent) {
@@ -47,11 +62,34 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
   const [draft, setDraft] = useState(() => initialDraft(event));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [materialPreview, setMaterialPreview] = useState<AdminEventPolicyResult | null>(null);
+  const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
+  const [materialAccepted, setMaterialAccepted] = useState(false);
+  const [changeReason, setChangeReason] = useState('');
+  const [cancellationPreview, setCancellationPreview] = useState<AdminEventPolicyResult | null>(null);
+  const [cancellationAccepted, setCancellationAccepted] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
   const { regions } = useRegion();
   const selectedRegion = regions.find(item => item.name === draft.city || item.id === draft.city);
   const references = useListingReferences('event', selectedRegion?.id);
 
   useEffect(() => setDraft(initialDraft(event)), [event]);
+
+  const buildPayload = (): Record<string, unknown> => ({
+    title: draft.title.trim(), city: draft.city.trim(),
+    category: draft.category.trim() || null, description: draft.description.trim() || null,
+    starts_at: new Date(draft.startsAt).toISOString(),
+    ends_at: draft.endsAt ? new Date(draft.endsAt).toISOString() : null,
+    event_location_kind: draft.locationKind,
+    venue_id: draft.locationKind === 'd8_venue' ? (draft.venueId.trim() || null) : null,
+    external_location_name: draft.locationKind === 'external' ? (draft.externalLocationName.trim() || null) : null,
+    external_location_address: draft.locationKind === 'external' ? (draft.externalLocationAddress.trim() || null) : null,
+    price_pp: draft.isFree ? 0 : Number(draft.price),
+    capacity: draft.capacity ? Number(draft.capacity) : null,
+    is_free: draft.isFree, is_featured: draft.isFeatured,
+    cover_image: draft.coverImage?.trim() || null, images: draft.images ?? [],
+    vibes: tags(draft.vibes), emoji: draft.emoji?.trim() || '✨',
+  });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -61,7 +99,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
     setError(null);
 
     try {
-      await updateAdminLiveEvent(
+      const result = await updateAdminLiveEvent(
         event.id,
         {
           title: draft.title.trim(),
@@ -82,13 +120,58 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
           images: draft.images ?? [],
           vibes: tags(draft.vibes),
           emoji: draft.emoji?.trim() || '✨',
-          frequency: 'one-off',
         },
-        event.updatedAt
+        event.updatedAt,
+        false,
       );
+      if (result.status === 'confirmation_required') {
+        setPendingPayload(buildPayload());
+        setMaterialPreview(result);
+        setMaterialAccepted(false);
+        setChangeReason('');
+        return;
+      }
       await onSaved();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not update the live event.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmMaterialChanges = async () => {
+    if (!pendingPayload || !materialAccepted || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await updateAdminLiveEvent(event.id, pendingPayload, event.updatedAt, true, changeReason);
+      setPendingPayload(null);
+      setMaterialPreview(null);
+      await onSaved();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not update the live event.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const requestCancellation = async (confirmed: boolean) => {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await cancelAdminEvent(event.id, event.updatedAt, confirmed, confirmed ? cancellationReason : undefined);
+      if (result.status === 'confirmation_required') {
+        setCancellationPreview(result);
+        setCancellationAccepted(false);
+        setCancellationReason('');
+        return;
+      }
+      setCancellationPreview(null);
+      await onSaved();
+      onCancel();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not cancel the event.');
     } finally {
       setSaving(false);
     }
@@ -121,9 +204,8 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
           <AlertCircle size={13} className="text-blue-600" /> Commercial Policy Active
         </p>
         <p className="leading-relaxed">
-          {event.isFree
-            ? 'This event was published as Free Entry and cannot be converted to a paid event.'
-            : `This event was published at ${event.currency} ${event.pricePerPerson?.toFixed(2)}. Material changes take effect immediately and remain in its event history.`}
+          Material changes require confirmation, take effect immediately, remain in event history,
+          and notify interested consumers. Policy v{EVENT_PUBLISHING_POLICY_VERSION} applies to D8 and partner publishers.
         </p>
       </div>
 
@@ -264,11 +346,10 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <label>
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">
-            Entry price {event.pricePerPerson != null && !event.isFree ? `(Max ${event.currency} ${event.pricePerPerson})` : ''}
+            Entry price
           </span>
           <input
             min="0.01"
-            max={event.pricePerPerson != null && !event.isFree ? event.pricePerPerson : undefined}
             step="0.01"
             type="number"
             disabled={draft.isFree}
@@ -303,7 +384,6 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            disabled={event.isFree}
             checked={draft.isFree}
             onChange={e => setDraft(c => ({ ...c, isFree: e.target.checked, price: e.target.checked ? '' : c.price }))}
           />
@@ -350,6 +430,51 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
         <Save size={15} />
         {saving ? 'Saving live changes...' : 'Save live event changes'}
       </button>
+
+      <button type="button" disabled={saving} onClick={() => void requestCancellation(false)} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-black text-red-700 hover:bg-red-100 disabled:opacity-60">
+        <Ban size={15} /> Cancel event
+      </button>
+
+      {materialPreview?.status === 'confirmation_required' && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700"><AlertTriangle size={20} /></div>
+              <div><h2 className="text-[18px] font-black text-gray-900">Confirm material event changes</h2><p className="mt-1 text-[12px] text-gray-500">Policy version {EVENT_PUBLISHING_POLICY_VERSION}</p></div>
+            </div>
+            <p className="mt-4 text-[13px] leading-5 text-gray-600">These details may affect consumer plans. Confirmed changes go live immediately and remain in event history.</p>
+            <div className="mt-4 space-y-2">
+              {materialPreview.material_fields?.map(field => (
+                <div key={field} className="rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-wide text-gray-500">{materialFieldLabels[field] ?? field.replaceAll('_', ' ')}</p>
+                  <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px] text-gray-700">
+                    <span className="break-words">{revisionValue(materialPreview.previous_values?.[field], event.currency)}</span><span className="text-gray-300">→</span><span className="break-words font-bold">{revisionValue(materialPreview.proposed_values?.[field], event.currency)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-2xl bg-blue-50 p-4 text-[12px] text-blue-800">
+              {(materialPreview.interested_count ?? 0) > 0 ? `${materialPreview.interested_count} interested ${materialPreview.interested_count === 1 ? 'person' : 'people'} will be notified.` : 'No interested people need to be notified right now.'}
+            </div>
+            <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500">Reason <span className="normal-case text-gray-400">(optional)</span><textarea value={changeReason} onChange={e => setChangeReason(e.target.value)} rows={3} placeholder="Add context for event history" className={`${inputClass} mt-1 resize-none normal-case`} /></label>
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4"><input type="checkbox" checked={materialAccepted} onChange={e => setMaterialAccepted(e.target.checked)} className="mt-1" /><span className="text-[12px] font-medium leading-5 text-gray-700">I confirm these changes are accurate and understand that interested people may be notified.</span></label>
+            <a className="mt-3 inline-block text-[12px] font-bold text-[#FF5A5F] hover:underline" href={EVENT_PUBLISHING_POLICY_PATH} target="_blank" rel="noreferrer">Read the Event Publishing Policy</a>
+            <div className="mt-5 flex gap-2"><button type="button" onClick={() => { setMaterialPreview(null); setPendingPayload(null); }} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Keep editing</button><button type="button" disabled={!materialAccepted || saving} onClick={() => void confirmMaterialChanges()} className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40">{saving ? 'Applying…' : 'Confirm and apply'}</button></div>
+          </div>
+        </div>
+      )}
+
+      {cancellationPreview?.status === 'confirmation_required' && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-50 text-red-700"><Ban size={20} /></div><div><h2 className="text-[18px] font-black text-gray-900">Cancel this event?</h2><p className="mt-1 text-[12px] text-gray-500">This applies immediately.</p></div></div>
+            <p className="mt-4 text-[13px] leading-5 text-gray-600">The event will be marked cancelled and {cancellationPreview.interested_count ?? 0} interested {(cancellationPreview.interested_count ?? 0) === 1 ? 'person' : 'people'} will be notified.</p>
+            <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500">Reason <span className="normal-case text-gray-400">(optional)</span><textarea value={cancellationReason} onChange={e => setCancellationReason(e.target.value)} rows={3} className={`${inputClass} mt-1 resize-none normal-case`} /></label>
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4"><input type="checkbox" checked={cancellationAccepted} onChange={e => setCancellationAccepted(e.target.checked)} className="mt-1" /><span className="text-[12px] font-medium leading-5 text-red-800">I understand cancellation is immediate and interested consumers may be notified.</span></label>
+            <div className="mt-5 flex gap-2"><button type="button" onClick={() => setCancellationPreview(null)} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Keep event live</button><button type="button" disabled={!cancellationAccepted || saving} onClick={() => void requestCancellation(true)} className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40">{saving ? 'Cancelling…' : 'Confirm cancellation'}</button></div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

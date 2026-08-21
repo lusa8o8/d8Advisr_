@@ -318,16 +318,49 @@ export async function publishAdminEvent(eventId: string): Promise<AdminEvent> {
 export async function updateAdminLiveEvent(
   eventId: string,
   payload: Record<string, unknown>,
-  expectedUpdatedAt: string
-): Promise<AdminEvent> {
-  const { data, error } = await supabase.rpc('admin_update_live_event', {
+  expectedUpdatedAt: string,
+  confirmed = false,
+  adminReason?: string,
+): Promise<AdminEventPolicyResult> {
+  const { data, error } = await supabase.rpc('admin_apply_event_revision_v11', {
     p_event_id: eventId,
     p_payload: payload,
     p_expected_updated_at: expectedUpdatedAt,
+    p_confirmed: confirmed,
+    p_admin_reason: adminReason?.trim() || null,
   });
   throwIfError(error);
   if (!data) throw new Error('Update failed');
-  return adminEventFromRow(data as unknown as AdminEventRow);
+  return data as AdminEventPolicyResult;
+}
+
+export interface AdminEventPolicyResult {
+  status: 'applied' | 'confirmation_required';
+  revision_id?: string;
+  changed_fields?: string[];
+  material_fields?: string[];
+  previous_values?: Record<string, unknown>;
+  proposed_values?: Record<string, unknown>;
+  interested_count?: number;
+  notification_count?: number;
+  message?: string;
+}
+
+export async function cancelAdminEvent(
+  eventId: string,
+  expectedUpdatedAt: string,
+  confirmed: boolean,
+  reason?: string,
+): Promise<AdminEventPolicyResult> {
+  const { data, error } = await supabase.rpc('admin_cancel_event_v11', {
+    p_event_id: eventId,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_confirmed: confirmed,
+    p_reason: reason?.trim() || null,
+  });
+  throwIfError(error);
+  if (!data) throw new Error('Cancellation failed');
+  return data as AdminEventPolicyResult;
 }
 
 export async function fetchEventRevisionHistory(eventId: string): Promise<AdminEventLiveRevision[]> {
