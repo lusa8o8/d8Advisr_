@@ -1,7 +1,7 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document - Phase 4.5 complete; Phase 4.6A automated
-staging verification and browser groups 1-3 complete; focused admin retest pending
+Status: active planning document - Phase 4.6D4 slices 1-3 implemented and
+staging-verified; slice-three browser acceptance and slice four remain
 
 Created: 2026-08-11
 
@@ -385,13 +385,13 @@ country/region admin-assignment foundation additively during the first database
 slice, but defer regional enforcement and the read-only Events directory until
 operational staffing requires them.
 
-Delivery state on 19 August 2026:
+Delivery state on 21 August 2026:
 
 | Slice | Scope | Status |
 | --- | --- | --- |
-| 4.6A | Commercial baseline, decimal prices, policy acknowledgement, public policy routes, admin-scope foundation | Implemented and staging-automated; browser groups 1-3 passed; focused admin retest pending after `e2de756` |
-| 4.6B | Event revision table, deterministic classifier, partner submission, sensitive admin review, history and optimistic concurrency | Next implementation slice; fresh discovery required |
-| 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
+| 4.6A | Commercial baseline, decimal prices, policy acknowledgement, public policy routes, admin-scope foundation | Complete; subsequent D2/D3 policy parity supersedes its v1.0 restrictions |
+| 4.6B | Event revision table, deterministic classifier, partner submission, history and optimistic concurrency | Foundation delivered; routine-review assumptions superseded by the accepted D2 v1.1 direct-confirmation/audit model |
+| 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Core durable interest notifications delivered and browser-verified; external delivery outbox remains deferred |
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Complete: automated gates and all browser journeys passed on 21 August 2026 |
 | 4.6D3 | Administrator event-policy v1.1 publication, edit, notification, and cancellation parity | Complete: automated and browser acceptance passed on 21 August 2026 |
@@ -620,9 +620,10 @@ Primary references:
 
 ## Immediate Next Step
 
-Run the focused Phase 4.6A admin browser retest recorded in
-`docs/testing/phase-4-6a-local-browser-checklist.md`. All automated staging
-checks and browser groups 1-3 pass. Once the admin draft/publish and migration
-exception observations are recorded, close 4.6A and begin fresh Phase 4.6B
-event revision discovery. Production promotion of accumulated migrations
-remains a separate explicit decision.
+Run the two partner browser journeys in
+`docs/testing/phase-4-6d4-local-browser-checklist.md` and record the result.
+Then perform fresh discovery and a mini plan for D4 slice four: consumer
+disputed-location behavior, interested-consumer notices, and the admin dispute
+resolution surface. Do not begin Phase 5 claims until the D4 authority boundary
+passes automated and browser acceptance. Production promotion of accumulated
+migrations remains a separate explicit decision.

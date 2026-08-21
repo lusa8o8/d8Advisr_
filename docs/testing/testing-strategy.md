@@ -137,6 +137,21 @@ pnpm run check:phase46d2:staging
 pnpm run check:phase46d2:release
 ```
 
+Phase 4.6D4 currently exposes the local and staging gates below. The staging
+gate creates isolated relationship/notification fixtures and cleans them up;
+it refuses to run outside the dedicated staging project.
+
+```powershell
+Set-Location H:\d8Advisr_
+pnpm run check:phase46d4
+pnpm run check:phase46d4:staging
+pnpm run build:staging
+```
+
+The two high-level slice-three partner journeys are recorded separately in
+`docs/testing/phase-4-6d4-local-browser-checklist.md`. Consumer/admin dispute
+acceptance is added only with slice four.
+
 ## Migration checklist
 
 Before applying a new migration:
