@@ -1,7 +1,7 @@
 # Phase 4.6D4 Partner Workflow Browser Acceptance
 
 Status: journey 1 passed; journey 2 found a response-feedback/idempotency
-failure, repair implemented locally, staging migration and retest pending.
+failure, repair applied and staging-verified, browser retest pending.
 
 Acceptance note, 21 August 2026: the attribution/approval journey reached the
 public venue page, where testing found that the Overview `Upcoming here`
@@ -73,6 +73,12 @@ text, and disables an unchanged update. Forward migration
 retry a no-op before optimistic-version rejection, so it creates no additional
 audit transition or notification. Do not delete the three existing staging
 notifications; they are evidence of the discovered failure.
+
+The forward migration was applied to the dedicated staging project on 22
+August 2026. Local and remote migration histories match through `20260822003000`
+and the full D4 staging gate passed. Its retry assertion repeated the identical
+response with the original stale expected version, received the already-saved
+relationship version, and retained exactly one venue-manager response notice.
 
 From a venue-manager workflow card, report the venue as incorrect and enter a
 reason. Confirm the organizer receives one notification and sees the disputed

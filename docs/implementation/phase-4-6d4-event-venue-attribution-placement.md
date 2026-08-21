@@ -255,9 +255,12 @@ submission. Forward migration
 response content before optimistic concurrency, returning the existing
 relationship without changing its version or creating another audit/notice.
 Changed responses remain explicit versioned transitions. The local D4 gate,
-TypeScript checks, and both staging-mode builds pass. The migration has not yet
-been applied to staging, so the staging idempotency gate and repaired browser
-journey remain pending.
+TypeScript checks, and both staging-mode builds pass. The migration was applied
+to the dedicated staging project on 22 August 2026 and migration parity plus
+the complete D4 staging gate passed. The staging workflow test proved an
+identical stale-version response retry returns the existing relationship
+version and leaves the response-notification count at one. Only the repaired
+browser journey remains pending.
 
 ## Verification
 

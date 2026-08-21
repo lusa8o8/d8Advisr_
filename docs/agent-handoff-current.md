@@ -31,9 +31,7 @@ Expected source state when this handoff was written:
   `c381475 fix(events): confirm venue dispute responses`;
 - a newer documentation-only commit containing this handoff is expected;
 - prior D4 commits: `071a6c9`, `98a833b`, and `8b56a85`; and
-- staging migrations match through
-  `20260821153000_event_venue_partner_workflows.sql`; local source also contains
-  unapplied forward repair
+- local and staging migrations match through
   `20260822003000_idempotent_event_venue_dispute_responses.sql`.
 
 If these expectations do not match, inspect the newer history and diff before
@@ -199,8 +197,9 @@ unchanged client update, and adds a forward migration that makes identical
 database retries notification-safe. Do not delete the existing duplicate
 staging notifications; they are test evidence.
 
-Do not mark slice three browser-complete until the forward repair is applied to
-staging with explicit approval, the staging D4 gate passes, and the repaired
+The forward repair is applied to staging and the complete D4 staging gate
+passes, including identical stale-retry idempotency and exactly one response
+notice. Do not mark slice three browser-complete until the repaired browser
 journey proves one response notification plus visible saved-response feedback.
 
 Use the exact steps in `docs/testing/phase-4-6d4-local-browser-checklist.md`.

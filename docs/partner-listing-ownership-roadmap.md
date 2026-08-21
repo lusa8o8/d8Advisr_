@@ -1,8 +1,8 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
 Status: active planning document - Phase 4.6D4 slices 1-3 implemented;
-browser journey 1 passed, journey 2 repair awaits staging and retest, then
-slice four remains
+browser journey 1 passed, journey 2 repair is staging-verified and awaits
+browser retest, then slice four remains
 
 Created: 2026-08-11
 
@@ -396,7 +396,7 @@ Delivery state on 21 August 2026:
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Complete: automated gates and all browser journeys passed on 21 August 2026 |
 | 4.6D3 | Administrator event-policy v1.1 publication, edit, notification, and cancellation parity | Complete: automated and browser acceptance passed on 21 August 2026 |
-| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slices 1-3 implemented; attribution/placement journey passed; dispute-response feedback/idempotency repair awaits staging and retest; consumer/admin dispute surfaces remain before Phase 5 |
+| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slices 1-3 implemented; attribution/placement journey passed; dispute-response repair is staging-verified and awaits browser retest; consumer/admin dispute surfaces remain before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
@@ -621,10 +621,7 @@ Primary references:
 
 ## Immediate Next Step
 
-With explicit approval, apply the forward-only
-`20260822003000_idempotent_event_venue_dispute_responses.sql` migration to the
-dedicated staging project, run the D4 staging gate, and rerun the repaired
-incorrect-location response steps in
+Rerun the repaired incorrect-location response steps in
 `docs/testing/phase-4-6d4-local-browser-checklist.md`. The attribution,
 approval, revocation, notification, and resubmission journey has passed. Then
 perform fresh discovery and a mini plan for D4 slice four: consumer
