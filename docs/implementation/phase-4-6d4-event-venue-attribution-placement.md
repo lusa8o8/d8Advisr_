@@ -239,6 +239,26 @@ second decline-like transition would be redundant. The incorrect-location
 report/response journey remains pending, so slice-three browser acceptance is
 not yet closed.
 
+### Slice-three dispute-response repair (22 August 2026)
+
+The incorrect-location browser journey proved that reporting, suppression,
+organizer notification, response persistence, and venue-manager notification
+worked, but exposed a feedback and retry defect. After responding, the organizer
+card did not render the persisted `response_reason` and still showed `Add
+response`. Three manual retries therefore created three valid audit transitions
+and three venue-manager notifications.
+
+Repair `c381475` renders the saved response, labels a later action `Update
+response`, prefills the existing text, and blocks an unchanged client
+submission. Forward migration
+`20260822003000_idempotent_event_venue_dispute_responses.sql` checks identical
+response content before optimistic concurrency, returning the existing
+relationship without changing its version or creating another audit/notice.
+Changed responses remain explicit versioned transitions. The local D4 gate,
+TypeScript checks, and both staging-mode builds pass. The migration has not yet
+been applied to staging, so the staging idempotency gate and repaired browser
+journey remain pending.
+
 ## Verification
 
 Automated and staging checks must prove:

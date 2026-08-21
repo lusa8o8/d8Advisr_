@@ -1,6 +1,7 @@
 # Phase 4.6D4 Partner Workflow Browser Acceptance
 
-Status: journey 1 passed on local staging; journey 2 remains pending.
+Status: journey 1 passed; journey 2 found a response-feedback/idempotency
+failure, repair implemented locally, staging migration and retest pending.
 
 Acceptance note, 21 August 2026: the attribution/approval journey reached the
 public venue page, where testing found that the Overview `Upcoming here`
@@ -54,12 +55,34 @@ placement removed state and can explicitly resubmit it.
 
 ## 2. Incorrect-location report
 
-Result: **Pending.**
+Result: **Repair and retest pending — 22 August 2026.**
+
+The incorrect-location report succeeded for `D8Advisr Freshman Launch` at `D8
+Cinema I`: placement was suppressed from the venue page, the organizer received
+the dispute notification, and the partner card showed the report reason plus
+`Correct venue` and `Add response`. The organizer response also persisted and
+the venue manager received a notification, but the organizer card did not show
+the saved response and continued to offer the unchanged `Add response` action.
+The tester submitted the same response three times and the venue manager
+received three response notifications.
+
+Repair `c381475` now shows `Your response was sent` and the saved response on
+the card, changes the follow-up action to `Update response`, prefills the saved
+text, and disables an unchanged update. Forward migration
+`20260822003000_idempotent_event_venue_dispute_responses.sql` makes an identical
+retry a no-op before optimistic-version rejection, so it creates no additional
+audit transition or notification. Do not delete the three existing staging
+notifications; they are evidence of the discovered failure.
 
 From a venue-manager workflow card, report the venue as incorrect and enter a
 reason. Confirm the organizer receives one notification and sees the disputed
 state, report reason, `Correct venue`, and `Add response` actions. Add a
-response and confirm the venue manager receives one response notification.
+response and confirm the organizer card shows the saved response and changes
+the action to `Update response`. Confirm the venue manager receives one response
+notification. Reopen the response, leave the text unchanged, and confirm the
+update action is disabled. After the forward migration is on staging, an
+identical direct retry must also leave the relationship version and notification
+count unchanged.
 
 Admin resolution and consumer disputed-location behavior are slice-four tests,
 not blockers for this slice-three browser acceptance.

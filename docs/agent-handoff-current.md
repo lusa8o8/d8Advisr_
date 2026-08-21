@@ -1,6 +1,6 @@
 # D8Advisr Current Agent Handoff
 
-Updated: 21 August 2026
+Updated: 22 August 2026
 
 This is the authoritative context-restoration note for a new Codex session.
 It supersedes `docs/agent-handoff-2026-08-19.md`, which is retained only as
@@ -26,12 +26,15 @@ Expected source state when this handoff was written:
 
 - branch: `main`;
 - worktree: clean;
-- local branch: at least 122 commits ahead of `origin/main` and not pushed;
-- latest implementation commit: `de97373 feat(partner): add event venue workflows`;
+- local branch: at least 126 commits ahead of `origin/main` and not pushed;
+- latest implementation commit:
+  `c381475 fix(events): confirm venue dispute responses`;
 - a newer documentation-only commit containing this handoff is expected;
 - prior D4 commits: `071a6c9`, `98a833b`, and `8b56a85`; and
-- local and staging migrations match through
-  `20260821153000_event_venue_partner_workflows.sql`.
+- staging migrations match through
+  `20260821153000_event_venue_partner_workflows.sql`; local source also contains
+  unapplied forward repair
+  `20260822003000_idempotent_event_venue_dispute_responses.sql`.
 
 If these expectations do not match, inspect the newer history and diff before
 acting. Never reset or discard newer work merely to match this note.
@@ -188,10 +191,17 @@ Journey 1 passed on 21 August 2026 after the browser-acceptance repair in
    notification, and explicit resubmission all passed. Resubmission is optional;
    taking no action leaves the event off the venue page with attribution intact.
 
-Do not mark slice three browser-complete until journey 2 passes: venue manager
-reports an incorrect venue with a reason; organizer receives one notice, sees
-the reason, can correct the venue or add a response; venue manager receives one
-response notice.
+Journey 2 reached response persistence and venue notification on 22 August but
+did not pass: the organizer card failed to show the saved response and invited
+three duplicate submissions, producing three notifications. Repair `c381475`
+shows the saved response, uses an explicit `Update response` action, blocks an
+unchanged client update, and adds a forward migration that makes identical
+database retries notification-safe. Do not delete the existing duplicate
+staging notifications; they are test evidence.
+
+Do not mark slice three browser-complete until the forward repair is applied to
+staging with explicit approval, the staging D4 gate passes, and the repaired
+journey proves one response notification plus visible saved-response feedback.
 
 Use the exact steps in `docs/testing/phase-4-6d4-local-browser-checklist.md`.
 
