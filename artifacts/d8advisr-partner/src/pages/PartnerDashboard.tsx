@@ -525,7 +525,7 @@ export function PartnerDashboard() {
                   ? `${cancellationInterestedCount} interested ${cancellationInterestedCount === 1 ? 'person' : 'people'} will be notified.`
                   : 'No interested people need to be notified right now.'}
               </div>
-              <label className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-gray-500">Reason <span className="normal-case text-gray-400">(optional)</span></label>
+              <label className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-gray-500">Cancellation reason shown to consumers <span className="normal-case text-gray-400">(optional)</span></label>
               <textarea
                 value={cancellationReason}
                 onChange={event => setCancellationReason(event.target.value)}

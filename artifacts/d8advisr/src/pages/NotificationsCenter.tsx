@@ -77,6 +77,9 @@ export function NotificationsCenter() {
                 const isRelocated = n.type === 'event_relocated';
                 const isPriceDrop = n.type === 'event_price_reduced' || n.type === 'event_price_changed';
                 const isCancelled = n.type === 'event_cancelled';
+                const cancellationReason = isCancelled && typeof n.metadata.reason === 'string'
+                  ? n.metadata.reason.trim()
+                  : '';
 
                 return (
                   <div
@@ -115,6 +118,11 @@ export function NotificationsCenter() {
                       <p className="text-[14px] text-muted-foreground font-medium mb-3 leading-snug">
                         {n.body}
                       </p>
+                      {cancellationReason && (
+                        <p className="-mt-1 mb-3 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-semibold leading-snug text-red-700">
+                          Reason: {cancellationReason}
+                        </p>
+                      )}
 
                       <div className="flex items-center gap-2 mt-1">
                         {n.eventId && (

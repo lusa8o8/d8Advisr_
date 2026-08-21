@@ -433,7 +433,6 @@ export function EventDetail() {
       {isCancelled && (
         <div className="mx-5 mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
           <p className="text-[14px] font-black">This event has been cancelled</p>
-          <p className="mt-1 text-[12px] leading-5">It remains visible temporarily so people can confirm what changed. Planning and reminder actions are unavailable.</p>
         </div>
       )}
 
