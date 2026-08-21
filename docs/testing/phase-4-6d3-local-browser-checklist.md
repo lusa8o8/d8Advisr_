@@ -18,3 +18,10 @@ Run the admin/consumer clients against staging and use disposable event data.
    cancelled state, consumer notification, and recent cancelled presentation.
 
 Passing this journey closes browser acceptance for Phase 4.6D3.
+
+Browser evidence on 21 August 2026 confirms the v1.1 publication modal,
+free-to-paid material preview, interested-recipient count, immediate apply, and
+consumer entry-price notification. That run exposed and led to fixes for local
+time drift, currency-formatted attendance, and manual end-time setup. Retest
+that choosing/changing a start keeps a valid end time and does not shift the
+displayed schedule, then complete cancellation to close the journey.

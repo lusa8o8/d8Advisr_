@@ -99,13 +99,17 @@ disposable event and confirm its cancelled consumer state.
 - `3bb69ab` adds the administrator confirmation/cancellation UI and timestamp
   normalization repair;
 - `4cd1886` adds static, client, and staging gates; and
-- `a16b9d3` covers automatic non-material administrator revisions.
+- `a16b9d3` covers automatic non-material administrator revisions; and
+- `3b5218b` closes browser-discovered local-time drift, keeps the end time
+  aligned when the start changes, and formats attendance independently of
+  currency in material previews.
 
 Migrations `20260821120000` and `20260821121000` are applied to staging and
 local/remote migration history matches. Static contracts, TypeScript, the D3
 staging smoke, the existing D2 partner regression smoke, linked database lint,
-and both staging builds pass. The only remaining closure evidence is the one
-manual browser journey.
+and both staging builds pass. Browser evidence confirms material free-to-paid
+confirmation and consumer price notification. A focused schedule/end-time
+retest and cancellation remain before the one manual journey is fully closed.
 
 ## Deliberately excluded
 
