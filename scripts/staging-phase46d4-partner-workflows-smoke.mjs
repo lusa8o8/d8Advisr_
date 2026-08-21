@@ -149,6 +149,14 @@ try {
   });
   assert(responded.response.ok && responded.body?.response_reason, 'Organizer dispute response failed');
 
+  const retriedResponse = await request(url, key, '/rest/v1/rpc/respond_event_venue_dispute', organizer.token, 'POST', {
+    p_relationship_id: relationshipId,
+    p_response: 'D4 workflow organizer response',
+    p_expected_version: version,
+  });
+  assert(retriedResponse.response.ok && retriedResponse.body?.version === responded.body.version,
+    'Identical organizer response retry was not idempotent');
+
   const venueResponseNotices = await request(url, key,
     `/rest/v1/partner_notifications?select=id,metadata&event_venue_relationship_id=eq.${relationshipId}`, venueManager.token);
   assert(venueResponseNotices.body?.filter(row => row.metadata?.relationship_action === 'dispute_response_added').length === 1,

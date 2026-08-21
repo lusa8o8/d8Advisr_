@@ -15,6 +15,10 @@ const conflictRepair = readFileSync(resolve(
   root,
   'supabase/migrations/20260821145000_fix_event_venue_conflict_sqlstate.sql',
 ), 'utf8');
+const responseRetryRepair = readFileSync(resolve(
+  root,
+  'supabase/migrations/20260822003000_idempotent_event_venue_dispute_responses.sql',
+), 'utf8');
 
 const required = [
   'create table public.event_venue_relationships',
@@ -82,6 +86,18 @@ for (const value of [
 }
 
 for (const value of [
+  'create or replace function public.respond_event_venue_dispute',
+  'if relationship_row.response_reason = btrim(p_response) then',
+  'return to_jsonb(relationship_row);',
+  'if p_expected_version is not null and relationship_row.version <> p_expected_version then',
+  "grant execute on function public.respond_event_venue_dispute(uuid, text, bigint) to authenticated;",
+]) {
+  if (!responseRetryRepair.includes(value)) {
+    throw new Error(`Missing Phase 4.6D4 idempotent dispute-response repair: ${value}`);
+  }
+}
+
+for (const value of [
   'decide_event_venue_placement(uuid,text,text,bigint)',
   'resubmit_event_venue_placement(uuid,text,bigint)',
   'report_event_venue_attribution(uuid,text,bigint)',
@@ -117,3 +133,4 @@ console.log('PASS organizer and venue authorization dual-read organization and l
 console.log('PASS transition RPCs own writes and enforce optimistic concurrency');
 console.log('PASS relationship and audit tables expose no browser write grants');
 console.log('PASS legacy venue-page status is a guarded compatibility projection');
+console.log('PASS identical dispute-response retries do not duplicate audit or notifications');

@@ -51,6 +51,9 @@ for (const value of [
   'Report incorrect venue',
   'Resubmit placement',
   'Add response',
+  'Your response was sent',
+  'Update response',
+  "workflow.responseReason ?? ''",
   'Location attribution is separate from Upcoming here placement.',
 ]) {
   if (!dashboard.includes(value)) throw new Error(`Missing partner workflow UI contract: ${value}`);

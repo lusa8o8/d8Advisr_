@@ -107,7 +107,7 @@ export function PartnerDashboard() {
     action: 'approved' | 'declined' | 'revoked' | 'report' | 'resubmit' | 'respond',
   ) => {
     setWorkflowAction({ workflow, action });
-    setWorkflowReason('');
+    setWorkflowReason(action === 'respond' ? workflow.responseReason ?? '' : '');
     setActionError(null);
   };
 
@@ -115,6 +115,7 @@ export function PartnerDashboard() {
     if (!workflowAction || workflowLoading) return;
     const reason = workflowReason.trim();
     if ((workflowAction.action === 'report' || workflowAction.action === 'respond') && !reason) return;
+    if (workflowAction.action === 'respond' && workflowAction.workflow.responseReason?.trim() === reason) return;
     setWorkflowLoading(true);
     try {
       setActionError(null);
@@ -553,6 +554,12 @@ export function PartnerDashboard() {
                     {venueWorkflow.disputeReason && (
                       <p className="mt-1 text-[11px] font-medium text-red-600">Report: {venueWorkflow.disputeReason}</p>
                     )}
+                    {venueWorkflow.responseReason && (
+                      <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">Your response was sent</p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-blue-800">{venueWorkflow.responseReason}</p>
+                      </div>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {venueWorkflow.attributionStatus === 'disputed' && (
                         <>
@@ -568,7 +575,7 @@ export function PartnerDashboard() {
                             onClick={() => openWorkflowAction(venueWorkflow, 'respond')}
                             className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-bold text-white"
                           >
-                            Add response
+                            {venueWorkflow.responseReason ? 'Update response' : 'Add response'}
                           </button>
                         </>
                       )}
@@ -661,7 +668,7 @@ export function PartnerDashboard() {
                      workflowAction.action === 'revoked' ? 'Remove from Upcoming here?' :
                      workflowAction.action === 'report' ? 'Report an incorrect venue?' :
                      workflowAction.action === 'resubmit' ? 'Resubmit venue-page placement?' :
-                     'Respond to the venue report'}
+                     workflowAction.workflow.responseReason ? 'Update your venue-report response' : 'Respond to the venue report'}
                   </h2>
                   <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
                     {workflowAction.workflow.eventName} · {workflowAction.workflow.venueName}
@@ -705,7 +712,10 @@ export function PartnerDashboard() {
                 <button
                   type="button"
                   onClick={() => void submitWorkflowAction()}
-                  disabled={workflowLoading || (['report', 'respond'].includes(workflowAction.action) && !workflowReason.trim())}
+                  disabled={workflowLoading
+                    || (['report', 'respond'].includes(workflowAction.action) && !workflowReason.trim())
+                    || (workflowAction.action === 'respond'
+                      && workflowAction.workflow.responseReason?.trim() === workflowReason.trim())}
                   className={cn(
                     'flex-1 rounded-xl px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40',
                     workflowAction.action === 'approved' ? 'bg-[#00C851]' :
@@ -717,7 +727,8 @@ export function PartnerDashboard() {
                    workflowAction.action === 'declined' ? 'Decline placement' :
                    workflowAction.action === 'revoked' ? 'Remove placement' :
                    workflowAction.action === 'report' ? 'Submit report' :
-                   workflowAction.action === 'resubmit' ? 'Resubmit request' : 'Send response'}
+                   workflowAction.action === 'resubmit' ? 'Resubmit request' :
+                   workflowAction.workflow.responseReason ? 'Update response' : 'Send response'}
                 </button>
               </div>
             </div>
