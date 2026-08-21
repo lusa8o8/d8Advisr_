@@ -10,6 +10,7 @@ import {
   EVENT_PUBLISHING_ACKNOWLEDGEMENT,
   EVENT_PUBLISHING_POLICY_PATH,
   EVENT_PUBLISHING_POLICY_VERSION,
+  alignEventEndWithStart,
   parseEventCapacityInput,
   parseEventPriceInput,
 } from '@workspace/d8-core/event-policy';
@@ -236,8 +237,8 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
                 <Field label="Region"><select required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
                 <Field label="Category"><select required className={inputClass} value={event.category} onChange={e => setEvent(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
                 <Field label="Event icon"><div className="flex flex-wrap gap-2">{EVENT_EMOJI_OPTIONS.map(icon => <button key={icon} type="button" aria-label={`Use ${icon} as the event icon`} onClick={() => setEvent(value => ({ ...value, emoji: icon }))} className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition ${event.emoji === icon ? 'bg-[#FFF0F1] ring-2 ring-[#FF5A5F]' : 'bg-gray-50 hover:bg-gray-100'}`}>{icon}</button>)}</div></Field>
-                <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value }))} /></Field>
-                <Field label="Ends"><input type="datetime-local" className={inputClass} value={event.endsAt} onChange={e => setEvent(v => ({ ...v, endsAt: e.target.value }))} /></Field>
+                <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value, endsAt: alignEventEndWithStart(v.startsAt, v.endsAt, e.target.value) }))} /></Field>
+                <Field label="Ends"><><input type="datetime-local" min={event.startsAt || undefined} className={inputClass} value={event.endsAt} onChange={e => setEvent(v => ({ ...v, endsAt: e.target.value }))} /><span className="mt-1 block text-[10px] text-gray-400">Defaults to two hours after the start; adjust when needed.</span></></Field>
               </div>
               <Field label="Description"><textarea className={`${inputClass} min-h-24`} value={event.description} onChange={e => setEvent(v => ({ ...v, description: e.target.value }))} /></Field>
               <Field label="Location"><select className={inputClass} value={event.locationKind} onChange={e => setEvent(v => ({ ...v, locationKind: e.target.value as EventLocation }))}><option value="undisclosed">Undisclosed</option><option value="d8_venue">Existing live D8 venue</option><option value="external">External location</option></select></Field>

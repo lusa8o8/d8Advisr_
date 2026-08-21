@@ -43,6 +43,36 @@ export function parseEventCapacityInput(value: string): number | undefined {
   return parsed;
 }
 
+export function toDateTimeLocalInput(value: string | Date | null | undefined): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+export function alignEventEndWithStart(
+  previousStart: string,
+  previousEnd: string,
+  nextStart: string,
+  defaultDurationMinutes = 120,
+): string {
+  if (!nextStart) return '';
+  const nextStartDate = new Date(nextStart);
+  if (Number.isNaN(nextStartDate.getTime())) return previousEnd;
+
+  const previousStartDate = previousStart ? new Date(previousStart) : null;
+  const previousEndDate = previousEnd ? new Date(previousEnd) : null;
+  const previousDuration = previousStartDate && previousEndDate
+    ? previousEndDate.getTime() - previousStartDate.getTime()
+    : 0;
+  const duration = previousDuration > 0
+    ? previousDuration
+    : defaultDurationMinutes * 60_000;
+
+  return toDateTimeLocalInput(new Date(nextStartDate.getTime() + duration));
+}
+
 export function canPublishedPriceChange(args: {
   previouslyPublished: boolean;
   currentIsFree: boolean;

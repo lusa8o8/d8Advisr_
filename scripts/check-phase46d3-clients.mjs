@@ -22,11 +22,20 @@ requireText('artifacts/d8advisr/src/features/admin/AdminEventLiveEdit.tsx', [
   'Confirm and apply',
   'Cancel this event?',
   'EVENT_PUBLISHING_POLICY_VERSION',
+  'toDateTimeLocalInput(event.startsAt)',
+  'alignEventEndWithStart(c.startsAt, c.endsAt, e.target.value)',
+  "field === 'capacity'",
 ], 'admin event confirmation UI');
 requireText('artifacts/d8advisr/src/features/admin/AdminListingCreate.tsx', [
   'EVENT_PUBLISHING_POLICY_VERSION',
   'EVENT_PUBLISHING_ACKNOWLEDGEMENT',
+  'alignEventEndWithStart(v.startsAt, v.endsAt, e.target.value)',
+  'Defaults to two hours after the start',
 ], 'admin first-publication UI');
+requireText('lib/d8-core/src/eventPolicy.ts', [
+  'export function toDateTimeLocalInput',
+  'export function alignEventEndWithStart',
+], 'shared event schedule helpers');
 
 for (const forbidden of [
   'cannot be converted to a paid event',

@@ -5,7 +5,7 @@ import type { AdminEvent } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
 import { AdminListingMediaEditor } from './AdminListingMediaEditor';
-import { EVENT_EMOJI_OPTIONS, EVENT_PUBLISHING_POLICY_PATH, EVENT_PUBLISHING_POLICY_VERSION } from '@workspace/d8-core/event-policy';
+import { alignEventEndWithStart, EVENT_EMOJI_OPTIONS, EVENT_PUBLISHING_POLICY_PATH, EVENT_PUBLISHING_POLICY_VERSION, toDateTimeLocalInput } from '@workspace/d8-core/event-policy';
 
 interface Props {
   event: AdminEvent;
@@ -27,12 +27,15 @@ const materialFieldLabels: Record<string, string> = {
   is_free: 'Free or paid entry', price_pp: 'Entry price', capacity: 'Attendance limit',
 };
 
-function revisionValue(value: unknown, currency: string) {
+function revisionValue(field: string, value: unknown, currency: string) {
+  if (field === 'capacity') return value == null || value === 0 ? 'Open attendance' : String(value);
   if (value == null || value === '') return 'Not set';
-  if (typeof value === 'boolean') return value ? 'Free entry' : 'Paid entry';
+  if (field === 'is_free' && typeof value === 'boolean') return value ? 'Free entry' : 'Paid entry';
+  if (field === 'price_pp') return `${currency} ${value}`;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value).toLocaleString();
   if (typeof value === 'object') return JSON.stringify(value);
-  return typeof value === 'number' ? `${currency} ${value}` : String(value);
+  return String(value);
 }
 
 function initialDraft(event: AdminEvent) {
@@ -41,8 +44,8 @@ function initialDraft(event: AdminEvent) {
     city: event.city,
     category: event.category ?? '',
     description: event.description ?? '',
-    startsAt: event.startsAt ? event.startsAt.slice(0, 16) : '',
-    endsAt: event.endsAt ? event.endsAt.slice(0, 16) : '',
+    startsAt: toDateTimeLocalInput(event.startsAt),
+    endsAt: toDateTimeLocalInput(event.endsAt),
     locationKind: event.eventLocationKind,
     venueId: event.venueId ?? '',
     externalLocationName: event.externalLocationName ?? '',
@@ -272,13 +275,14 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
             type="datetime-local"
             className={inputClass}
             value={draft.startsAt}
-            onChange={e => setDraft(c => ({ ...c, startsAt: e.target.value }))}
+            onChange={e => setDraft(c => ({ ...c, startsAt: e.target.value, endsAt: alignEventEndWithStart(c.startsAt, c.endsAt, e.target.value) }))}
           />
         </label>
         <label>
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Ends</span>
           <input
             type="datetime-local"
+            min={draft.startsAt || undefined}
             className={inputClass}
             value={draft.endsAt}
             onChange={e => setDraft(c => ({ ...c, endsAt: e.target.value }))}
@@ -448,7 +452,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
                 <div key={field} className="rounded-2xl border border-gray-100 bg-gray-50 p-3">
                   <p className="text-[11px] font-black uppercase tracking-wide text-gray-500">{materialFieldLabels[field] ?? field.replaceAll('_', ' ')}</p>
                   <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px] text-gray-700">
-                    <span className="break-words">{revisionValue(materialPreview.previous_values?.[field], event.currency)}</span><span className="text-gray-300">→</span><span className="break-words font-bold">{revisionValue(materialPreview.proposed_values?.[field], event.currency)}</span>
+                    <span className="break-words">{revisionValue(field, materialPreview.previous_values?.[field], event.currency)}</span><span className="text-gray-300">→</span><span className="break-words font-bold">{revisionValue(field, materialPreview.proposed_values?.[field], event.currency)}</span>
                   </div>
                 </div>
               ))}
