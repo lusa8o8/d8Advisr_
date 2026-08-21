@@ -2,6 +2,19 @@
 
 Status: ready for local staging browser acceptance after slice three.
 
+Acceptance note, 21 August 2026: the attribution/approval journey reached the
+public venue page, where testing found that the Overview `Upcoming here`
+preview rendered only the first approved event even though the Events tab had
+the full list. The consumer surface now renders every approved future event in
+the overview as well as the Events tab. Testing also found that a user who
+entered the partner application flow with the wrong account had no visible
+pre-submission exit. The application flow now offers `Cancel and sign out`;
+before `Submit for review` there is no persisted application to delete.
+
+The approval-to-revocation portion of journey 1 remains pending and must be
+rerun after refreshing the updated local clients. Neither finding changes the
+database transition contract or requires a Supabase migration.
+
 The automated staging suite covers role isolation, modified-client denial,
 optimistic versions, notification deduplication, and cleanup. Browser testing
 is intentionally limited to two high-level partner journeys.

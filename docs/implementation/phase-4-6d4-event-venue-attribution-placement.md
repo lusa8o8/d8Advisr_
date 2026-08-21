@@ -212,6 +212,25 @@ isolation, notification-insert denial, one notice per transition and recipient,
 and cascading fixture cleanup. Slice four remains responsible for admin dispute
 resolution UI and consumer disputed-location rendering/notifications.
 
+### Slice-three browser acceptance repair (21 August 2026)
+
+The first manual attribution/placement journey reached approval and exposed two
+client-only blockers before revocation could be tested:
+
+- the live venue overview indexed only the first approved upcoming event even
+  though the query and Events tab held several, so a newer approval appeared to
+  displace earlier placement; and
+- the pre-submission partner application flow had no visible sign-out action,
+  trapping a tester who authenticated with the wrong account.
+
+The venue overview now renders the complete chronologically ordered approved
+future-event result without an arbitrary page-level cap. The application flow
+now offers `Cancel and sign out` before submission; abandoning that local form
+does not delete or mutate a submitted application. Static regression checks,
+the full local D4 gate, and both staging-mode client builds pass. The browser
+revocation journey remains pending and this repair does not close slice-three
+acceptance.
+
 ## Verification
 
 Automated and staging checks must prove:

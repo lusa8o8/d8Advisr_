@@ -122,7 +122,7 @@ export function useEvents(city?: string, limit = 10) {
   return { events, loading, error };
 }
 
-export function useVenueEvents(venueId?: string, limit = 10) {
+export function useVenueEvents(venueId?: string, limit?: number) {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,15 +142,17 @@ export function useVenueEvents(venueId?: string, limit = 10) {
       }
 
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('events')
           .select(EVENT_CLIENT_SELECT)
           .eq('venue_id', venueId)
           .or(`event_status.eq.live,and(event_status.eq.cancelled,cancelled_at.gte.${cancelledSince})`)
           .eq('venue_page_status', 'approved')
           .gte('starts_at', now)
-          .order('starts_at', { ascending: true })
-          .limit(limit);
+          .order('starts_at', { ascending: true });
+
+        if (typeof limit === 'number') query = query.limit(limit);
+        const { data, error } = await query;
 
         if (!active) return;
         if (error) {

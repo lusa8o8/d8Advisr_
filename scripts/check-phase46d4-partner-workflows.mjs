@@ -7,6 +7,9 @@ const migration = read('supabase/migrations/20260821153000_event_venue_partner_w
 const venueData = read('artifacts/d8advisr-partner/src/features/partner/partnerVenueData.ts');
 const dashboard = read('artifacts/d8advisr-partner/src/pages/PartnerDashboard.tsx');
 const notifications = read('artifacts/d8advisr-partner/src/pages/PartnerNotifications.tsx');
+const partnerPortal = read('artifacts/d8advisr-partner/src/pages/PartnerPortal.tsx');
+const venueDetails = read('artifacts/d8advisr/src/pages/VenueDetails.tsx');
+const venueHooks = read('artifacts/d8advisr/src/hooks/useVenues.ts');
 
 for (const value of [
   'event_venue_relationship_id uuid',
@@ -55,8 +58,20 @@ for (const value of [
 if (!notifications.includes('notification.metadata.route')) {
   throw new Error('Partner relationship notifications do not navigate to their workflow');
 }
+if (!venueDetails.includes('data-testid="venue-upcoming-event"') || venueDetails.includes('displayedVenueEvents[0]')) {
+  throw new Error('Venue Upcoming here overview must render every approved event rather than one displaced preview');
+}
+if (!venueHooks.includes("if (typeof limit === 'number') query = query.limit(limit)")
+  || !venueDetails.includes('useVenueEvents(hasLiveVenueId ? venueId : undefined);')) {
+  throw new Error('Venue detail must not cap the complete Upcoming here list');
+}
+for (const value of ['useAuth', 'Cancel and sign out', 'await signOut()', "setLocation('/signin')"]) {
+  if (!partnerPortal.includes(value)) throw new Error(`Missing safe pre-submission exit contract: ${value}`);
+}
 
 console.log('PASS partner workflows read canonical relationship state');
 console.log('PASS placement and dispute actions carry optimistic versions');
 console.log('PASS venue and organizer surfaces keep attribution separate from placement');
 console.log('PASS durable relationship notices are deduplicated and navigable');
+console.log('PASS venue overview renders the complete approved Upcoming here list');
+console.log('PASS an unsubmitted partner application can be abandoned by signing out');

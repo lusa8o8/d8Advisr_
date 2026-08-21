@@ -256,7 +256,7 @@ export function VenueDetails() {
   const pathParts = window.location.pathname.split('/');
   const venueId = pathParts[pathParts.length - 1];
   const hasLiveVenueId = isUuid(venueId);
-  const { events: approvedVenueEvents, loading: venueEventsLoading, error: venueEventsError } = useVenueEvents(hasLiveVenueId ? venueId : undefined, 8);
+  const { events: approvedVenueEvents, loading: venueEventsLoading, error: venueEventsError } = useVenueEvents(hasLiveVenueId ? venueId : undefined);
   const displayedVenueEvents = hasLiveVenueId
     ? approvedVenueEvents.map(event => ({
         id: event.id,
@@ -550,10 +550,19 @@ export function VenueDetails() {
                 <span className="text-xs font-bold text-[#FF9500] bg-orange-50 border border-orange-200 px-2.5 py-1.5 rounded-xl">8 left</span>
               </div>
               {hasLiveVenueId && (displayedVenueEvents.length > 0 ? (
-                <button onClick={() => setLocation(`/event/${displayedVenueEvents[0].id}`)} className="w-full rounded-2xl border border-border bg-card p-4 text-left">
-                  <p className="font-bold text-foreground">{displayedVenueEvents[0].name}</p>
-                  <p className="mt-1 text-[12px] text-muted-foreground">{displayedVenueEvents[0].recurrenceLabel ?? displayedVenueEvents[0].date} · {displayedVenueEvents[0].time}</p>
-                </button>
+                <div className="flex flex-col gap-3">
+                  {displayedVenueEvents.map(event => (
+                    <button
+                      key={event.id}
+                      data-testid="venue-upcoming-event"
+                      onClick={() => setLocation(`/event/${event.id}`)}
+                      className="w-full rounded-2xl border border-border bg-card p-4 text-left active:scale-[0.99] transition-transform"
+                    >
+                      <p className="font-bold text-foreground">{event.name}</p>
+                      <p className="mt-1 text-[12px] text-muted-foreground">{event.recurrenceLabel ?? event.date} · {event.time}</p>
+                    </button>
+                  ))}
+                </div>
               ) : <div className="rounded-2xl border border-dashed border-border p-4 text-[12px] text-muted-foreground">No upcoming events at this venue.</div>)}
             </div>
             

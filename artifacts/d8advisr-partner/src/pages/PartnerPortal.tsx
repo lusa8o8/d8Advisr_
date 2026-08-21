@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ChevronRight, Check, Loader2, AlertCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Check, Loader2, AlertCircle, XCircle, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePartner } from '@/hooks/usePartner';
 import { useRegion } from '@workspace/d8-core/use-region';
 import { AuthLayout } from '@workspace/d8-core/ui/auth-layout';
+import { useAuth } from '@workspace/d8-core/auth';
 
 type PartnerType = 'venue' | 'organizer' | 'both';
 
@@ -25,6 +26,7 @@ const TYPE_OPTIONS: { value: PartnerType; label: string; desc: string; emoji: st
 
 export function PartnerPortal() {
   const [, setLocation] = useLocation();
+  const { signOut } = useAuth();
   const { profile, loading, applyAsPartner } = usePartner();
   const { regions } = useRegion();
   const [step, setStep] = useState<1 | 2>(1);
@@ -33,6 +35,7 @@ export function PartnerPortal() {
   const [city, setCity] = useState('');
   const [contact, setContact] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingApplication, setEditingApplication] = useState(false);
 
@@ -142,9 +145,33 @@ export function PartnerPortal() {
     }
   };
 
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    setSubmitError(null);
+    try {
+      await signOut();
+      setLocation('/signin');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Could not sign out. Please try again.');
+      setSigningOut(false);
+    }
+  };
+
   return (
     <AuthLayout showLogo={true}>
       <div className="w-full flex-1 flex flex-col pb-10 mt-4">
+
+        <div className="flex justify-end mb-3">
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            disabled={signingOut || submitting}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-[12px] font-bold text-gray-600 disabled:opacity-50"
+          >
+            {signingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+            Cancel and sign out
+          </button>
+        </div>
 
         <div className="pb-6 border-b border-gray-100">
           {step === 2 && (
