@@ -1,6 +1,6 @@
 # Phase 4.6D3 - Administrator Event Policy v1.1 Parity
 
-Status: implementation in progress
+Status: implemented on staging; automated verification passed; browser acceptance pending
 
 Decision date: 21 August 2026
 
@@ -90,6 +90,22 @@ Automated checks must prove:
 Manual acceptance is intentionally one journey: publish an admin event, make a
 material edit, confirm the preview and consumer notification, then cancel a
 disposable event and confirm its cancelled consumer state.
+
+## Delivery evidence
+
+- `29c9ea6` documents discovery, scope, and acceptance boundaries;
+- `4c3d1c7` adds v1.1 publication, protected-field enforcement, administrator
+  revision confirmation, notification, and cancellation RPCs;
+- `3bb69ab` adds the administrator confirmation/cancellation UI and timestamp
+  normalization repair;
+- `4cd1886` adds static, client, and staging gates; and
+- `a16b9d3` covers automatic non-material administrator revisions.
+
+Migrations `20260821120000` and `20260821121000` are applied to staging and
+local/remote migration history matches. Static contracts, TypeScript, the D3
+staging smoke, the existing D2 partner regression smoke, linked database lint,
+and both staging builds pass. The only remaining closure evidence is the one
+manual browser journey.
 
 ## Deliberately excluded
 
