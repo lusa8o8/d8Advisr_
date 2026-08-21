@@ -227,9 +227,17 @@ The venue overview now renders the complete chronologically ordered approved
 future-event result without an arbitrary page-level cap. The application flow
 now offers `Cancel and sign out` before submission; abandoning that local form
 does not delete or mutate a submitted application. Static regression checks,
-the full local D4 gate, and both staging-mode client builds pass. The browser
-revocation journey remains pending and this repair does not close slice-three
-acceptance.
+the full local D4 gate, and both staging-mode client builds pass.
+
+The repaired attribution/placement journey then passed: venue approval added
+the event to `Upcoming here`; revocation removed only that marketing placement
+while preserving the public event and factual venue link; the organizer
+received the decision notification; and explicit resubmission restored the
+requested state. An organizer who does not want to resubmit simply takes no
+action. That stable revoked state intentionally retains attribution, so a
+second decline-like transition would be redundant. The incorrect-location
+report/response journey remains pending, so slice-three browser acceptance is
+not yet closed.
 
 ## Verification
 

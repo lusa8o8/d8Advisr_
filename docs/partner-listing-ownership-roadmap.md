@@ -1,7 +1,7 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
 Status: active planning document - Phase 4.6D4 slices 1-3 implemented and
-staging-verified; slice-three browser acceptance and slice four remain
+staging-verified; browser journey 1 passed, journey 2 and slice four remain
 
 Created: 2026-08-11
 
@@ -395,7 +395,7 @@ Delivery state on 21 August 2026:
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Complete: automated gates and all browser journeys passed on 21 August 2026 |
 | 4.6D3 | Administrator event-policy v1.1 publication, edit, notification, and cancellation parity | Complete: automated and browser acceptance passed on 21 August 2026 |
-| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slices 1-3 complete; consumer/admin dispute surfaces remain before Phase 5 |
+| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slices 1-3 implemented; attribution/placement browser journey passed, incorrect-location journey and consumer/admin dispute surfaces remain before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
@@ -620,9 +620,10 @@ Primary references:
 
 ## Immediate Next Step
 
-Run the two partner browser journeys in
-`docs/testing/phase-4-6d4-local-browser-checklist.md` and record the result.
-Then perform fresh discovery and a mini plan for D4 slice four: consumer
+Run and record the remaining incorrect-location report/response journey in
+`docs/testing/phase-4-6d4-local-browser-checklist.md`; the attribution,
+approval, revocation, notification, and resubmission journey has passed. Then
+perform fresh discovery and a mini plan for D4 slice four: consumer
 disputed-location behavior, interested-consumer notices, and the admin dispute
 resolution surface. Do not begin Phase 5 claims until the D4 authority boundary
 passes automated and browser acceptance. Production promotion of accumulated

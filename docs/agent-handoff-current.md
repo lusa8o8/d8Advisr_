@@ -176,18 +176,22 @@ transition, optimistic transition behavior, and fixture cleanup. Production
 builds passed with existing non-blocking bundle-size, sourcemap, and stale
 Browserslist warnings.
 
-### Browser acceptance still pending
+### Browser acceptance in progress
 
-Do not mark slice three browser-complete until the user reports these two
-journeys:
+Journey 1 passed on 21 August 2026 after the browser-acceptance repair in
+`cebd506`:
 
 1. Organizer selects another partner's D8 venue; venue manager receives one
    attribution notice, approves `Upcoming here`, then revokes it. Attribution
    and the event remain while marketing placement changes; organizer receives
-   decisions and can resubmit.
-2. Venue manager reports an incorrect venue with a reason; organizer receives
-   one notice, sees the reason, can correct the venue or add a response; venue
-   manager receives one response notice.
+   decisions and can resubmit. Approval, revocation, public attribution,
+   notification, and explicit resubmission all passed. Resubmission is optional;
+   taking no action leaves the event off the venue page with attribution intact.
+
+Do not mark slice three browser-complete until journey 2 passes: venue manager
+reports an incorrect venue with a reason; organizer receives one notice, sees
+the reason, can correct the venue or add a response; venue manager receives one
+response notice.
 
 Use the exact steps in `docs/testing/phase-4-6d4-local-browser-checklist.md`.
 
@@ -205,7 +209,8 @@ pnpm run dev:partner:staging
 
 ## Next implementation: D4 slice four
 
-After recording slice-three browser results, run fresh discovery before edits.
+After recording the remaining slice-three browser result, run fresh discovery
+before edits.
 Do not rely on this note for exact current code paths. Inspect the consumer
 event/venue reads and detail components, admin dashboard queues, existing admin
 notification model, relationship RLS/audit, `resolve_event_venue_dispute`, and
