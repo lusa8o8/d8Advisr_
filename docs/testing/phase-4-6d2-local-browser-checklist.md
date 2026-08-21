@@ -1,6 +1,24 @@
 # Phase 4.6D2 High-Level Browser Acceptance
 
-Status: pending
+Status: journeys reported passed on 21 August 2026; focused schedule-timezone retest pending
+
+Browser evidence:
+
+- material attendance and schedule changes produced an accurate confirmation
+  modal and two interested recipients;
+- the consumer received durable entry and schedule notifications and both
+  notification links opened the event;
+- notification-page rendering, free-to-paid editing, cancellation, admin
+  history, and cancelled-event surfaces passed;
+- discovery found that the initial schedule notification formatted timestamps
+  in UTC (`5:00 PM → 6:00 PM`) while the event-local confirmation showed
+  `7:00 PM → 8:00 PM`;
+- migrations `20260821100000` and `20260821101000` now format schedule copy in
+  the canonical event-region timezone and prevent browser roles from directly
+  invoking the internal dispatcher.
+
+Phase closure requires only one new schedule change confirming that notification
+copy matches the partner modal and includes the event-local time label.
 
 Run both clients locally against staging. Use one disposable live partner event
 that is not needed for later tests. Cancellation is intentionally destructive

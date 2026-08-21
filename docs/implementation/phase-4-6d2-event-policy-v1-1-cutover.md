@@ -1,6 +1,6 @@
 # Phase 4.6D2 Event Policy v1.1 Cutover
 
-Status: implemented on staging; automated verification complete; browser acceptance pending
+Status: implemented on staging; automated verification complete; focused schedule-timezone browser retest pending
 
 Decision date: 20 August 2026
 
@@ -44,6 +44,10 @@ event history readable from notifications and direct links. Explicit consumer
 discovery queries enforce the approximately 24-hour discovery window and
 derank cancelled rows behind live events. Migration `20260820142000` adds the
 matching read-only column grant required by the project's explicit-grant model.
+
+Migrations `20260821100000` and `20260821101000` close the browser-discovered
+schedule notification timezone mismatch and restrict the security-definer
+notification dispatcher to internal database callers.
 
 The partner editor renders the material before/after preview and reuses staged
 media between preview and confirmation. The partner dashboard exposes a strong

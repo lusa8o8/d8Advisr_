@@ -11,6 +11,12 @@ const migration = [readFileSync(
 ), readFileSync(
   resolve(root, 'supabase/migrations/20260820142000_grant_cancelled_event_visibility_column.sql'),
   'utf8',
+), readFileSync(
+  resolve(root, 'supabase/migrations/20260821100000_format_event_notifications_in_region_timezone.sql'),
+  'utf8',
+), readFileSync(
+  resolve(root, 'supabase/migrations/20260821101000_restrict_event_notification_dispatch.sql'),
+  'utf8',
 )].join('\n');
 
 const required = [
@@ -27,6 +33,9 @@ const required = [
   "event_status = 'cancelled'",
   'Public can view live and cancelled event history',
   'grant select (cancelled_at)',
+  'old_start at time zone event_timezone',
+  "'event_timezone', event_timezone",
+  'revoke all on function public.dispatch_event_change_notifications',
   "status = 'cancelled'",
   'revoke execute on function public.admin_review_event_revision',
   'drop function if exists public.partner_submit_event_revision',

@@ -121,6 +121,16 @@ const retiredReview = await request(url, key, '/rest/v1/rpc/admin_review_event_r
 });
 assert(!retiredReview.response.ok, 'Partner can execute the retired admin event-review RPC');
 
+const directDispatch = await request(url, key, '/rest/v1/rpc/dispatch_event_change_notifications', token, 'POST', {
+  p_event_id: event.id,
+  p_revision_id: crypto.randomUUID(),
+  p_changed_fields: ['starts_at'],
+  p_previous_values: { starts_at: new Date().toISOString() },
+  p_proposed_values: { starts_at: new Date(Date.now() + 60_000).toISOString() },
+});
+assert(!directDispatch.response.ok, 'Partner can directly execute the internal notification dispatcher');
+
 console.log('PASS material preview is non-mutating and protected direct updates are denied');
 console.log('PASS non-material revisions apply, audit, and restore through the v1.1 RPC');
 console.log('PASS cancellation preview is non-mutating and legacy admin review is inaccessible');
+console.log('PASS internal notification dispatch is inaccessible to browser roles');
