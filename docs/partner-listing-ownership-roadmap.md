@@ -395,7 +395,7 @@ Delivery state on 19 August 2026:
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Complete: automated gates and all browser journeys passed on 21 August 2026 |
 | 4.6D3 | Administrator event-policy v1.1 publication, edit, notification, and cancellation parity | Complete: automated and browser acceptance passed on 21 August 2026 |
-| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slice 1 database foundation complete; client enforcement remains before Phase 5 |
+| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slices 1-2 complete; workflow, notifications, and consumer/admin surfaces remain before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 

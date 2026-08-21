@@ -1,6 +1,6 @@
 # Phase 4.6D4 - Event Venue Attribution, Awareness, and Placement
 
-Status: slice one database foundation complete; client enforcement pending
+Status: slices one and two complete; workflow and notification surfaces pending
 
 Decision date: 21 August 2026
 
@@ -159,9 +159,31 @@ Complete on the dedicated staging project:
   deliberate stale-version conflicts; and
 - passed linked database lint and the staging role/transition matrix.
 
-Slice two remains responsible for removing placement fields from organizer
-event payloads and synchronizing the relationship transactionally from every
-event save/location-change path.
+Slice one intentionally left organizer payload cleanup and automatic
+event-write synchronization to the next bounded cutover recorded below.
+
+### Slice two - transactional event-write cutover (21 August 2026)
+
+Complete on the dedicated staging project:
+
+- made the compatibility projection server-derived on every event write;
+- neutralized direct draft writes to `venue_page_status` while retaining the
+  dedicated placement-RPC projection path;
+- synchronized canonical attribution after authenticated event creation and
+  persisted venue/location changes;
+- preserved relationship decisions and versions across ordinary event edits;
+- withdrew the old relationship and created a fresh request when `venue_id`
+  changes;
+- withdrew active D8 attribution when an event moves to an external or
+  undisclosed location;
+- wrapped the partner live-revision RPC so modified clients cannot submit
+  `venue_page_status`; and
+- removed placement derivation and payload fields from the partner client.
+
+The staging mutation journey passed forged placement writes, ordinary-edit
+preservation, D8-to-D8 handoff, D8-to-external withdrawal, and fixture cleanup.
+Slice three adds organizer/venue-manager workflow surfaces and durable notices;
+it does not reopen the event-write authority boundary.
 
 ## Verification
 

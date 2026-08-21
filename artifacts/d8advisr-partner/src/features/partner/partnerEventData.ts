@@ -127,8 +127,6 @@ export async function savePartnerEvent(
   const selectedVenue = eventData.venueId ? venueOptions.find(venue => venue.id === eventData.venueId) : null;
   const hasLinkedVenue = Boolean(selectedVenue);
   const locationKind = hasLinkedVenue ? 'd8_venue' : eventData.locationKind === 'external' ? 'external' : 'undisclosed';
-  const venuePageStatus = hasLinkedVenue && selectedVenue?.isOwnedByCurrentPartner
-    ? 'approved' : hasLinkedVenue ? 'requested' : 'hidden';
   const parsedCapacity = Number(eventData.capacity);
   if (eventData.hasCapacity && (!Number.isInteger(parsedCapacity) || parsedCapacity <= 0)) {
     throw new Error('Attendance limit must be a whole number greater than zero');
@@ -152,7 +150,7 @@ export async function savePartnerEvent(
     event_location_kind: locationKind, venue_id: selectedVenue?.id ?? null,
     external_location_name: locationKind === 'external' ? eventData.externalLocationName?.trim() || null : null,
     external_location_address: locationKind === 'external' ? eventData.externalLocationAddress?.trim() || null : null,
-    venue_page_status: venuePageStatus, partner_id: userId, city, currency: city === 'Lusaka' ? 'K' : '₦',
+    partner_id: userId, city, currency: city === 'Lusaka' ? 'K' : '₦',
     starts_at: buildNextStartsAt(eventData), vibes: eventData.vibes, updated_at: now,
   };
 
@@ -187,7 +185,6 @@ export async function savePartnerEvent(
         cover_image: eventData.coverImage ?? eventData.images?.[0] ?? null,
         images: eventData.images ?? [],
         vibes: eventData.vibes,
-        venue_page_status: venuePageStatus,
         next_occurrence: nextOccurrence,
       };
       const { data: revData, error: revError } = await supabase.rpc('partner_apply_event_revision_v11', {

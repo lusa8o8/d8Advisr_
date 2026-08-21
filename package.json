@@ -57,6 +57,8 @@
     "check:phase46d3:release": "pnpm run check:phase46d3 && pnpm run build:staging",
     "test:phase46d4:foundation": "node scripts/check-phase46d4-foundation.mjs",
     "test:staging:phase46d4:foundation": "node scripts/staging-phase46d4-foundation-smoke.mjs",
+    "test:phase46d4:sync": "node scripts/check-phase46d4-transactional-sync.mjs",
+    "test:staging:phase46d4:sync": "node scripts/staging-phase46d4-transactional-sync-smoke.mjs",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",
     "test:staging:phase45:media": "node scripts/staging-phase45-media-smoke.mjs",
     "test:staging:phase45:partner-revision": "node scripts/staging-phase45-partner-revision-smoke.mjs",

@@ -116,23 +116,19 @@ try {
   assert(eventAuthority.response.ok && eventAuthority.body === true, 'Admin event-attribution authority helper failed');
   console.log('PASS event-attribution authority helper');
 
-  let firstSync;
-  try {
-    firstSync = await request(url, key, '/rest/v1/rpc/sync_event_venue_attribution', admin.token, 'POST', {
-      p_event_id: eventId,
-      p_reason: 'D4 staging relationship fixture',
-    });
-  } catch (syncError) {
-    console.log('Initial sync request timed out; probing committed state...');
-    const probe = await request(url, key,
-      `/rest/v1/event_venue_relationships?select=id,placement_status&event_id=eq.${eventId}`,
-      admin.token);
-    throw new Error(`Initial sync timed out; committed rows: ${JSON.stringify(probe.body)}`, { cause: syncError });
-  }
-  assert(firstSync.response.ok && firstSync.body?.action === 'created', `Initial relationship sync failed: ${JSON.stringify(firstSync.body)}`);
-  relationshipId = firstSync.body.relationship.id;
-  assert(firstSync.body.relationship.placement_status === 'requested', 'Third-party venue did not begin as requested');
-  console.log('PASS initial relationship synchronization');
+  const automaticRows = await request(url, key,
+    `/rest/v1/event_venue_relationships?select=id,placement_status&event_id=eq.${eventId}&is_active=eq.true`,
+    admin.token);
+  assert(automaticRows.response.ok && automaticRows.body?.length === 1, 'Event insert did not synchronize attribution');
+  relationshipId = automaticRows.body[0].id;
+  assert(automaticRows.body[0].placement_status === 'requested', 'Third-party venue did not begin as requested');
+  console.log('PASS automatic relationship synchronization');
+
+  const firstSync = await request(url, key, '/rest/v1/rpc/sync_event_venue_attribution', admin.token, 'POST', {
+    p_event_id: eventId,
+    p_reason: 'D4 explicit idempotency retry',
+  });
+  assert(firstSync.response.ok && firstSync.body?.action === 'preserved', `Explicit relationship sync did not preserve: ${JSON.stringify(firstSync.body)}`);
 
   console.log('Checking idempotent relationship synchronization...');
   const secondSync = await request(url, key, '/rest/v1/rpc/sync_event_venue_attribution', admin.token, 'POST', {
