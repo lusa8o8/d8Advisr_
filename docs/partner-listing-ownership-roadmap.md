@@ -394,6 +394,7 @@ Delivery state on 19 August 2026:
 | 4.6C | Active consumer interest, unified durable notifications, transactional recipient generation and later delivery outbox | Planned after revision decisions are stable |
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Complete: automated gates and all browser journeys passed on 21 August 2026 |
+| 4.6D3 | Administrator event-policy v1.1 publication, edit, notification, and cancellation parity | In progress; closure repair required before Phase 5 |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
@@ -448,8 +449,13 @@ Phase 4.6D2 delivery evidence:
 - the D2 automated and browser gates are defined in the phase implementation
   and testing documents.
 
-Phase 5 is now unblocked. Ticket-aware restrictions, occurrence normalization,
-delivery outboxes, and speculative analytics are not Phase 5 prerequisites.
+Phase 4.6D3 closes a discovery finding after D2 acceptance: the shared public
+policy was v1.1, but administrator live edits and the first-publication RPC
+still retained v1.0 restrictions. Its contract is
+`docs/implementation/phase-4-6d3-admin-event-policy-parity.md`. Phase 5 resumes
+after this bounded parity repair passes automated and browser acceptance.
+Ticket-aware restrictions, occurrence normalization, delivery outboxes, and
+speculative analytics are not Phase 5 prerequisites.
 
 ### Phase 5 — Claim submission and approval
 
