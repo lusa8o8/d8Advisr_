@@ -6,7 +6,7 @@ Version: `1.1`
 
 Approved: 20 August 2026
 
-Status: approved and implemented on staging; partner browser acceptance passed in Phase 4.6D2; administrator parity browser acceptance pending in Phase 4.6D3
+Status: approved and implemented on staging; partner and administrator browser acceptance passed in Phases 4.6D2 and 4.6D3
 
 Owner: D8Advisr
 

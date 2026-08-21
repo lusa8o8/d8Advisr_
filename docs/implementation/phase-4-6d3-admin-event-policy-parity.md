@@ -1,6 +1,6 @@
 # Phase 4.6D3 - Administrator Event Policy v1.1 Parity
 
-Status: implemented on staging; automated verification passed; browser acceptance pending
+Status: complete on staging; automated and browser verification passed
 
 Decision date: 21 August 2026
 
@@ -102,14 +102,18 @@ disposable event and confirm its cancelled consumer state.
 - `a16b9d3` covers automatic non-material administrator revisions; and
 - `3b5218b` closes browser-discovered local-time drift, keeps the end time
   aligned when the start changes, and formats attendance independently of
-  currency in material previews.
+  currency in material previews; and
+- `c4ab29a` exposes optional cancellation reasons to consumers and reduces the
+  cancelled event page to its essential status copy.
 
 Migrations `20260821120000` and `20260821121000` are applied to staging and
 local/remote migration history matches. Static contracts, TypeScript, the D3
 staging smoke, the existing D2 partner regression smoke, linked database lint,
-and both staging builds pass. Browser evidence confirms material free-to-paid
-confirmation and consumer price notification. A focused schedule/end-time
-retest and cancellation remain before the one manual journey is fully closed.
+and both staging builds pass. Browser evidence confirms first publication,
+aligned start/end editing without time drift, free-to-paid and paid-to-free
+material confirmation, consumer price notifications, immediate cancellation,
+cancelled-event deranking, and notification/direct-link history. Phase 4.6D3
+is closed.
 
 ## Deliberately excluded
 
