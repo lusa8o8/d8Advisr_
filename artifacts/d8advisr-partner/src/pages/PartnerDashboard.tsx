@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
   Plus, ChevronRight, AlertCircle, CheckCircle,
-  Clock, Pause, Edit3, Bell, Loader2, LogOut, Ban,
+  Clock, Pause, Edit3, Bell, Loader2, LogOut, Ban, MapPin, RotateCcw, ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { PartnerEvent } from '@workspace/d8-core/types';
+import type { PartnerEvent, PartnerEventVenueWorkflow } from '@workspace/d8-core/types';
 import {
   LISTING_STATUS_PILL as STATUS_PILL,
   EVENT_STATUS_PILL,
@@ -23,14 +23,17 @@ export function PartnerDashboard() {
     profile,
     events,
     venueListing,
-    venuePlacementRequests,
+    eventVenueWorkflows,
     demandSignals,
     reviewInsights,
     loading,
     error,
     pauseEvent,
     cancelEvent,
-    updateVenuePlacementStatus,
+    decideVenuePlacement,
+    resubmitVenuePlacement,
+    reportVenueAttribution,
+    respondToVenueDispute,
   } = usePartner();
   const { unreadCount } = usePartnerNotifications();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -39,6 +42,12 @@ export function PartnerDashboard() {
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
   const [cancellationInterestedCount, setCancellationInterestedCount] = useState(0);
   const [cancellationLoading, setCancellationLoading] = useState(false);
+  const [workflowAction, setWorkflowAction] = useState<{
+    workflow: PartnerEventVenueWorkflow;
+    action: 'approved' | 'declined' | 'revoked' | 'report' | 'resubmit' | 'respond';
+  } | null>(null);
+  const [workflowReason, setWorkflowReason] = useState('');
+  const [workflowLoading, setWorkflowLoading] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -93,12 +102,37 @@ export function PartnerDashboard() {
     }
   };
 
-  const handleVenuePlacement = async (eventId: string, status: 'approved' | 'rejected') => {
+  const openWorkflowAction = (
+    workflow: PartnerEventVenueWorkflow,
+    action: 'approved' | 'declined' | 'revoked' | 'report' | 'resubmit' | 'respond',
+  ) => {
+    setWorkflowAction({ workflow, action });
+    setWorkflowReason('');
+    setActionError(null);
+  };
+
+  const submitWorkflowAction = async () => {
+    if (!workflowAction || workflowLoading) return;
+    const reason = workflowReason.trim();
+    if ((workflowAction.action === 'report' || workflowAction.action === 'respond') && !reason) return;
+    setWorkflowLoading(true);
     try {
       setActionError(null);
-      await updateVenuePlacementStatus(eventId, status);
-    } catch {
-      setActionError('Failed to update venue page request. Please try again.');
+      if (workflowAction.action === 'report') {
+        await reportVenueAttribution(workflowAction.workflow, reason);
+      } else if (workflowAction.action === 'respond') {
+        await respondToVenueDispute(workflowAction.workflow, reason);
+      } else if (workflowAction.action === 'resubmit') {
+        await resubmitVenuePlacement(workflowAction.workflow, reason);
+      } else {
+        await decideVenuePlacement(workflowAction.workflow, workflowAction.action, reason);
+      }
+      setWorkflowAction(null);
+      setWorkflowReason('');
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : 'Failed to update the venue workflow. Please refresh and try again.');
+    } finally {
+      setWorkflowLoading(false);
     }
   };
 
@@ -121,6 +155,16 @@ export function PartnerDashboard() {
     'Venue & Organiser';
   const canCreateEvents = canManageEvents(profile.partner_type);
   const canEditVenue = canManageVenues(profile.partner_type);
+  const venueManagedWorkflows = eventVenueWorkflows.filter(workflow =>
+    workflow.canManageVenue
+    && workflow.attributionStatus !== 'resolved_invalid'
+    && workflow.placementStatus !== 'withdrawn'
+  );
+  const workflowByEvent = new Map(
+    eventVenueWorkflows
+      .filter(workflow => workflow.canManageEvent)
+      .map(workflow => [workflow.eventId, workflow]),
+  );
   const dashboardName = canEditVenue && venueListing?.name ? venueListing.name : profile.name;
   const venueInReview = Boolean(
     venueListing
@@ -254,40 +298,81 @@ export function PartnerDashboard() {
           </div>
         )}
 
-        {/* Venue page requests */}
-        {canEditVenue && venuePlacementRequests.length > 0 && (
+        {/* Venue attribution and venue-page placement */}
+        {canEditVenue && venueManagedWorkflows.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Venue page requests</p>
-              <span className="text-[11px] font-black text-primary">{venuePlacementRequests.length}</span>
+              <div>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Events identifying your venue</p>
+                <p className="mt-1 text-[11px] text-gray-400">Location attribution is separate from Upcoming here placement.</p>
+              </div>
+              <span className="text-[11px] font-black text-primary">{venueManagedWorkflows.length}</span>
             </div>
             <div className="flex flex-col divide-y divide-gray-50">
-              {venuePlacementRequests.map(request => (
-                <div key={request.eventId} className="px-4 py-4">
+              {venueManagedWorkflows.map(workflow => (
+                <div key={workflow.relationshipId} className="px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-bold text-gray-900 text-[14px] leading-tight">{request.eventName}</p>
+                      <p className="font-bold text-gray-900 text-[14px] leading-tight">{workflow.eventName}</p>
                       <p className="text-[11px] text-gray-400 font-medium mt-1">
-                        {request.eventCategory} wants to appear on {request.venueName}
+                        {workflow.eventCategory} by {workflow.organizerName}
                       </p>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 shrink-0">
-                      Review
+                    <span className={cn(
+                      'text-[10px] font-bold px-2 py-1 rounded-full border shrink-0',
+                      workflow.attributionStatus === 'disputed'
+                        ? 'bg-red-50 text-red-600 border-red-100'
+                        : workflow.placementStatus === 'approved'
+                          ? 'bg-green-50 text-[#00C851] border-green-100'
+                          : workflow.placementStatus === 'requested'
+                            ? 'bg-amber-50 text-amber-700 border-amber-100'
+                            : 'bg-gray-50 text-gray-500 border-gray-100',
+                    )}>
+                      {workflow.attributionStatus === 'disputed' ? 'Reported' :
+                       workflow.placementStatus === 'approved' ? 'On venue page' :
+                       workflow.placementStatus === 'requested' ? 'Review placement' :
+                       workflow.placementStatus}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <button
-                      onClick={() => void handleVenuePlacement(request.eventId, 'approved')}
-                      className="bg-[#00C851] text-white rounded-xl font-bold text-[12px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
-                    >
-                      <CheckCircle size={13} /> Approve
-                    </button>
-                    <button
-                      onClick={() => void handleVenuePlacement(request.eventId, 'rejected')}
-                      className="bg-gray-100 text-gray-600 rounded-xl font-bold text-[12px] py-2.5 active:scale-95 transition-transform hover:bg-red-50 hover:text-red-600"
-                    >
-                      Reject
-                    </button>
+                  {workflow.disputeReason && (
+                    <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-[11px] leading-relaxed text-red-700">
+                      Report: {workflow.disputeReason}
+                      {workflow.responseReason && <span className="block mt-1 text-gray-600">Organizer response: {workflow.responseReason}</span>}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {workflow.attributionStatus !== 'disputed' && workflow.placementStatus === 'requested' && (
+                      <>
+                        <button
+                          onClick={() => openWorkflowAction(workflow, 'approved')}
+                          className="bg-[#00C851] text-white rounded-xl font-bold text-[12px] px-3 py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+                        >
+                          <CheckCircle size={13} /> Approve Upcoming here
+                        </button>
+                        <button
+                          onClick={() => openWorkflowAction(workflow, 'declined')}
+                          className="bg-gray-100 text-gray-600 rounded-xl font-bold text-[12px] px-3 py-2.5 active:scale-95 transition-transform hover:bg-red-50 hover:text-red-600"
+                        >
+                          Decline placement
+                        </button>
+                      </>
+                    )}
+                    {workflow.attributionStatus !== 'disputed' && workflow.placementStatus === 'approved' && (
+                      <button
+                        onClick={() => openWorkflowAction(workflow, 'revoked')}
+                        className="bg-gray-100 text-gray-600 rounded-xl font-bold text-[12px] px-3 py-2.5 active:scale-95 transition-transform hover:bg-red-50 hover:text-red-600"
+                      >
+                        Remove from Upcoming here
+                      </button>
+                    )}
+                    {workflow.attributionStatus !== 'disputed' && (
+                      <button
+                        onClick={() => openWorkflowAction(workflow, 'report')}
+                        className="bg-red-50 text-red-600 rounded-xl font-bold text-[12px] px-3 py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+                      >
+                        <ShieldAlert size={13} /> Report incorrect venue
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -397,7 +482,9 @@ export function PartnerDashboard() {
           )}
 
           <div className="flex flex-col gap-3">
-            {events.map(event => (
+            {events.map(event => {
+              const venueWorkflow = workflowByEvent.get(event.id);
+              return (
               <div key={event.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
 
                 <div className="flex items-start justify-between gap-3 mb-3">
@@ -439,20 +526,62 @@ export function PartnerDashboard() {
                   </div>
                 )}
 
-                {event.locationKind === 'd8_venue' && event.venuePageStatus && (
-                  <div className="mb-3">
+                {event.locationKind === 'd8_venue' && venueWorkflow && (
+                  <div className={cn(
+                    'mb-3 rounded-xl border px-3 py-2.5',
+                    venueWorkflow.attributionStatus === 'disputed' ? 'border-red-100 bg-red-50' : 'border-gray-100 bg-gray-50',
+                  )}>
                     <span className={cn(
                       'inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold border',
-                      event.venuePageStatus === 'approved' ? 'bg-green-50 text-[#00C851] border-green-100' :
-                      event.venuePageStatus === 'requested' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                      event.venuePageStatus === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' :
+                      venueWorkflow.attributionStatus === 'disputed' ? 'bg-red-50 text-red-600 border-red-100' :
+                      venueWorkflow.placementStatus === 'approved' ? 'bg-green-50 text-[#00C851] border-green-100' :
+                      venueWorkflow.placementStatus === 'requested' ? 'bg-amber-50 text-amber-700 border-amber-100' :
                       'bg-gray-50 text-gray-500 border-gray-100'
                     )}>
-                      {event.venuePageStatus === 'approved' ? 'On venue page' :
-                       event.venuePageStatus === 'requested' ? 'Venue page requested' :
-                       event.venuePageStatus === 'rejected' ? 'Venue page rejected' :
-                       'Venue page hidden'}
+                      <MapPin size={11} className="mr-1" />
+                      {venueWorkflow.attributionStatus === 'disputed' ? 'Venue attribution disputed' :
+                       venueWorkflow.placementStatus === 'approved' ? 'On venue page' :
+                       venueWorkflow.placementStatus === 'requested' ? 'Venue-page review requested' :
+                       venueWorkflow.placementStatus === 'declined' ? 'Venue-page placement declined' :
+                       'Venue-page placement removed'}
                     </span>
+                    <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+                      {venueWorkflow.attributionStatus === 'disputed'
+                        ? `${venueWorkflow.venueName} reported that this event may not take place there.`
+                        : `${venueWorkflow.venueName} remains the event location. Upcoming here placement is managed separately.`}
+                    </p>
+                    {venueWorkflow.disputeReason && (
+                      <p className="mt-1 text-[11px] font-medium text-red-600">Report: {venueWorkflow.disputeReason}</p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {venueWorkflow.attributionStatus === 'disputed' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setLocation(`/event/${event.id}/edit`)}
+                            className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-bold text-gray-700 border border-gray-200"
+                          >
+                            Correct venue
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openWorkflowAction(venueWorkflow, 'respond')}
+                            className="rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-bold text-white"
+                          >
+                            Add response
+                          </button>
+                        </>
+                      )}
+                      {venueWorkflow.attributionStatus !== 'disputed' && ['declined', 'revoked'].includes(venueWorkflow.placementStatus) && (
+                        <button
+                          type="button"
+                          onClick={() => openWorkflowAction(venueWorkflow, 'resubmit')}
+                          className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-bold text-primary border border-gray-200"
+                        >
+                          <RotateCcw size={11} /> Resubmit placement
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -505,9 +634,94 @@ export function PartnerDashboard() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+        )}
+
+        {workflowAction && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl">
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  'grid h-10 w-10 shrink-0 place-items-center rounded-xl',
+                  workflowAction.action === 'approved' ? 'bg-green-50 text-[#00C851]' :
+                  workflowAction.action === 'report' || workflowAction.action === 'respond' ? 'bg-red-50 text-red-600' :
+                  'bg-amber-50 text-amber-700',
+                )}>
+                  {workflowAction.action === 'approved' ? <CheckCircle size={20} /> :
+                   workflowAction.action === 'resubmit' ? <RotateCcw size={20} /> :
+                   <ShieldAlert size={20} />}
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-black text-gray-900">
+                    {workflowAction.action === 'approved' ? 'Approve Upcoming here placement?' :
+                     workflowAction.action === 'declined' ? 'Decline venue-page placement?' :
+                     workflowAction.action === 'revoked' ? 'Remove from Upcoming here?' :
+                     workflowAction.action === 'report' ? 'Report an incorrect venue?' :
+                     workflowAction.action === 'resubmit' ? 'Resubmit venue-page placement?' :
+                     'Respond to the venue report'}
+                  </h2>
+                  <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
+                    {workflowAction.workflow.eventName} · {workflowAction.workflow.venueName}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-[12px] leading-5 text-gray-600">
+                {workflowAction.action === 'report'
+                  ? 'Reporting disputes the public location attribution and removes venue-page placement while D8 reviews it. It does not give you control of the organizer’s event.'
+                  : workflowAction.action === 'respond'
+                    ? 'Your response is shared with the venue manager and retained in the relationship history. You can also correct or remove the venue in the event editor.'
+                    : 'This decision controls only whether the event is promoted under Upcoming here. It does not edit, cancel, or hide the organizer’s event listing.'}
+              </div>
+
+              <label className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                {workflowAction.action === 'report' ? 'Why is this venue incorrect?' :
+                 workflowAction.action === 'respond' ? 'Response' : 'Reason'}
+                {!['report', 'respond'].includes(workflowAction.action) && <span className="normal-case text-gray-400"> (optional)</span>}
+              </label>
+              <textarea
+                value={workflowReason}
+                onChange={event => setWorkflowReason(event.target.value)}
+                rows={3}
+                placeholder={workflowAction.action === 'report'
+                  ? 'This event is not scheduled at our venue…'
+                  : workflowAction.action === 'respond'
+                    ? 'Add context for D8 and the venue manager…'
+                    : 'Add context for the other party…'}
+                className="mt-1.5 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[13px] outline-none focus:border-primary"
+              />
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setWorkflowAction(null)}
+                  disabled={workflowLoading}
+                  className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600"
+                >
+                  Keep current state
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void submitWorkflowAction()}
+                  disabled={workflowLoading || (['report', 'respond'].includes(workflowAction.action) && !workflowReason.trim())}
+                  className={cn(
+                    'flex-1 rounded-xl px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40',
+                    workflowAction.action === 'approved' ? 'bg-[#00C851]' :
+                    workflowAction.action === 'report' || workflowAction.action === 'respond' ? 'bg-red-600' : 'bg-primary',
+                  )}
+                >
+                  {workflowLoading ? 'Saving…' :
+                   workflowAction.action === 'approved' ? 'Approve placement' :
+                   workflowAction.action === 'declined' ? 'Decline placement' :
+                   workflowAction.action === 'revoked' ? 'Remove placement' :
+                   workflowAction.action === 'report' ? 'Submit report' :
+                   workflowAction.action === 'resubmit' ? 'Resubmit request' : 'Send response'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {cancellingEvent && (

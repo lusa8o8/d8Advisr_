@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { DemandSignal, PartnerEvent, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@workspace/d8-core/types';
+import type { DemandSignal, PartnerEvent, PartnerEventVenueWorkflow, PartnerReviewInsight, PartnerVenueListing, PartnerVenueOption } from '@workspace/d8-core/types';
 import type { PartnerType } from '@workspace/d8-core/partner-capabilities';
 import { fetchPartnerApplication, getAuthenticatedPartnerUserId, getOptionalPartnerUserId, savePartnerApplication } from '@/features/partner/partnerApplicationData';
 import { cancelPartnerEvent, fetchPartnerEvents, savePartnerEvent, setPartnerEventStatus, type EventRevisionConfirmation, type PartnerEventInput } from '@/features/partner/partnerEventData';
 import { fetchPartnerDemandSignals } from '@/features/partner/partnerDemandData';
 import { fetchPartnerReviewInsights } from '@/features/partner/partnerReviewData';
 import { partnerProfileFromRow, type PartnerProfile } from '@/features/partner/partnerModels';
-import { fetchOwnedVenue, fetchVenueOptions, fetchVenuePlacementRequests, savePartnerVenue, setPartnerVenuePlacementStatus, type PartnerVenueInput } from '@/features/partner/partnerVenueData';
+import {
+  decidePartnerEventVenuePlacement,
+  fetchOwnedVenue,
+  fetchPartnerEventVenueWorkflows,
+  fetchVenueOptions,
+  reportPartnerEventVenueAttribution,
+  resubmitPartnerEventVenuePlacement,
+  respondToPartnerEventVenueDispute,
+  savePartnerVenue,
+  type PartnerVenueInput,
+} from '@/features/partner/partnerVenueData';
 
 export type { PartnerProfile } from '@/features/partner/partnerModels';
 
@@ -25,7 +35,7 @@ export function usePartner() {
   const [events, setEvents] = useState<PartnerEvent[]>([]);
   const [venueListing, setVenueListing] = useState<PartnerVenueListing | null>(null);
   const [venueOptions, setVenueOptions] = useState<PartnerVenueOption[]>([]);
-  const [venuePlacementRequests, setVenuePlacementRequests] = useState<VenuePlacementRequest[]>([]);
+  const [eventVenueWorkflows, setEventVenueWorkflows] = useState<PartnerEventVenueWorkflow[]>([]);
   const [demandSignals, setDemandSignals] = useState<DemandSignal[]>([]);
   const [reviewInsights, setReviewInsights] = useState<PartnerReviewInsight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,17 +67,17 @@ export function usePartner() {
         try {
           const options = await fetchVenueOptions(userId, application.city);
           setVenueOptions(options);
-          const ownedVenueIds = options.filter(venue => venue.isOwnedByCurrentPartner).map(venue => venue.id);
-          try {
-            setVenuePlacementRequests(await fetchVenuePlacementRequests(ownedVenueIds));
-          } catch (placementError) {
-            setVenuePlacementRequests([]);
-            logPartnerIssue('Could not load venue page placement requests', partnerErrorMessage(placementError));
-          }
         } catch (venueOptionsError) {
           setVenueOptions([]);
           logPartnerIssue('Could not load D8 venue options for event location linking', partnerErrorMessage(venueOptionsError));
         }
+      }
+
+      try {
+        setEventVenueWorkflows(await fetchPartnerEventVenueWorkflows());
+      } catch (workflowError) {
+        setEventVenueWorkflows([]);
+        logPartnerIssue('Could not load event venue workflows', partnerErrorMessage(workflowError));
       }
 
       try {
@@ -97,17 +107,29 @@ export function usePartner() {
     await load();
   }, [load]);
 
-  const updateVenuePlacementStatus = useCallback(async (eventId: string, status: 'approved' | 'rejected' | 'hidden') => {
-    const previous = venuePlacementRequests;
-    setVenuePlacementRequests(current => current.filter(request => request.eventId !== eventId));
-    try {
-      await setPartnerVenuePlacementStatus(eventId, status);
-    } catch (placementError) {
-      setVenuePlacementRequests(previous);
-      throw placementError;
-    }
-    setEvents(current => current.map(event => event.id === eventId ? { ...event, venuePageStatus: status } : event));
-  }, [venuePlacementRequests]);
+  const decideVenuePlacement = useCallback(async (
+    workflow: PartnerEventVenueWorkflow,
+    decision: 'approved' | 'declined' | 'revoked',
+    reason?: string,
+  ) => {
+    await decidePartnerEventVenuePlacement(workflow.relationshipId, decision, workflow.version, reason);
+    await load();
+  }, [load]);
+
+  const resubmitVenuePlacement = useCallback(async (workflow: PartnerEventVenueWorkflow, reason?: string) => {
+    await resubmitPartnerEventVenuePlacement(workflow.relationshipId, workflow.version, reason);
+    await load();
+  }, [load]);
+
+  const reportVenueAttribution = useCallback(async (workflow: PartnerEventVenueWorkflow, reason: string) => {
+    await reportPartnerEventVenueAttribution(workflow.relationshipId, workflow.version, reason);
+    await load();
+  }, [load]);
+
+  const respondToVenueDispute = useCallback(async (workflow: PartnerEventVenueWorkflow, response: string) => {
+    await respondToPartnerEventVenueDispute(workflow.relationshipId, workflow.version, response);
+    await load();
+  }, [load]);
 
   const saveEvent = useCallback(async (eventData: PartnerEventInput, editId?: string, revisionConfirmation?: EventRevisionConfirmation) => {
     const userId = await getAuthenticatedPartnerUserId();
@@ -137,8 +159,8 @@ export function usePartner() {
   }, [load]);
 
   return {
-    profile, events, venueListing, venueOptions, venuePlacementRequests, demandSignals, reviewInsights,
+    profile, events, venueListing, venueOptions, eventVenueWorkflows, demandSignals, reviewInsights,
     loading, error, reload: load, applyAsPartner, saveEvent, pauseEvent, cancelEvent, saveVenue,
-    updateVenuePlacementStatus,
+    decideVenuePlacement, resubmitVenuePlacement, reportVenueAttribution, respondToVenueDispute,
   };
 }

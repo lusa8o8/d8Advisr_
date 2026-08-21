@@ -84,6 +84,33 @@ export interface VenuePlacementRequest {
   createdAt: string;
 }
 
+export type EventVenuePlacementStatus = 'requested' | 'approved' | 'declined' | 'revoked' | 'withdrawn';
+export type EventVenueAttributionStatus = 'uncontested' | 'disputed' | 'resolved_confirmed' | 'resolved_invalid' | 'withdrawn';
+
+export interface PartnerEventVenueWorkflow {
+  relationshipId: string;
+  eventId: string;
+  venueId: string;
+  eventName: string;
+  eventCategory: string;
+  eventStatus: EventStatus;
+  eventStartsAt: string | null;
+  venueName: string;
+  organizerName: string;
+  placementStatus: EventVenuePlacementStatus;
+  attributionStatus: EventVenueAttributionStatus;
+  requestSource: string;
+  decisionReason: string | null;
+  disputeReason: string | null;
+  responseReason: string | null;
+  resolutionReason: string | null;
+  version: number;
+  requestedAt: string;
+  updatedAt: string;
+  canManageEvent: boolean;
+  canManageVenue: boolean;
+}
+
 export interface DemandSignal {
   eventId: string | null;
   label: string;

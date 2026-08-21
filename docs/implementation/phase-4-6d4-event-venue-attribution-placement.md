@@ -1,6 +1,6 @@
 # Phase 4.6D4 - Event Venue Attribution, Awareness, and Placement
 
-Status: slices one and two complete; workflow and notification surfaces pending
+Status: slices one through three complete; consumer and admin surfaces pending
 
 Decision date: 21 August 2026
 
@@ -184,6 +184,33 @@ The staging mutation journey passed forged placement writes, ordinary-edit
 preservation, D8-to-D8 handoff, D8-to-external withdrawal, and fixture cleanup.
 Slice three adds organizer/venue-manager workflow surfaces and durable notices;
 it does not reopen the event-write authority boundary.
+
+### Slice three - partner workflows and durable notices (21 August 2026)
+
+Complete on the dedicated staging project:
+
+- added a security-definer partner workflow read that exposes only safe event,
+  venue, relationship, reason, and authority fields to a relevant organizer or
+  venue manager without broadening draft-event table RLS;
+- replaced the partner dashboard's legacy `events.venue_page_status` queue and
+  adapter calls with canonical relationship IDs and optimistic versions;
+- added venue-manager approval, decline, revocation, and incorrect-location
+  report actions;
+- added organizer placement resubmission, venue correction, and dispute
+  response actions while keeping event editing authority separate;
+- made factual venue attribution and optional `Upcoming here` marketing state
+  explicit in partner copy and state badges;
+- emitted deduplicated durable partner notices from immutable audit inserts in
+  the same transaction as the relationship transition;
+- notified venue managers of persisted attribution/removal and organizers of
+  placement decisions or disputes, with opposite-party notices for resubmission
+  and dispute responses; and
+- made relationship notifications navigate back to the dashboard workflow.
+
+The staging role journey proved organizer/venue-manager safe reads, consumer
+isolation, notification-insert denial, one notice per transition and recipient,
+and cascading fixture cleanup. Slice four remains responsible for admin dispute
+resolution UI and consumer disputed-location rendering/notifications.
 
 ## Verification
 

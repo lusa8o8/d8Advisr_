@@ -1,8 +1,8 @@
 import { supabase } from '@workspace/d8-core/supabase';
 import { canManageVenues, type PartnerType } from '@workspace/d8-core/partner-capabilities';
-import type { PartnerVenueListing, PartnerVenueOption, VenuePlacementRequest } from '@workspace/d8-core/types';
-import type { PartnerApplicationRow, VenuePlacementRequestRow } from './partnerModels';
-import { venuePlacementRequestFromRow } from './partnerModels';
+import type { PartnerEventVenueWorkflow, PartnerVenueListing, PartnerVenueOption } from '@workspace/d8-core/types';
+import type { PartnerApplicationRow, PartnerEventVenueWorkflowRow } from './partnerModels';
+import { partnerEventVenueWorkflowFromRow } from './partnerModels';
 
 export interface PartnerVenueInput {
   name: string;
@@ -74,25 +74,62 @@ export async function fetchVenueOptions(userId: string, cityValue: string): Prom
   }));
 }
 
-export async function fetchVenuePlacementRequests(ownedVenueIds: string[]): Promise<VenuePlacementRequest[]> {
-  if (ownedVenueIds.length === 0) return [];
-  const { data, error } = await supabase
-    .from('events')
-    .select('id,title,category,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name)')
-    .in('venue_id', ownedVenueIds)
-    .eq('venue_page_status', 'requested')
-    .order('created_at', { ascending: false });
+export async function fetchPartnerEventVenueWorkflows(): Promise<PartnerEventVenueWorkflow[]> {
+  const { data, error } = await supabase.rpc('get_partner_event_venue_workflows');
   throwIfError(error);
-  return ((data ?? []) as VenuePlacementRequestRow[]).map(venuePlacementRequestFromRow);
+  return ((data ?? []) as PartnerEventVenueWorkflowRow[]).map(partnerEventVenueWorkflowFromRow);
 }
 
-export async function setPartnerVenuePlacementStatus(
-  eventId: string,
-  status: 'approved' | 'rejected' | 'hidden',
+export async function decidePartnerEventVenuePlacement(
+  relationshipId: string,
+  decision: 'approved' | 'declined' | 'revoked',
+  expectedVersion: number,
+  reason?: string,
 ) {
-  const { error } = await supabase.rpc('set_event_venue_page_status', {
-    p_event_id: eventId,
-    p_status: status,
+  const { error } = await supabase.rpc('decide_event_venue_placement', {
+    p_relationship_id: relationshipId,
+    p_decision: decision,
+    p_reason: reason?.trim() || null,
+    p_expected_version: expectedVersion,
+  });
+  throwIfError(error);
+}
+
+export async function resubmitPartnerEventVenuePlacement(
+  relationshipId: string,
+  expectedVersion: number,
+  reason?: string,
+) {
+  const { error } = await supabase.rpc('resubmit_event_venue_placement', {
+    p_relationship_id: relationshipId,
+    p_reason: reason?.trim() || null,
+    p_expected_version: expectedVersion,
+  });
+  throwIfError(error);
+}
+
+export async function reportPartnerEventVenueAttribution(
+  relationshipId: string,
+  expectedVersion: number,
+  reason: string,
+) {
+  const { error } = await supabase.rpc('report_event_venue_attribution', {
+    p_relationship_id: relationshipId,
+    p_reason: reason.trim(),
+    p_expected_version: expectedVersion,
+  });
+  throwIfError(error);
+}
+
+export async function respondToPartnerEventVenueDispute(
+  relationshipId: string,
+  expectedVersion: number,
+  response: string,
+) {
+  const { error } = await supabase.rpc('respond_event_venue_dispute', {
+    p_relationship_id: relationshipId,
+    p_response: response.trim(),
+    p_expected_version: expectedVersion,
   });
   throwIfError(error);
 }

@@ -293,6 +293,8 @@ export type Database = {
           id: string;
           user_id: string;
           partner_application_id: string | null;
+          event_venue_relationship_id: string | null;
+          deduplication_key: string | null;
           type: 'system' | 'approval' | 'action' | 'review';
           title: string;
           body: string;
@@ -300,10 +302,12 @@ export type Database = {
           read_at: string | null;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['partner_notifications']['Row'], 'id' | 'created_at' | 'read_at'> & {
+        Insert: Omit<Database['public']['Tables']['partner_notifications']['Row'], 'id' | 'created_at' | 'read_at' | 'event_venue_relationship_id' | 'deduplication_key'> & {
           id?: string;
           read_at?: string | null;
           created_at?: string;
+          event_venue_relationship_id?: string | null;
+          deduplication_key?: string | null;
         };
         Update: Partial<Database['public']['Tables']['partner_notifications']['Row']>;
       };

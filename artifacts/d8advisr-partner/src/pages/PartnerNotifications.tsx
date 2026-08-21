@@ -27,6 +27,18 @@ export function PartnerNotifications() {
   const [, setLocation] = useLocation();
   const { notifications, loading, error, markRead, markAllRead, unreadCount } = usePartnerNotifications();
 
+  const openNotification = async (notification: PartnerNotification) => {
+    const route = typeof notification.metadata?.route === 'string'
+      && notification.metadata.route.startsWith('/')
+      ? notification.metadata.route
+      : null;
+    try {
+      if (!notification.read_at) await markRead(notification.id);
+    } finally {
+      if (route) setLocation(route);
+    }
+  };
+
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-10">
       <div className="bg-[#111] px-5 pt-12 pb-5 shrink-0">
@@ -77,7 +89,7 @@ export function PartnerNotifications() {
         {!loading && !error && notifications.map(notification => (
           <button
             key={notification.id}
-            onClick={() => !notification.read_at && void markRead(notification.id)}
+            onClick={() => void openNotification(notification)}
             className={cn(
               'w-full text-left rounded-2xl border p-4 flex items-start gap-3 transition-colors',
               notification.read_at

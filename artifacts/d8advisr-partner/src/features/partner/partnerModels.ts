@@ -1,4 +1,4 @@
-import type { DemandSignal, ListingStatus, PartnerEvent, PartnerReviewInsight, VenuePlacementRequest } from '@workspace/d8-core/types';
+import type { DemandSignal, ListingStatus, PartnerEvent, PartnerEventVenueWorkflow, PartnerReviewInsight } from '@workspace/d8-core/types';
 import type { PartnerType } from '@workspace/d8-core/partner-capabilities';
 
 export interface PartnerProfile {
@@ -33,17 +33,28 @@ export interface ReviewSummaryRow {
   avg_rating: number | null;
 }
 
-export interface VenuePlacementRequestRow {
-  id: string;
-  title: string;
-  category: string | null;
-  starts_at: string | null;
-  event_status: string | null;
+export interface PartnerEventVenueWorkflowRow {
+  relationship_id: string;
+  event_id: string;
   venue_id: string;
-  venue_page_status: string;
-  partner_id: string | null;
-  created_at: string | null;
-  venues?: { name?: string | null } | { name?: string | null }[] | null;
+  event_title: string;
+  event_category: string | null;
+  event_status: string;
+  event_starts_at: string | null;
+  venue_name: string;
+  organizer_name: string;
+  placement_status: string;
+  attribution_status: string;
+  request_source: string;
+  decision_reason: string | null;
+  dispute_reason: string | null;
+  response_reason: string | null;
+  resolution_reason: string | null;
+  relationship_version: number;
+  requested_at: string;
+  updated_at: string;
+  can_manage_event: boolean;
+  can_manage_venue: boolean;
 }
 
 export function partnerProfileFromRow(row: PartnerApplicationRow): PartnerProfile {
@@ -134,14 +145,28 @@ export function reviewInsightFromRow(row: ReviewSummaryRow): PartnerReviewInsigh
   };
 }
 
-export function venuePlacementRequestFromRow(row: VenuePlacementRequestRow): VenuePlacementRequest {
-  const venue = Array.isArray(row.venues) ? row.venues[0] : row.venues;
+export function partnerEventVenueWorkflowFromRow(row: PartnerEventVenueWorkflowRow): PartnerEventVenueWorkflow {
   return {
-    eventId: row.id, eventName: row.title, eventCategory: row.category ?? 'Event',
-    eventStartsAt: row.starts_at ?? row.created_at ?? '',
-    eventStatus: (row.event_status as VenuePlacementRequest['eventStatus']) ?? 'draft',
-    venueId: row.venue_id, venueName: venue?.name ?? 'Venue', organizerId: row.partner_id,
-    organizerName: 'Event organiser', status: row.venue_page_status as VenuePlacementRequest['status'],
-    createdAt: row.created_at ?? '',
+    relationshipId: row.relationship_id,
+    eventId: row.event_id,
+    venueId: row.venue_id,
+    eventName: row.event_title,
+    eventCategory: row.event_category ?? 'Event',
+    eventStatus: row.event_status as PartnerEventVenueWorkflow['eventStatus'],
+    eventStartsAt: row.event_starts_at,
+    venueName: row.venue_name,
+    organizerName: row.organizer_name,
+    placementStatus: row.placement_status as PartnerEventVenueWorkflow['placementStatus'],
+    attributionStatus: row.attribution_status as PartnerEventVenueWorkflow['attributionStatus'],
+    requestSource: row.request_source,
+    decisionReason: row.decision_reason,
+    disputeReason: row.dispute_reason,
+    responseReason: row.response_reason,
+    resolutionReason: row.resolution_reason,
+    version: Number(row.relationship_version),
+    requestedAt: row.requested_at,
+    updatedAt: row.updated_at,
+    canManageEvent: row.can_manage_event,
+    canManageVenue: row.can_manage_venue,
   };
 }
