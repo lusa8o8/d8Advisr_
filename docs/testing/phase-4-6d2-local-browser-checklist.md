@@ -1,6 +1,6 @@
 # Phase 4.6D2 High-Level Browser Acceptance
 
-Status: journeys reported passed on 21 August 2026; focused schedule-timezone retest pending
+Status: complete; all journeys and focused retest passed on 21 August 2026
 
 Browser evidence:
 
@@ -17,8 +17,10 @@ Browser evidence:
   the canonical event-region timezone and prevent browser roles from directly
   invoking the internal dispatcher.
 
-Phase closure requires only one new schedule change confirming that notification
-copy matches the partner modal and includes the event-local time label.
+Focused retest evidence: the partner confirmation showed
+`Fri Aug 28, 9:00 PM → 6:00 PM`; the resulting consumer notification showed
+the same values and explicitly labelled them `(Lusaka time)`. Phase 4.6D2
+browser acceptance is complete.
 
 Run both clients locally against staging. Use one disposable live partner event
 that is not needed for later tests. Cancellation is intentionally destructive

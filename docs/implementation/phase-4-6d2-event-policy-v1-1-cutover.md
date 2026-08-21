@@ -1,6 +1,6 @@
 # Phase 4.6D2 Event Policy v1.1 Cutover
 
-Status: implemented on staging; automated verification complete; focused schedule-timezone browser retest pending
+Status: complete on staging; automated and browser verification passed
 
 Decision date: 20 August 2026
 
