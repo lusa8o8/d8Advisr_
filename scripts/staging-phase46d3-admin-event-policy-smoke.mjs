@@ -75,6 +75,23 @@ const retiredRpc = await request(url, key, '/rest/v1/rpc/admin_update_live_event
 });
 assert(!retiredRpc.response.ok, 'Superseded admin live-edit RPC remains executable');
 
+const originalDescription = event.description ?? null;
+const temporaryDescription = `${originalDescription ?? ''}\n[D3 smoke]`.trim();
+const automatic = await request(url, key, '/rest/v1/rpc/admin_apply_event_revision_v11', adminToken, 'POST', {
+  p_event_id: event.id, p_payload: { description: temporaryDescription },
+  p_expected_updated_at: event.updated_at, p_confirmed: false, p_admin_reason: 'D3 automatic edit',
+});
+assert(automatic.response.ok && automatic.body?.status === 'applied', 'Admin non-material edit did not apply automatically');
+const automaticState = await request(url, key, `/rest/v1/events?select=description,updated_at&id=eq.${event.id}`, adminToken);
+assert(automaticState.body?.[0]?.description === temporaryDescription, 'Admin non-material edit did not persist');
+const automaticRestore = await request(url, key, '/rest/v1/rpc/admin_apply_event_revision_v11', adminToken, 'POST', {
+  p_event_id: event.id, p_payload: { description: originalDescription },
+  p_expected_updated_at: automaticState.body[0].updated_at, p_confirmed: false, p_admin_reason: 'Restore D3 automatic edit',
+});
+assert(automaticRestore.response.ok && automaticRestore.body?.status === 'applied', 'Could not restore admin non-material edit');
+const afterAutomatic = await request(url, key, `/rest/v1/events?select=updated_at&id=eq.${event.id}`, adminToken);
+event = { ...event, updated_at: afterAutomatic.body[0].updated_at };
+
 const previousInterest = await request(
   url, key,
   `/rest/v1/event_interests?select=active&event_id=eq.${event.id}&user_id=eq.${consumer.user.id}&interest_type=eq.saved`,
@@ -135,6 +152,7 @@ if (!wasInterested) {
 }
 
 console.log('PASS stale v1.0 publication and direct admin bypass are rejected');
+console.log('PASS admin non-material revisions apply, audit, and restore automatically');
 console.log('PASS admin material preview is non-mutating');
 console.log('PASS confirmed admin material edit audits, notifies, and restores');
 console.log('PASS admin cancellation preview is non-mutating');
