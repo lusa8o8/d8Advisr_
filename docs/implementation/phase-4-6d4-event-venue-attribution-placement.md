@@ -1,6 +1,6 @@
 # Phase 4.6D4 - Event Venue Attribution, Awareness, and Placement
 
-Status: policy approved; implementation pending
+Status: slice one database foundation complete; client enforcement pending
 
 Decision date: 21 August 2026
 
@@ -141,6 +141,27 @@ outbox. Do not create speculative delivery or analytics infrastructure here.
 5. Add static, staging role-matrix, notification, and browser acceptance gates.
 
 Commit after each key change.
+
+## Delivery log
+
+### Slice one - database relationship foundation (21 August 2026)
+
+Complete on the dedicated staging project:
+
+- added canonical `event_venue_relationships` and immutable transition audit;
+- enforced one active relationship per event and optimistic version checks;
+- added organization-first authorization with audited legacy-owner compatibility;
+- added synchronization, placement decision/resubmission, dispute response, and
+  admin resolution RPCs;
+- retained `events.venue_page_status` as a guarded compatibility projection;
+- backfilled existing D8 venue selections without emitting historical notices;
+- repaired idempotent retry timestamp churn and PostgREST retry loops for
+  deliberate stale-version conflicts; and
+- passed linked database lint and the staging role/transition matrix.
+
+Slice two remains responsible for removing placement fields from organizer
+event payloads and synchronizing the relationship transactionally from every
+event save/location-change path.
 
 ## Verification
 
