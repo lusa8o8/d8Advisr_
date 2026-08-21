@@ -18,12 +18,14 @@ requireText('artifacts/d8advisr/src/pages/AdminPanel.tsx', 'Event change history
 requireText('artifacts/d8advisr/src/pages/EventDetail.tsx', 'This event has been cancelled', 'consumer cancellation state');
 requireText('artifacts/d8advisr/src/hooks/useVenues.ts', 'cancelled_at.gte.${cancelledSince}', '24-hour cancellation discovery window');
 requireText('artifacts/d8advisr/src/pages/NotificationsCenter.tsx', "n.type === 'event_price_changed'", 'price change notification UI');
+requireText('artifacts/d8advisr/src/hooks/useConsumerNotifications.ts', 'channelInstanceId.current', 'unique consumer realtime channel instance');
 requireText('lib/d8-core/src/legal.tsx', 'D8 does not routinely pre-review event publication or edits', 'public v1.1 policy');
 
 for (const [path, forbidden, label] of [
   ['artifacts/d8advisr/src/pages/AdminPanel.tsx', 'admin_review_event_revision', 'retired admin review RPC'],
   ['artifacts/d8advisr/src/pages/AdminPanel.tsx', 'Event sensitive revisions', 'retired event review queue'],
   ['artifacts/d8advisr-partner/src/pages/PartnerDashboard.tsx', '⏳ In review', 'retired partner event review badge'],
+  ['artifacts/d8advisr-partner/src/pages/PartnerEventEditor.tsx', 'existing?.firstPublishedAt && existing.isFree', 'superseded published-free UI lock'],
   ['lib/d8-core/src/legal.tsx', 'A published free event cannot later become paid', 'superseded permanent free lock'],
   ['lib/d8-core/src/legal.tsx', 'More than 72 hours before start', 'superseded time threshold'],
 ]) {

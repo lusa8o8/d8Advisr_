@@ -741,8 +741,7 @@ export function PartnerEventEditor() {
             <div className="flex items-center justify-between mb-3">
               <label className={cn(LABEL, 'mb-0')}>Entry price</label>
               <button
-                onClick={() => { if (!(existing?.firstPublishedAt && existing.isFree)) { setIsFree(f => !f); setPrice(''); } }}
-                disabled={Boolean(existing?.firstPublishedAt && existing.isFree)}
+                onClick={() => { setIsFree(current => !current); setPrice(''); }}
                 className={cn(
                   'flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-full border transition-all',
                   isFree

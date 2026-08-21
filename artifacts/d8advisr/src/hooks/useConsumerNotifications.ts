@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@workspace/d8-core/auth';
 import type { ConsumerNotification } from '@workspace/d8-core/types';
@@ -7,6 +7,7 @@ const NOTIFICATIONS_CHANGED_EVENT = 'd8:consumer-notifications-changed';
 
 export function useConsumerNotifications() {
   const { user } = useAuth();
+  const channelInstanceId = useRef(crypto.randomUUID());
   const [notifications, setNotifications] = useState<ConsumerNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export function useConsumerNotifications() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     if (user?.id) {
       channel = supabase
-        .channel(`consumer-notifications:${user.id}`)
+        .channel(`consumer-notifications:${user.id}:${channelInstanceId.current}`)
         .on(
           'postgres_changes',
           {
