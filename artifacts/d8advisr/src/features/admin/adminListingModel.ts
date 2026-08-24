@@ -6,6 +6,7 @@ export interface Venue {
   name: string;
   category: string;
   city: string;
+  regionId: string;
   area: string | null;
   address: string | null;
   description: string | null;
@@ -38,6 +39,7 @@ export interface AdminVenueRow {
   name: string;
   category: string;
   city: string;
+  region_id: string;
   area: string | null;
   address: string | null;
   tier: string | null;
@@ -572,6 +574,7 @@ export function adminVenueFromRow(row: AdminVenueRow): Venue {
     name: row.name,
     category: row.category,
     city: row.city,
+    regionId: row.region_id,
     area: row.area,
     address: row.address,
     description: row.description,

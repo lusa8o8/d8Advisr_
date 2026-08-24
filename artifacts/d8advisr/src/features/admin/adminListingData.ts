@@ -39,7 +39,7 @@ function throwIfError(error: { message: string } | null) {
 export async function fetchAdminVenues(): Promise<Venue[]> {
   const { data, error } = await supabase
     .from('venues')
-    .select('id,name,category,city,area,address,tier,price_tier,description,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,partner_id,operator_organization_id,source,created_at,updated_at')
+    .select('id,name,category,city,region_id,area,address,tier,price_tier,description,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,partner_id,operator_organization_id,source,created_at,updated_at')
     .order('updated_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as AdminVenueRow[]).map(adminVenueFromRow);
@@ -148,6 +148,7 @@ export async function setVenueListingStatus(
 
 export interface AdminDraftVenueUpdateInput {
   name: string;
+  regionId: string;
   city: string;
   category: string;
   area?: string;
@@ -170,6 +171,7 @@ export async function updateAdminDraftVenue(
     p_expected_updated_at: expectedUpdatedAt,
     p_payload: {
       name: input.name.trim(),
+      region_id: input.regionId,
       city: input.city.trim(),
       category: input.category.trim(),
       area: input.area?.trim() || null,
@@ -196,7 +198,7 @@ export async function submitAdminLiveVenueRevision(
     p_venue_id: venueId,
     p_expected_updated_at: expectedUpdatedAt,
     p_payload: {
-      name: input.name.trim(), city: input.city.trim(), category: input.category.trim(),
+      name: input.name.trim(), region_id: input.regionId, city: input.city.trim(), category: input.category.trim(),
       area: input.area?.trim() || null, address: input.address?.trim() || null,
       description: input.description?.trim() || null, price_tier: input.priceTier?.trim() || null,
       avg_cost_pp: input.averageCostPerPerson ?? null, cover_image: input.coverImage?.trim() || null,

@@ -21,6 +21,7 @@ function tags(value: string) {
 function initialDraft(venue: Venue) {
   return {
     name: venue.name,
+    regionId: venue.regionId,
     city: venue.city,
     category: venue.category,
     area: venue.area ?? '',
@@ -39,7 +40,7 @@ export function AdminVenueDraftEdit({ venue, onCancel, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegion();
-  const selectedRegion = regions.find(item => item.name === draft.city || item.id === draft.city);
+  const selectedRegion = regions.find(item => item.id === draft.regionId);
   const references = useListingReferences('venue', selectedRegion?.id);
 
   useEffect(() => setDraft(initialDraft(venue)), [venue]);
@@ -53,6 +54,7 @@ export function AdminVenueDraftEdit({ venue, onCancel, onSaved }: Props) {
     try {
       await updateAdminDraftVenue(venue.id, venue.updatedAt, {
         name: draft.name,
+        regionId: draft.regionId,
         city: draft.city,
         category: draft.category,
         area: draft.area,
@@ -84,7 +86,8 @@ export function AdminVenueDraftEdit({ venue, onCancel, onSaved }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Name</span><input required maxLength={160} className={inputClass} value={draft.name} onChange={e => setDraft(current => ({ ...current, name: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Region</span><select required className={inputClass} value={draft.city} onChange={e => setDraft(current => ({ ...current, city: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Discovery market</span><select required className={inputClass} value={draft.regionId} onChange={e => setDraft(current => ({ ...current, regionId: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Physical city / locality</span><input required maxLength={120} className={inputClass} value={draft.city} onChange={e => setDraft(current => ({ ...current, city: e.target.value }))} /></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Category</span><select required className={inputClass} value={draft.category} onChange={e => setDraft(current => ({ ...current, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Area</span><input list="draft-region-areas" maxLength={160} className={inputClass} value={draft.area} onChange={e => setDraft(current => ({ ...current, area: e.target.value }))} /><datalist id="draft-region-areas">{references.areas.map(item => <option key={item.id} value={item.name} />)}</datalist></label>
       </div>

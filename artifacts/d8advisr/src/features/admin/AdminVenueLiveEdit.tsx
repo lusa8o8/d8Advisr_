@@ -26,11 +26,11 @@ const displayValue = (field: string, value: unknown) => {
   if (field === 'avg_cost_pp' && value !== null && value !== undefined) return `${value} per person`;
   return Array.isArray(value) ? value.join(', ') : value === null || value === undefined || value === '' ? 'Not provided' : String(value);
 };
-const fieldLabel = (field: string) => ({ price_tier: 'Price level', avg_cost_pp: 'Average cost / person', cover_image: 'Cover image', images: 'Gallery images', contact_phone: 'Phone / WhatsApp', website_url: 'Website', name: 'Name', city: 'City', category: 'Category', area: 'Area', address: 'Address', vibes: 'Vibes' }[field] ?? field.replaceAll('_', ' '));
+const fieldLabel = (field: string) => ({ region_id: 'Discovery market', price_tier: 'Price level', avg_cost_pp: 'Average cost / person', cover_image: 'Cover image', images: 'Gallery images', contact_phone: 'Phone / WhatsApp', website_url: 'Website', name: 'Name', city: 'Physical city / locality', category: 'Category', area: 'Area', address: 'Address', vibes: 'Vibes' }[field] ?? field.replaceAll('_', ' '));
 
 function initialDraft(venue: Venue) {
   return {
-    name: venue.name, city: venue.city, category: venue.category, area: venue.area ?? '',
+    name: venue.name, regionId: venue.regionId, city: venue.city, category: venue.category, area: venue.area ?? '',
     address: venue.address ?? '', description: venue.description ?? '', priceTier: venue.priceTier ?? '',
     averageCost: venue.averageCostPerPerson?.toString() ?? '', coverImage: venue.coverImage ?? '',
     images: venue.photos,
@@ -45,7 +45,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegion();
-  const selectedRegion = regions.find(item => item.name === draft.city || item.id === draft.city);
+  const selectedRegion = regions.find(item => item.id === draft.regionId);
   const references = useListingReferences('venue', selectedRegion?.id);
 
   useEffect(() => setDraft(initialDraft(venue)), [venue]);
@@ -54,7 +54,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
     event.preventDefault(); if (saving) return; setSaving(true); setError(null);
     try {
       await submitAdminLiveVenueRevision(venue.id, venue.updatedAt, {
-        name: draft.name, city: draft.city, category: draft.category, area: draft.area,
+        name: draft.name, regionId: draft.regionId, city: draft.city, category: draft.category, area: draft.area,
         address: draft.address, description: draft.description, priceTier: draft.priceTier,
         averageCostPerPerson: draft.averageCost ? Number(draft.averageCost) : undefined,
         coverImage: draft.coverImage, images: draft.images, vibes: tags(draft.vibes),
@@ -94,7 +94,7 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
                   <img src={pendingRevision.proposedValues[field] as string} alt="Proposed venue cover" className="h-36 w-full rounded-lg border border-gray-200 object-cover" />
                 </div>
               ) : (
-                <div className="mt-1 grid grid-cols-2 gap-2 text-[12px]"><div><span className="text-[9px] font-bold uppercase text-gray-400">Current</span><p className="break-words text-gray-600">{displayValue(field, pendingRevision.previousValues[field])}</p></div><div><span className="text-[9px] font-bold uppercase text-amber-600">Proposed</span><p className="break-words font-semibold text-gray-900">{displayValue(field, pendingRevision.proposedValues[field])}</p></div></div>
+                <div className="mt-1 grid grid-cols-2 gap-2 text-[12px]"><div><span className="text-[9px] font-bold uppercase text-gray-400">Current</span><p className="break-words text-gray-600">{field === 'region_id' ? regions.find(region => region.id === pendingRevision.previousValues[field])?.name ?? displayValue(field, pendingRevision.previousValues[field]) : displayValue(field, pendingRevision.previousValues[field])}</p></div><div><span className="text-[9px] font-bold uppercase text-amber-600">Proposed</span><p className="break-words font-semibold text-gray-900">{field === 'region_id' ? regions.find(region => region.id === pendingRevision.proposedValues[field])?.name ?? displayValue(field, pendingRevision.proposedValues[field]) : displayValue(field, pendingRevision.proposedValues[field])}</p></div></div>
               )}
             </div>
           ))}
@@ -119,7 +119,8 @@ export function AdminVenueLiveEdit({ venue, pendingRevision, onCancel, onChanged
       <div className="mb-4 flex items-start justify-between gap-3"><div><h3 className="text-[14px] font-black text-gray-900">Edit live venue</h3><p className="mt-1 text-[11px] text-gray-500">Description applies now. Other changes remain private until separately approved.</p></div><button type="button" onClick={onCancel} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-500" aria-label="Cancel live venue editing"><X size={15} /></button></div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Name · review</span><input required maxLength={160} className={inputClass} value={draft.name} onChange={e => setDraft(v => ({ ...v, name: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Region · review</span><select required className={inputClass} value={draft.city} onChange={e => setDraft(v => ({ ...v, city: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Discovery market · review</span><select required className={inputClass} value={draft.regionId} onChange={e => setDraft(v => ({ ...v, regionId: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Physical city / locality · review</span><input required maxLength={120} className={inputClass} value={draft.city} onChange={e => setDraft(v => ({ ...v, city: e.target.value }))} /></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Category · review</span><select required className={inputClass} value={draft.category} onChange={e => setDraft(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase text-amber-600">Area · review</span><input list="live-region-areas" maxLength={160} className={inputClass} value={draft.area} onChange={e => setDraft(v => ({ ...v, area: e.target.value }))} /><datalist id="live-region-areas">{references.areas.map(item => <option key={item.id} value={item.name} />)}</datalist></label>
       </div>

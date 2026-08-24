@@ -27,7 +27,7 @@ function throwIfError(error: { message: string } | null) {
 export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListing | null> {
   const { data, error } = await supabase
     .from('venues')
-    .select('id,name,category,description,address,area,price_tier,avg_cost_pp,vibes,open_hours,contact_phone,website_url,cover_image,images,listing_status,verification_status,reverification_reason,is_active,updated_at')
+    .select('id,name,region_id,category,description,address,area,price_tier,avg_cost_pp,vibes,open_hours,contact_phone,website_url,cover_image,images,listing_status,verification_status,reverification_reason,is_active,updated_at')
     .eq('partner_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -44,7 +44,7 @@ export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListi
     .maybeSingle();
   throwIfError(pendingError);
   return {
-    id: data.id, name: data.name, status: data.listing_status,
+    id: data.id, name: data.name, regionId: data.region_id, status: data.listing_status,
     verificationStatus: data.verification_status, reverificationReason: data.reverification_reason,
     isActive: data.is_active, category: data.category, description: data.description,
     address: data.address, area: data.area, priceTier: data.price_tier,
@@ -157,6 +157,7 @@ export async function savePartnerVenue(
   throwIfError(lookupError);
 
   const editable = {
+    region_id: application.region_id,
     name: venueData.name, category: venueData.category, description: venueData.description ?? null,
     address: venueData.address, area: venueData.area ?? null,
     price_tier: venueData.priceTier ?? null,

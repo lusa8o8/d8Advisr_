@@ -50,6 +50,7 @@ export interface PartnerVenueOption {
 export interface PartnerVenueListing {
   id: string;
   name: string;
+  regionId: string;
   status: VenueListingStatus;
   verificationStatus: VenueVerificationStatus;
   reverificationReason: string | null;
