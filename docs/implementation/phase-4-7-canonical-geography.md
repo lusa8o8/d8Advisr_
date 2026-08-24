@@ -1,7 +1,6 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slices 4.7A and 4.7B complete on main. Slice 4.7C remains planned and
-does not inherit the 4.7B direct-main exception automatically.
+Status: Slices 4.7A and 4.7B complete on main. Slice 4.7C is in progress.
 
 Date: 24 August 2026
 
@@ -178,6 +177,22 @@ Implementation evidence: `47e7a2d` and
 `docs/implementation/phase-4-7b-production-delivery.md`.
 
 ### Slice 4.7C - canonical profile and listing writes
+
+Delivery decision recorded 24 August 2026: the owner explicitly authorized
+4.7C delivery against the main project while the product is pre-launch. The
+migration must remain transactional and forward-repairable, must preserve all
+consumer identities, and must abort rather than guess at unknown geography.
+
+To keep the write-contract change reviewable, 4.7C is split into two bounded
+deliveries:
+
+- **4.7C1 (current):** canonical consumer profile persistence, deterministic
+  legacy resolution, required venue/event market keys, server-owned event
+  currency, and canonical admin/partner creation writes.
+- **4.7C2 (follow-up):** add explicit `region_id` to every admin/partner
+  location edit and live-revision audit payload. Until then, existing listing
+  location editors retain their compatibility contract and must not be used
+  to reinterpret physical locality as a market key.
 
 1. Add nullable `profiles.region_id`, backfill unambiguous Lagos/Lusaka values,
    update generated/shared types and column grants, and preserve unknown values

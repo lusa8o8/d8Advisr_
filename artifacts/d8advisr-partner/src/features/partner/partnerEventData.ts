@@ -122,6 +122,9 @@ export async function savePartnerEvent(
   if (!canManageEvents(application.partner_type as PartnerType)) {
     throw new Error('Your partner type is not allowed to create events');
   }
+  if (!application.region_id) {
+    throw new Error('Choose a valid discovery market before creating an event');
+  }
 
   const city = application.city?.split(',')[0]?.trim() ?? 'Lusaka';
   const selectedVenue = eventData.venueId ? venueOptions.find(venue => venue.id === eventData.venueId) : null;
@@ -150,7 +153,8 @@ export async function savePartnerEvent(
     event_location_kind: locationKind, venue_id: selectedVenue?.id ?? null,
     external_location_name: locationKind === 'external' ? eventData.externalLocationName?.trim() || null : null,
     external_location_address: locationKind === 'external' ? eventData.externalLocationAddress?.trim() || null : null,
-    partner_id: userId, city, currency: city === 'Lusaka' ? 'K' : '₦',
+    partner_id: userId, city,
+    region_id: application.region_id,
     starts_at: buildNextStartsAt(eventData), vibes: eventData.vibes, updated_at: now,
   };
 

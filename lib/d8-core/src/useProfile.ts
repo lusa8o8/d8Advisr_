@@ -7,7 +7,8 @@ export interface UserProfile {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
-  city: string;
+  city: string | null;
+  region_id: string | null;
   vibe_prefs: string[];
   budget_pref: number;
   created_at: string;

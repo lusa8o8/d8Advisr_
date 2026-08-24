@@ -94,7 +94,8 @@ export type Database = {
           username: string | null;
           display_name: string | null;
           avatar_url: string | null;
-          city: string;
+          city: string | null;
+          region_id: string | null;
           budget_pref: number;
           vibe_prefs: string[];
           is_partner: boolean;

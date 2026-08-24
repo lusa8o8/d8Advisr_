@@ -6,6 +6,7 @@ export type AdminPublicationStatus = 'draft' | 'live';
 
 export interface AdminVenueCreationInput {
   requestKey: string;
+  regionId: string;
   name: string;
   city: string;
   category: string;
@@ -24,6 +25,7 @@ export interface AdminVenueCreationInput {
 
 export interface AdminEventCreationInput {
   requestKey: string;
+  regionId: string;
   title: string;
   city: string;
   startsAt: string;
@@ -56,6 +58,7 @@ export async function createAdminVenue(input: AdminVenueCreationInput): Promise<
   const { data, error } = await supabase.rpc('admin_create_venue', {
     p_payload: {
       request_key: input.requestKey,
+      region_id: input.regionId,
       name: input.name.trim(),
       city: input.city.trim(),
       category: input.category.trim(),
@@ -81,6 +84,7 @@ export async function createAdminEvent(input: AdminEventCreationInput): Promise<
   const { data, error } = await supabase.rpc('admin_create_event', {
     p_payload: {
       request_key: input.requestKey,
+      region_id: input.regionId,
       title: input.title.trim(),
       city: input.city.trim(),
       category: input.category?.trim() || null,

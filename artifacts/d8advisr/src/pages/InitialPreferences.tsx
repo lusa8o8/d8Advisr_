@@ -103,7 +103,8 @@ export function InitialPreferences() {
     const { error } = await supabase
       .from('profiles')
       .update({
-        city: city, 
+        region_id: city,
+        city,
         budget_pref: budget,
         vibe_prefs: vibes,
       })
@@ -285,10 +286,10 @@ export function InitialPreferences() {
         {step === 3 && (
           <div className="px-6 pt-8 pb-32 animate-in fade-in slide-in-from-bottom-3 duration-300">
             <h1 className="text-[28px] font-bold text-foreground leading-tight mb-2">
-              Where are you based?
+              What would you like to explore first?
             </h1>
             <p className="text-muted-foreground text-[15px] mb-8">
-              We'll show you venues and experiences close to you.
+              Choose a city or destination for your recommendations. You can switch later.
             </p>
 
             <div className="flex flex-col gap-3 mb-8">

@@ -12,7 +12,7 @@ export type ListingVibe = Database['public']['Tables']['listing_vibes']['Row'];
 export function useRegion() {
   const { profile } = useProfile();
 
-  // Local state for the active discovery region. Defaults to the user's profile city, or lagos.
+  // Local state for the active discovery market. The live catalog supplies the fallback.
   const [activeRegionId, setActiveRegionId] = useState<string>('lagos');
 
   // Fetch all live regions
@@ -31,12 +31,13 @@ export function useRegion() {
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
-  // Whenever the user's profile loads and they have a city, set it as the active region IF it exists
+  // Canonical profile key first; legacy city remains a one-release compatibility read.
   useEffect(() => {
-    if (profile?.city && regions?.find(r => r.id === profile.city)) {
-      setActiveRegionId(profile.city);
+    const preferredRegionId = profile?.region_id ?? profile?.city;
+    if (preferredRegionId && regions?.find(r => r.id === preferredRegionId)) {
+      setActiveRegionId(preferredRegionId);
     }
-  }, [profile?.city, regions]);
+  }, [profile?.region_id, profile?.city, regions]);
 
   const activeRegion = regions?.find(r => r.id === activeRegionId) || regions?.[0] || {
     id: 'lagos',

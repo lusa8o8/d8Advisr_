@@ -106,6 +106,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
       if (kind === 'venue') {
         id = await createAdminVenue({
           requestKey,
+          regionId: selectedRegion?.id ?? '',
           name: venue.name, city: venue.city, category: venue.category,
           attribution, publicationStatus, area: venue.area, address: venue.address,
           description: venue.description, tier: venue.tier, priceTier: venue.priceTier,
@@ -120,6 +121,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         const eventCapacity = parseEventCapacityInput(event.capacity);
         id = await createAdminEvent({
           requestKey,
+          regionId: selectedRegion?.id ?? '',
           title: event.title, city: event.city, category: event.category,
           description: event.description, startsAt: new Date(event.startsAt).toISOString(),
           endsAt: event.endsAt ? new Date(event.endsAt).toISOString() : undefined,

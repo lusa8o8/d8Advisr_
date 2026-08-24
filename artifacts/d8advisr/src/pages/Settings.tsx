@@ -224,7 +224,7 @@ export function Settings() {
       setFirstName(parts[0] ?? '');
       setLastName(parts.slice(1).join(' '));
       setHandle(profile.username || '');
-      setCity(profile.city || 'lagos');
+      setCity(profile.region_id || profile.city || 'lagos');
     }
     
     if (user) {
@@ -392,7 +392,7 @@ export function Settings() {
                   if (c.is_live) {
                     setCity(c.id);
                     if (user) {
-                      supabase.from('profiles').update({ city: c.id }).eq('id', user.id).then(() => refetch());
+                      supabase.from('profiles').update({ region_id: c.id, city: c.id }).eq('id', user.id).then(() => refetch());
                     }
                     setNeighborhood('');
                     localStorage.removeItem('d8advisr_neighborhood');

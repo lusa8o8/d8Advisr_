@@ -144,6 +144,9 @@ export async function savePartnerVenue(
   if (!canManageVenues(application.partner_type as PartnerType)) {
     throw new Error('Your partner type is not allowed to manage venues');
   }
+  if (!application.region_id) {
+    throw new Error('Choose a valid discovery market before creating a venue');
+  }
 
   const city = application.city?.split(',')[0]?.trim() ?? 'Lusaka';
   const { data: existing, error: lookupError } = await supabase
@@ -185,7 +188,8 @@ export async function savePartnerVenue(
   }
 
   const { error } = await supabase.from('venues').insert({
-    ...editable, city, partner_id: userId, review_count: 0, created_at: new Date().toISOString(),
+    ...editable, city, region_id: application.region_id,
+    partner_id: userId, review_count: 0, created_at: new Date().toISOString(),
   });
   throwIfError(error);
 }
