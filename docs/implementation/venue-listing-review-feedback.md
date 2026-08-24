@@ -1,6 +1,8 @@
 # Venue Listing Review Feedback
 
 Status: implemented in the admin and partner clients on 24 August 2026.
+TypeScript and both production builds pass. Browser acceptance is explicitly
+deferred and must not be reported as passed.
 
 ## MVP decision
 
