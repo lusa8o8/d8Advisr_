@@ -155,26 +155,16 @@ linked project other than main, opens a repeatable-read/read-only transaction,
 and captures Auth identities plus the consumer-owned and baseline listing
 tables. Storage object metadata is included, but Storage object bytes are not.
 
-Run from a private PowerShell session. Do not paste either secret into chat.
-Use a backup destination on a different physical disk from the external source
-drive, and retain the encryption passphrase separately:
+Run the interactive wrapper from a private PowerShell session. Do not paste
+either secret into chat. It prompts for the database password once and the
+backup encryption passphrase twice, then removes the plaintext environment
+variables even if the snapshot fails. Its default destination is the current
+Windows Documents folder, which should be on a different physical disk from
+the external source drive. Retain the encryption passphrase separately:
 
 ```powershell
 Set-Location <external-drive>:\d8Advisr_
-
-$databaseSecret = Read-Host "Paste the MAIN database password" -AsSecureString
-$databaseCredential = New-Object System.Management.Automation.PSCredential("postgres", $databaseSecret)
-$backupSecret = Read-Host "Create a backup encryption passphrase (16+ characters)" -AsSecureString
-$backupCredential = New-Object System.Management.Automation.PSCredential("snapshot", $backupSecret)
-
-$env:PRODUCTION_DB_PASSWORD = $databaseCredential.GetNetworkCredential().Password
-$env:PRODUCTION_BACKUP_PASSPHRASE = $backupCredential.GetNetworkCredential().Password
-$env:PRODUCTION_BACKUP_PATH = "C:\Users\Lusa\Documents\d8advisr-main-preflight-2026-08-24.json.enc"
-
-pnpm run production:snapshot
-
-Remove-Item Env:PRODUCTION_DB_PASSWORD, Env:PRODUCTION_BACKUP_PASSPHRASE, Env:PRODUCTION_BACKUP_PATH
-Remove-Variable databaseSecret, databaseCredential, backupSecret, backupCredential
+.\scripts\production-preflight-snapshot.ps1
 ```
 
 The command must end with `PASS encrypted snapshot round-trip verification`.
