@@ -1,7 +1,9 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slices 4.7A, 4.7B, and 4.7C1 complete on main. The authenticated
-4.7C1 browser journey passed on 24 August 2026. Slice 4.7C2 is in progress.
+Status: Slices 4.7A, 4.7B, 4.7C1, and the 4.7C2 implementation are complete
+on main. The authenticated 4.7C1 browser journey passed on 24 August 2026;
+the two high-level 4.7C2 browser journeys remain before the geography gate is
+fully closed.
 
 Date: 24 August 2026
 
@@ -187,13 +189,12 @@ consumer identities, and must abort rather than guess at unknown geography.
 To keep the write-contract change reviewable, 4.7C is split into two bounded
 deliveries:
 
-- **4.7C1 (current):** canonical consumer profile persistence, deterministic
+- **4.7C1:** canonical consumer profile persistence, deterministic
   legacy resolution, required venue/event market keys, server-owned event
   currency, and canonical admin/partner creation writes.
-- **4.7C2 (follow-up):** add explicit `region_id` to every admin/partner
-  location edit and live-revision audit payload. Until then, existing listing
-  location editors retain their compatibility contract and must not be used
-  to reinterpret physical locality as a market key.
+- **4.7C2:** add explicit `region_id` to every admin/partner location edit and
+  live-revision audit payload. Listing editors no longer reinterpret physical
+  locality as a market key.
 
 4.7C2 is delivered as two independently gated changes:
 
@@ -210,6 +211,29 @@ Both changes must update the active function versions rather than editing
 historical migrations. Client display-name inference is removed from edit
 payloads. Unknown IDs, partner cross-market writes, and cross-market D8 venue
 links fail explicitly.
+
+4.7C2A and 4.7C2B were delivered to the main project on 24 August 2026 through
+`20260824180000_phase47c2a_venue_region_edits.sql` and
+`20260824200000_phase47c2b_event_region_edits.sql`. Remote migration history,
+linked schema lint, the production read-only isolation/feed smoke, focused
+static contracts, session checks, TypeScript, and both production client
+builds pass. The optional CLI catalog-cache warning is caused by Docker not
+being installed and does not affect either applied remote migration.
+
+### 4.7C2 browser acceptance
+
+Keep acceptance at two high-level journeys:
+
+1. **Admin listing geography:** with isolated test listings, confirm venue and
+   event draft/live editors load discovery market separately from physical
+   city/locality. Save a venue market revision through its existing review
+   path and confirm an event market move through the policy modal. Verify the
+   final market, server-derived event currency, audit history, and feed
+   isolation.
+2. **Partner market scope:** as an approved Lusaka partner, create and edit one
+   venue and one event (including a D8-venue event). Confirm values reload,
+   both records remain Lusaka-scoped in admin, and no cross-market venue is
+   offered or accepted.
 
 4.7C1 was delivered to main on 24 August 2026 through migration
 `20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,
@@ -240,6 +264,7 @@ combined phase and staging database gates:
 
 ```powershell
 pnpm run check:phase47a
+pnpm run check:phase47c2b
 pnpm run build:staging
 pnpm run test:production:readonly
 ```
