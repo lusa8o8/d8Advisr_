@@ -10,11 +10,15 @@ Phase 5 claims
 
 Decision record: `docs/adr/0002-canonical-market-geography.md`
 
+Cross-country validation:
+`docs/research/cross-country-discovery-market-validation-2026-08-24.md`
+
 ## Outcome
 
 Restore the current Lusaka consumer feed and establish one country-aware,
-region-keyed geography contract that can add inactive Livingstone and Kitwe
-now and scale to additional African countries without city-name collisions.
+market-keyed geography contract that can add inactive Livingstone, Kitwe,
+Ndola, and Siavonga now and scale to additional African countries without
+city-name collisions or country-specific government hierarchy code.
 
 ## Fresh discovery
 
@@ -66,6 +70,24 @@ The six main events are dated April-July 2026. Their absence from an upcoming
 feed is expected and is not repaired by geography work. One legacy monthly
 event has no normalized future occurrence; Phase 4.6F remains responsible for
 occurrence modeling.
+
+### Cross-country model validation
+
+Research against Nigeria and South Africa found that government geography
+cannot be D8's product hierarchy:
+
+- Nigeria uses states, an exceptional Federal Capital Territory, and LGAs;
+- South Africa uses provinces plus metropolitan, district, and local
+  municipalities;
+- one administrative area can contain several valid D8 markets, such as
+  Kitwe/Ndola in Copperbelt or Johannesburg/Tshwane/Ekurhuleni in Gauteng; and
+- practical destination relationships cross ordinary city discovery
+  boundaries, such as Lusaka-Siavonga or Cape Town-Winelands.
+
+Accordingly, `regions` is a legacy table name for D8 discovery markets.
+Administrative context is generic optional metadata. Listing physical locality
+is independent from market membership. No country-specific hierarchy adapter
+belongs in Phase 4.7.
 
 ## Bounded implementation plan
 
@@ -121,13 +143,17 @@ This slice restores the main venue feed without waiting for the schema work.
 2. Add `countries`, seed Nigeria and Zambia, and validate ISO country plus UN
    M49 continent codes.
 3. Add/backfill `regions.slug`, add the country foreign key, and enforce
-   `(country_code, slug)` uniqueness and normalized slugs.
-4. Seed Livingstone and Kitwe under Zambia with `is_live = false`, ZMW, and
-   `Africa/Lusaka`; do not invent areas or content.
-5. Add the countries reference grants/RLS required for public live-region
+   `(country_code, slug)` uniqueness and normalized slugs. Treat `regions.id`
+   as opaque; new IDs are country-qualified or otherwise globally unique.
+4. Add only nullable generic administrative context fields needed for planned
+   markets. Do not add fixed province/state/district/LGA columns or preload a
+   national hierarchy.
+5. Seed Livingstone, Kitwe, Ndola, and Siavonga under Zambia with
+   `is_live = false`, ZMW, and `Africa/Lusaka`; do not invent areas or content.
+6. Add the countries reference grants/RLS required for public live-region
    context and administrator management without exposing inactive regions to
    ordinary consumer selection.
-6. Additively validate existing country-admin assignments against the catalog;
+7. Additively validate existing country-admin assignments against the catalog;
    do not activate geographic admin enforcement.
 
 ### Slice 4.7C - canonical profile and listing writes
@@ -136,15 +162,17 @@ This slice restores the main venue feed without waiting for the schema work.
    update generated/shared types and column grants, and preserve unknown values
    for explicit user correction.
 2. Update onboarding/settings/useRegion to read and write `profile.region_id`;
-   dual-read legacy `city` during the release boundary.
+   dual-read legacy `city` during the release boundary. Change consumer copy
+   from a residence claim to choosing the city or destination to explore first.
 3. Update admin and partner listing creation/edit/revision contracts to submit
-   `region_id`; derive display city, timezone, and event currency server-side.
+   `region_id`; derive market-owned timezone and event currency server-side,
+   while preserving physical locality/address independently.
 4. Replace global name inference with an exact region-ID path and an explicit
    unique-only legacy fallback. Ambiguous or unknown display names fail.
 5. Inventory all listing rows in staging, backfill any safe gaps, then make
    venue/event `region_id` non-null. Do not coerce unknown rows.
-6. Retain `city` as a derived compatibility projection; column removal belongs
-   to a later measured cleanup.
+6. Retain `city` as a physical-locality compatibility field rather than a
+   derived market label; column removal belongs to a later measured cleanup.
 
 ## Automated gates
 
@@ -161,13 +189,18 @@ Automated coverage must prove:
 
 - feed, map, event, and venue-picker queries use `region_id`;
 - staging and main capitalization differences cannot change results;
-- two test regions may share one display name/slug only in different countries
-  and remain distinguishable;
+- two test markets may share one slug only in different countries and remain
+  distinguishable;
+- one administrative context may contain multiple independently selectable
+  markets without widening their feeds;
+- market selection never overwrites a listing's truthful physical locality;
 - unknown/ambiguous legacy city-only writes fail rather than choosing a row;
-- inactive Livingstone/Kitwe are absent from consumer region selection;
+- inactive Livingstone/Kitwe/Ndola/Siavonga are absent from consumer market
+  selection;
 - admin reference access remains available;
 - profile backfill preserves user UUIDs and unknown legacy values;
-- listing region changes derive display city and event currency correctly;
+- listing market changes preserve physical locality and derive event currency
+  correctly;
 - anonymous/private RLS boundaries do not widen; and
 - migration replay, optimistic revisions, D4 venue relationships, and existing
   Phase 4.6 gates remain green.
@@ -182,9 +215,9 @@ Keep manual acceptance to three journeys:
 
 1. **Consumer discovery:** a Lusaka consumer sees the expected Lusaka venues
    on Home and Map; switching to another live region cannot leak Lusaka rows.
-2. **Inactive expansion markets:** Livingstone and Kitwe do not appear in
-   consumer onboarding/settings while inactive, but their country/region
-   records remain administratively valid.
+2. **Inactive expansion markets:** Livingstone, Kitwe, Ndola, and Siavonga do
+   not appear in consumer onboarding/settings while inactive, but their
+   country/market records remain administratively valid.
 3. **Listing write parity:** an admin and an eligible partner create/edit a
    staging listing in a selected region; it persists the correct `region_id`,
    displays the region name, and appears only in that region's consumer view.
@@ -206,6 +239,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 ## Stop conditions
 
 - any legitimate profile cannot be mapped without guessing;
+- any implementation equates a D8 market with a country's administrative-area
+  type or overwrites physical locality from the market label;
 - a listing write can still choose a region from an ambiguous display name;
 - staging fixtures reveal null `region_id` rows that the plan cannot preserve;
 - a migration would rename existing region primary keys; or
@@ -216,7 +251,9 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 - PostGIS/geocoding/radius search;
 - nationwide or continent-wide default discovery;
 - full region-management UI;
-- activating Livingstone or Kitwe;
+- activating Livingstone, Kitwe, Ndola, or Siavonga;
+- a complete African or national administrative-area catalog;
+- market-to-market nearby/weekend-trip relationships;
 - populating their areas, venues, or events;
 - budget/relevance localization beyond canonical region persistence;
 - event occurrence generation; and

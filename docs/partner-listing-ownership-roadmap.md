@@ -409,12 +409,15 @@ and claims add more location-dependent workflows.
 This is an immediate corrective phase rather than scope added to event-policy
 work. Main and staging format the compatibility `city` field differently,
 while both already agree on `region_id`. The phase first repairs feed/map and
-partner venue reads, then adds the countries catalog, country-scoped region
-slugs, inactive Livingstone/Kitwe records, canonical profile location, and
-region-ID listing writes. See:
+partner venue reads, then adds the countries catalog, country-scoped market
+slugs, inactive Livingstone/Kitwe/Ndola/Siavonga records, canonical profile
+market selection, and market-ID listing writes. `regions` remains a legacy
+table name for D8 discovery markets; administrative context is optional
+metadata and physical locality remains independent. See:
 
 - `docs/adr/0002-canonical-market-geography.md`; and
-- `docs/implementation/phase-4-7-canonical-geography.md`.
+- `docs/implementation/phase-4-7-canonical-geography.md`; and
+- `docs/research/cross-country-discovery-market-validation-2026-08-24.md`.
 
 Slice 4.7A is implemented in `eeb32f2`; its automated, build, main read-only,
 and two high-level browser gates pass. The partner browser journey used the

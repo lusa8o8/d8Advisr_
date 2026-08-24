@@ -143,8 +143,16 @@ journeys passed on 24 August; the partner journey correctly displayed staging
 venues because it ran with the staging build. Deployment remains. Then relink
 the CLI to staging before any country/profile/write migration. The
 bounded schema work adds a countries catalog, country-scoped region slugs,
-inactive Livingstone and Kitwe, canonical `profiles.region_id`, and
-region-ID-based listing writes without removing compatibility `city` fields.
+inactive Livingstone, Kitwe, Ndola, and Siavonga, canonical
+`profiles.region_id`, and market-ID-based listing writes without removing
+compatibility `city` fields.
+
+Cross-country validation against Nigeria and South Africa amended ADR 0002:
+`regions` means D8 discovery markets, not government regions. Administrative
+context is optional generic metadata, and listing physical locality must remain
+independent from market membership. Do not add country-specific province,
+state, district, municipality, or LGA logic. The evidence and examples are in
+`docs/research/cross-country-discovery-market-validation-2026-08-24.md`.
 
 Do not change old production event dates to populate the feed. All six main
 events are currently in the past; recurrence normalization remains Phase 4.6F.
