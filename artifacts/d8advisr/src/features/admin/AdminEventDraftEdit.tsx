@@ -23,6 +23,7 @@ function tags(value: string) {
 function initialDraft(event: AdminEvent) {
   return {
     title: event.title,
+    regionId: event.regionId,
     city: event.city,
     category: event.category ?? '',
     description: event.description ?? '',
@@ -50,7 +51,7 @@ export function AdminEventDraftEdit({ event, onCancel, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegion();
-  const selectedRegion = regions.find(item => item.name === draft.city || item.id === draft.city);
+  const selectedRegion = regions.find(item => item.id === draft.regionId);
   const references = useListingReferences('event', selectedRegion?.id);
 
   useEffect(() => setDraft(initialDraft(event)), [event]);
@@ -64,6 +65,7 @@ export function AdminEventDraftEdit({ event, onCancel, onSaved }: Props) {
     try {
       await updateAdminDraftEvent(event.id, {
         title: draft.title.trim(),
+        region_id: draft.regionId,
         city: draft.city.trim(),
         category: draft.category.trim() || null,
         description: draft.description.trim() || null,
@@ -104,7 +106,8 @@ export function AdminEventDraftEdit({ event, onCancel, onSaved }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Title</span><input required maxLength={160} className={inputClass} value={draft.title} onChange={e => setDraft(c => ({ ...c, title: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Region</span><select required className={inputClass} value={draft.city} onChange={e => setDraft(c => ({ ...c, city: e.target.value }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Discovery market</span><select required className={inputClass} value={draft.regionId} onChange={e => setDraft(c => ({ ...c, regionId: e.target.value }))}>{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Physical city / locality</span><input required className={inputClass} value={draft.city} onChange={e => setDraft(c => ({ ...c, city: e.target.value }))} /></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Category</span><select required className={inputClass} value={draft.category} onChange={e => setDraft(c => ({ ...c, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Event icon</span><div className="flex flex-wrap gap-2">{EVENT_EMOJI_OPTIONS.map(icon => <button key={icon} type="button" aria-label={`Use ${icon} as event icon`} onClick={() => setDraft(c => ({ ...c, emoji: icon }))} className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition ${draft.emoji === icon ? 'bg-[#FFF0F1] ring-2 ring-[#FF5A5F]' : 'bg-gray-50 hover:bg-gray-100'}`}>{icon}</button>)}</div></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Starts</span><input required type="datetime-local" className={inputClass} value={draft.startsAt} onChange={e => setDraft(c => ({ ...c, startsAt: e.target.value }))} /></label>

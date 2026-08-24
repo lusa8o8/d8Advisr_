@@ -8,6 +8,7 @@ export type VenuePageStatus = 'hidden' | 'requested' | 'approved' | 'rejected';
 
 export interface PartnerEvent {
   id: string;
+  regionId: string;
   name: string;
   emoji: string;
   frequency: Frequency;

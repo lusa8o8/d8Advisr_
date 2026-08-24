@@ -21,7 +21,7 @@ function tags(value: string) {
 }
 
 const materialFieldLabels: Record<string, string> = {
-  city: 'Region', starts_at: 'Start date or time', ends_at: 'End date or time',
+  region_id: 'Discovery market', city: 'Physical city / locality', starts_at: 'Start date or time', ends_at: 'End date or time',
   event_location_kind: 'Location type', venue_id: 'D8 venue',
   external_location_name: 'Location name', external_location_address: 'Location address',
   is_free: 'Free or paid entry', price_pp: 'Entry price', capacity: 'Attendance limit',
@@ -41,6 +41,7 @@ function revisionValue(field: string, value: unknown, currency: string) {
 function initialDraft(event: AdminEvent) {
   return {
     title: event.title,
+    regionId: event.regionId,
     city: event.city,
     category: event.category ?? '',
     description: event.description ?? '',
@@ -73,13 +74,13 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
   const [cancellationAccepted, setCancellationAccepted] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const { regions } = useRegion();
-  const selectedRegion = regions.find(item => item.name === draft.city || item.id === draft.city);
+  const selectedRegion = regions.find(item => item.id === draft.regionId);
   const references = useListingReferences('event', selectedRegion?.id);
 
   useEffect(() => setDraft(initialDraft(event)), [event]);
 
   const buildPayload = (): Record<string, unknown> => ({
-    title: draft.title.trim(), city: draft.city.trim(),
+    title: draft.title.trim(), region_id: draft.regionId, city: draft.city.trim(),
     category: draft.category.trim() || null, description: draft.description.trim() || null,
     starts_at: new Date(draft.startsAt).toISOString(),
     ends_at: draft.endsAt ? new Date(draft.endsAt).toISOString() : null,
@@ -106,6 +107,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
         event.id,
         {
           title: draft.title.trim(),
+          region_id: draft.regionId,
           city: draft.city.trim(),
           category: draft.category.trim() || null,
           description: draft.description.trim() || null,
@@ -224,17 +226,21 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
           />
         </label>
         <label>
-          <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Region</span>
+          <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Discovery market</span>
           <select
             required
             className={inputClass}
-            value={draft.city}
-            onChange={e => setDraft(c => ({ ...c, city: e.target.value }))}
+            value={draft.regionId}
+            onChange={e => setDraft(c => ({ ...c, regionId: e.target.value }))}
           >
             {regions.map(item => (
-              <option key={item.id} value={item.name}>{item.name}</option>
+              <option key={item.id} value={item.id}>{item.name}</option>
             ))}
           </select>
+        </label>
+        <label>
+          <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Physical city / locality</span>
+          <input required className={inputClass} value={draft.city} onChange={e => setDraft(c => ({ ...c, city: e.target.value }))} />
         </label>
         <label>
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Category</span>
@@ -452,7 +458,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
                 <div key={field} className="rounded-2xl border border-gray-100 bg-gray-50 p-3">
                   <p className="text-[11px] font-black uppercase tracking-wide text-gray-500">{materialFieldLabels[field] ?? field.replaceAll('_', ' ')}</p>
                   <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px] text-gray-700">
-                    <span className="break-words">{revisionValue(field, materialPreview.previous_values?.[field], event.currency)}</span><span className="text-gray-300">→</span><span className="break-words font-bold">{revisionValue(field, materialPreview.proposed_values?.[field], event.currency)}</span>
+                    <span className="break-words">{field === 'region_id' ? regions.find(region => region.id === materialPreview.previous_values?.[field])?.name ?? revisionValue(field, materialPreview.previous_values?.[field], event.currency) : revisionValue(field, materialPreview.previous_values?.[field], event.currency)}</span><span className="text-gray-300">→</span><span className="break-words font-bold">{field === 'region_id' ? regions.find(region => region.id === materialPreview.proposed_values?.[field])?.name ?? revisionValue(field, materialPreview.proposed_values?.[field], event.currency) : revisionValue(field, materialPreview.proposed_values?.[field], event.currency)}</span>
                   </div>
                 </div>
               ))}

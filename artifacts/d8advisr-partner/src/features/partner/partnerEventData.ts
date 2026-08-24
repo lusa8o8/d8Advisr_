@@ -165,13 +165,14 @@ export async function savePartnerEvent(
     // Check if event is currently live
     const { data: currentEvent, error: fetchError } = await supabase
       .from('events')
-      .select('event_status, updated_at')
+      .select('event_status, updated_at, region_id')
       .eq('id', editId)
       .single();
     throwIfError(fetchError);
 
     if (currentEvent?.event_status === 'live') {
       const revisionPayload = {
+        region_id: application.region_id,
         title: eventData.title,
         category: eventData.category,
         description: eventData.description ?? null,

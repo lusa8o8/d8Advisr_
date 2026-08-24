@@ -14,6 +14,7 @@ export const DEMO_PARTNER = {
 export const DEMO_EVENTS: PartnerEvent[] = [
   {
     id: 'pe1',
+    regionId: 'lusaka',
     name: 'Jazz Night',
     emoji: '🎷',
     frequency: 'weekly',
@@ -25,6 +26,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
   },
   {
     id: 'pe2',
+    regionId: 'lusaka',
     name: 'Sunday Brunch',
     emoji: '🍳',
     frequency: 'weekly',
@@ -36,6 +38,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
   },
   {
     id: 'pe3',
+    regionId: 'lusaka',
     name: 'Comedy Open Mic',
     emoji: '🎤',
     frequency: 'monthly',
@@ -47,6 +50,7 @@ export const DEMO_EVENTS: PartnerEvent[] = [
   },
   {
     id: 'pe4',
+    regionId: 'lusaka',
     name: 'Lusaka City Run',
     emoji: '🏃',
     frequency: 'annual',

@@ -605,6 +605,7 @@ export function adminVenueFromRow(row: AdminVenueRow): Venue {
 
 export interface AdminEventRow {
   id: string;
+  region_id: string;
   venue_id: string | null;
   partner_id: string | null;
   organizer_organization_id: string | null;
@@ -635,6 +636,7 @@ export interface AdminEventRow {
 
 export interface AdminEvent {
   id: string;
+  regionId: string;
   venueId: string | null;
   venueName: string | null;
   partnerId: string | null;
@@ -666,6 +668,7 @@ export interface AdminEvent {
 export function adminEventFromRow(row: AdminEventRow): AdminEvent {
   return {
     id: row.id,
+    regionId: row.region_id,
     venueId: row.venue_id,
     venueName: Array.isArray(row.venues) ? row.venues[0]?.name ?? null : row.venues?.name ?? null,
     partnerId: row.partner_id,

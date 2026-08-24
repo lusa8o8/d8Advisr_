@@ -86,7 +86,7 @@ export function partnerEventFromRow(row: Record<string, unknown>): PartnerEvent 
         }).format(pricePp) + '/pp';
   }
   return {
-    id: String(row.id), name: String(row.title), emoji: String(row.emoji ?? '📅'),
+    id: String(row.id), regionId: String(row.region_id), name: String(row.title), emoji: String(row.emoji ?? '📅'),
     frequency: (row.frequency as PartnerEvent['frequency']) ?? 'one-off',
     nextOccurrence: String(row.next_occurrence ?? ''), spotsTotal, price, isFree,
     status: (row.event_status as PartnerEvent['status']) ?? 'live', category: String(row.category ?? ''),
