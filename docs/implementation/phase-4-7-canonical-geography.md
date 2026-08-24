@@ -1,6 +1,6 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slices 4.7A and 4.7B complete on main. Slice 4.7C is in progress.
+Status: Slices 4.7A, 4.7B, and 4.7C1 complete on main. Slice 4.7C2 is next.
 
 Date: 24 August 2026
 
@@ -193,6 +193,12 @@ deliveries:
   location edit and live-revision audit payload. Until then, existing listing
   location editors retain their compatibility contract and must not be used
   to reinterpret physical locality as a market key.
+
+4.7C1 was delivered to main on 24 August 2026 through migration
+`20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,
+production read-only smoke, the combined static/type gate, and both client
+builds pass. Delivery evidence is recorded in
+`docs/implementation/phase-4-7c1-production-delivery.md`.
 
 1. Add nullable `profiles.region_id`, backfill unambiguous Lagos/Lusaka values,
    update generated/shared types and column grants, and preserve unknown values

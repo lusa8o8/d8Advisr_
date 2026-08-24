@@ -1,6 +1,6 @@
 # Phase 4.7C1 - Canonical Write Foundation
 
-Status: implementation in progress
+Status: complete on main
 
 Date: 24 August 2026
 
@@ -45,6 +45,42 @@ physical locality.
 4.7C1 does not redesign listing location-edit/revision audit payloads. Those
 become 4.7C2 so region changes can be represented explicitly in history rather
 than inferred from a changed `city` string.
+
+## Production delivery evidence
+
+Migration `20260824150000_phase47c1_canonical_write_foundation.sql` was applied
+to main on 24 August 2026. It completed transactionally, which proves every
+existing venue and event had a deterministic market key; otherwise its stop
+checks would have rolled the migration back.
+
+Post-apply checks:
+
+- local and remote migration history match through `20260824150000`;
+- linked database lint reports no schema errors;
+- public inventory remains 16 venues and 6 events;
+- the canonical Lusaka venue predicate still returns all 16 venues;
+- Lagos/Lusaka remain the only anonymously visible markets and four inactive
+  Zambia markets remain hidden;
+- anonymous access to plans, partner applications, and consumer notifications
+  remains HTTP 401;
+- `pnpm run check:phase47c1` passes; and
+- both consumer and partner staging-mode builds pass.
+
+Managed backup inventory remained empty and PITR remained disabled. That risk
+was explicitly accepted for this pre-launch production-first delivery and is
+not a post-launch precedent.
+
+## High-level browser acceptance
+
+1. **Consumer market preference:** sign in as an existing consumer, change the
+   city/destination in Settings, refresh, and confirm Home and Map remain in
+   the chosen live market.
+2. **Admin creation:** create one draft venue or event in Lusaka and confirm it
+   persists/reads only under the Lusaka market; an event derives ZMW without a
+   client currency choice.
+3. **Partner creation:** create one partner draft in the approved application
+   market and confirm the D8-venue picker and resulting listing remain scoped
+   to that market.
 
 ## Stop conditions
 
