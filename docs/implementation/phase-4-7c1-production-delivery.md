@@ -116,6 +116,48 @@ not a post-launch precedent.
   control; that should be a deliberate audited workflow rather than a casual
   dropdown.
 
+## Browser follow-up repairs
+
+Consumer/admin/partner acceptance on 24 August exposed three implementation
+gaps. Migration `20260824170000_market_presentation_metadata.sql` and commit
+`9c123a9` repair them:
+
+- an empty market map now uses database-owned market center/zoom metadata;
+  Lagos no longer falls back to the hard-coded Lusaka map center;
+- configured countries own their international calling code (`+234` Nigeria,
+  `+260` Zambia), and partner application region selection safely pre-fills
+  the prefix without overwriting a number the applicant has typed; and
+- Admin reloads partner applications, venue listing reviews, and placement
+  requests whenever Submissions is opened instead of showing its mount-time
+  snapshot indefinitely.
+
+The admin venue workflow remains intentionally:
+
+`create draft -> Submissions listing review -> Approve listing -> live`
+
+Verification metadata and publication status are distinct. A draft does not
+need to be marked verified merely to enter Submissions; the earlier appearance
+of that dependency was caused by the stale queue.
+
+The first production migration attempt stopped and rolled back transactionally
+because the live-center constraint preceded its backfill. The statement order
+was corrected before delivery. The applied migration now matches local history,
+linked database lint is clean, and the production smoke passes with the user's
+new browser-test inventory (17 public venues, 7 events, and one upcoming Lusaka
+event).
+
+### Focused retest
+
+1. Select Lagos in consumer Settings and open Map: it should center on Lagos
+   even with zero Lagos listings, and show no Lusaka markers.
+2. In a new/updateable partner application, select Lagos and then Lusaka while
+   the phone field is untouched: the prefix should change from `+234` to
+   `+260`. Once a full number is typed, changing the market must not overwrite
+   it.
+3. Submit a partner application or create an admin venue draft, then open (or
+   leave and reopen) Admin -> Submissions: the new item should appear without
+   another verification/status action or a full page reload.
+
 ## Stop conditions
 
 - any existing listing has no deterministic market;
