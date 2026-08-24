@@ -416,8 +416,9 @@ region-ID listing writes. See:
 - `docs/adr/0002-canonical-market-geography.md`; and
 - `docs/implementation/phase-4-7-canonical-geography.md`.
 
-Slice 4.7A is implemented in `eeb32f2`; its automated, build, and main
-read-only gates pass. Its two high-level local browser journeys remain before deployment.
+Slice 4.7A is implemented in `eeb32f2`; its automated, build, main read-only,
+and two high-level browser gates pass. The partner browser journey used the
+staging build and correctly showed staging-created venues. Deployment remains.
 Country catalog and canonical write work remain Slices 4.7B-C and must start
 on staging.
 
@@ -645,9 +646,9 @@ Primary references:
 
 ## Immediate Next Step
 
-Follow `docs/implementation/phase-4-7-canonical-geography.md`. Browser-check
-and release the implemented Slice 4.7A repair, then test the country/profile/
-write schema slices on staging before any further main migration. Resume the
+Follow `docs/implementation/phase-4-7-canonical-geography.md`. Release the
+browser-accepted Slice 4.7A repair, then test the country/profile/write schema
+slices on staging before any further main migration. Resume the
 repaired D4 partner browser journey and slice four only after the geography
 gate. Do not begin Phase 5 claims until D4 automated and browser acceptance
 closes the authority boundary.

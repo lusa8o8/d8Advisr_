@@ -138,8 +138,10 @@ The authoritative new documents are:
 Slice 4.7A is implemented locally: feed, map, events, partner D8-venue
 selection, and partner event references/currency now query canonical
 `region_id`. Its client contract, session lifecycle, typechecks, both builds,
-and main read-only predicate smoke pass in `eeb32f2`. Local browser acceptance
-remains. Then relink the CLI to staging before any country/profile/write migration. The
+and main read-only predicate smoke pass in `eeb32f2`. Both high-level browser
+journeys passed on 24 August; the partner journey correctly displayed staging
+venues because it ran with the staging build. Deployment remains. Then relink
+the CLI to staging before any country/profile/write migration. The
 bounded schema work adds a countries catalog, country-scoped region slugs,
 inactive Livingstone and Kitwe, canonical `profiles.region_id`, and
 region-ID-based listing writes without removing compatibility `city` fields.
