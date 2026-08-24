@@ -1,6 +1,6 @@
 # D8Advisr Current Agent Handoff
 
-Updated: 22 August 2026
+Updated: 24 August 2026
 
 This is the authoritative context-restoration note for a new Codex session.
 It supersedes `docs/agent-handoff-2026-08-19.md`, which is retained only as
@@ -26,7 +26,7 @@ Expected source state when this handoff was written:
 
 - branch: `main`;
 - worktree: clean;
-- local branch: at least 126 commits ahead of `origin/main` and not pushed;
+- local branch: at least 128 commits ahead of `origin/main` and not pushed;
 - latest implementation commit:
   `c381475 fix(events): confirm venue dispute responses`;
 - a newer documentation-only commit containing this handoff is expected;
@@ -135,6 +135,14 @@ roadmap table. Phase 4.6D2 and D3 replaced routine review with the accepted v1.1
 direct-publication/audit/notification policy. The immediate work is D4 closure,
 then Phase 5 claims.
 
+The user changed the immediate priority on 24 August: promote the current
+tested baseline into the existing main Supabase project and fast-forward
+GitHub `main` before continuing D4 slice four. The production plan is
+`docs/implementation/production-promotion-2026-08-24.md`. Preserve every
+consumer/Auth identity; existing partner ownership is not a release-blocking
+preservation requirement. Do not import staging fixtures or abandon staging as
+the future migration-test environment.
+
 ### Completed D4 slices
 
 Slice one (`98a833b`) added canonical `event_venue_relationships`, immutable
@@ -216,7 +224,7 @@ Set-Location <external-drive>:\d8Advisr_
 pnpm run dev:partner:staging
 ```
 
-## Next implementation: D4 slice four
+## Next implementation after production promotion: D4 slice four
 
 After recording the remaining slice-three browser result, run fresh discovery
 before edits.

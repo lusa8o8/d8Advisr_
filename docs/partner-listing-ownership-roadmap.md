@@ -1,8 +1,8 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: active planning document - Phase 4.6D4 slices 1-3 implemented;
-browser journey 1 passed, journey 2 repair is staging-verified and awaits
-browser retest, then slice four remains
+Status: production baseline promotion is the immediate priority; Phase 4.6D4
+slices 1-3 are implemented and staging-verified, with one browser retest and
+slice four still remaining
 
 Created: 2026-08-11
 
@@ -621,11 +621,11 @@ Primary references:
 
 ## Immediate Next Step
 
-Rerun the repaired incorrect-location response steps in
-`docs/testing/phase-4-6d4-local-browser-checklist.md`. The attribution,
-approval, revocation, notification, and resubmission journey has passed. Then
-perform fresh discovery and a mini plan for D4 slice four: consumer
-disputed-location behavior, interested-consumer notices, and the admin dispute
-resolution surface. Do not begin Phase 5 claims until the D4 authority boundary
-passes automated and browser acceptance. Production promotion of accumulated
-migrations remains a separate explicit decision.
+Follow `docs/implementation/production-promotion-2026-08-24.md`: protect the
+external-drive history on GitHub without triggering production, inventory and
+back up the existing main Supabase project, apply the already staging-verified
+migrations, verify legitimate consumer identities/data, then fast-forward
+GitHub `main` and monitor both Vercel projects. Staging data is not copied.
+After the stable baseline is live, rerun the repaired partner browser journey
+and resume fresh D4 slice-four discovery. Do not begin Phase 5 claims until D4
+automated and browser acceptance closes the authority boundary.
