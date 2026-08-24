@@ -61,6 +61,11 @@ async function assertFilteredPublicRead(url, apiKey, label, path, minimumRows = 
   return count;
 }
 
+async function assertFilteredPublicCount(url, apiKey, label, path, expectedRows) {
+  const count = await assertFilteredPublicRead(url, apiKey, label, path, expectedRows);
+  assert(count === expectedRows, `${label} expected exactly ${expectedRows} rows, received ${count}`);
+}
+
 async function assertAnonymousDenied(url, apiKey, table) {
   const { response } = await request(url, apiKey, `/rest/v1/${table}?select=*&limit=1`);
   assert(
@@ -83,6 +88,7 @@ assert(
 await assertPublicRead(url, apiKey, 'venues', 16);
 await assertPublicRead(url, apiKey, 'events', 6);
 await assertPublicRead(url, apiKey, 'regions', 2);
+await assertPublicRead(url, apiKey, 'countries', 2);
 await assertPublicRead(url, apiKey, 'listing_categories', 1);
 await assertPublicRead(url, apiKey, 'listing_vibes', 1);
 
@@ -104,6 +110,21 @@ const upcomingEventCount = await assertFilteredPublicRead(
 if (upcomingEventCount === 0) {
   console.log('INFO canonical upcoming Lusaka events: production currently has no future live inventory');
 }
+
+await assertFilteredPublicCount(
+  url,
+  apiKey,
+  'canonical live market metadata',
+  '/rest/v1/regions?select=id,slug,administrative_area_code,administrative_area_name&id=in.(lagos,lusaka)&limit=10',
+  2,
+);
+await assertFilteredPublicCount(
+  url,
+  apiKey,
+  'inactive expansion markets hidden from anonymous clients',
+  '/rest/v1/regions?select=id&id=in.(zm-livingstone,zm-kitwe,zm-ndola,zm-siavonga)&limit=10',
+  0,
+);
 
 for (const table of ['plans', 'partner_applications', 'consumer_notifications']) {
   await assertAnonymousDenied(url, apiKey, table);

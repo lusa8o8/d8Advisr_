@@ -450,16 +450,38 @@ export type Database = {
       regions: {
         Row: {
           id: string;
+          slug: string;
           name: string;
           country_code: string;
+          administrative_area_code: string | null;
+          administrative_area_name: string | null;
           currency_code: string;
           currency_symbol: string;
           timezone: string;
           is_live: boolean;
           created_at: string;
+          updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['regions']['Row'], 'created_at'> & { created_at?: string };
+        Insert: Omit<Database['public']['Tables']['regions']['Row'], 'created_at' | 'updated_at'> & {
+          created_at?: string;
+          updated_at?: string;
+        };
         Update: Partial<Database['public']['Tables']['regions']['Row']>;
+      };
+      countries: {
+        Row: {
+          code: string;
+          name: string;
+          continent_code: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['countries']['Row'], 'created_at' | 'updated_at'> & {
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['countries']['Row']>;
       };
       region_areas: {
         Row: {

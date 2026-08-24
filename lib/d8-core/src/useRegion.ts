@@ -40,13 +40,17 @@ export function useRegion() {
 
   const activeRegion = regions?.find(r => r.id === activeRegionId) || regions?.[0] || {
     id: 'lagos',
+    slug: 'lagos',
     name: 'Lagos',
     country_code: 'NG',
+    administrative_area_code: 'NG-LA',
+    administrative_area_name: 'Lagos State',
     currency_code: 'NGN',
     currency_symbol: '₦',
     timezone: 'Africa/Lagos',
     is_live: true,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
 
   /**
