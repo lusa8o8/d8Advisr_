@@ -42,8 +42,8 @@ function exactCount(response, body) {
   return Array.isArray(parsed) ? parsed.length : null;
 }
 
-async function assertPublicRead(url, apiKey, table, minimumRows) {
-  const { response, body } = await request(url, apiKey, `/rest/v1/${table}?select=id&limit=1000`);
+async function assertPublicRead(url, apiKey, table, minimumRows, identityColumn = 'id') {
+  const { response, body } = await request(url, apiKey, `/rest/v1/${table}?select=${identityColumn}&limit=1000`);
   assert(response.status === 200, `${table} public read returned HTTP ${response.status}: ${body}`);
   const count = exactCount(response, body);
   assert(Number.isInteger(count), `${table} response did not expose a count`);
@@ -88,7 +88,7 @@ assert(
 await assertPublicRead(url, apiKey, 'venues', 16);
 await assertPublicRead(url, apiKey, 'events', 6);
 await assertPublicRead(url, apiKey, 'regions', 2);
-await assertPublicRead(url, apiKey, 'countries', 2);
+await assertPublicRead(url, apiKey, 'countries', 2, 'code');
 await assertPublicRead(url, apiKey, 'listing_categories', 1);
 await assertPublicRead(url, apiKey, 'listing_vibes', 1);
 
