@@ -10,6 +10,7 @@
     "dev:consumer:staging": "pnpm --filter @workspace/d8advisr exec vite --config vite.config.ts --host 0.0.0.0 --mode staging",
     "dev:partner:staging": "pnpm --filter @workspace/d8advisr-partner exec vite --config vite.config.ts --host 0.0.0.0 --mode staging",
     "test:local:browser-env": "node scripts/check-local-browser-env.mjs",
+    "test:local:main-env": "node scripts/check-local-main-browser-env.mjs",
     "test:session-lifecycle:static": "node scripts/check-session-lifecycle.mjs",
     "test:production-snapshot:static": "node scripts/production-preflight-snapshot.mjs --self-test",
     "production:snapshot": "node scripts/production-preflight-snapshot.mjs snapshot",
