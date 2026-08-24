@@ -72,15 +72,49 @@ not a post-launch precedent.
 
 ## High-level browser acceptance
 
-1. **Consumer market preference:** sign in as an existing consumer, change the
-   city/destination in Settings, refresh, and confirm Home and Map remain in
-   the chosen live market.
-2. **Admin creation:** create one draft venue or event in Lusaka and confirm it
-   persists/reads only under the Lusaka market; an event derives ZMW without a
-   client currency choice.
-3. **Partner creation:** create one partner draft in the approved application
-   market and confirm the D8-venue picker and resulting listing remain scoped
-   to that market.
+1. **Consumer discovery city:** sign in as an existing consumer, open
+   Settings -> Location -> City, and select a different *live D8 discovery
+   market* (currently Lagos or Lusaka). Here "city/destination" means this
+   discovery choice, not a residential-address change. Refresh, open Home and
+   Map, and confirm they remain scoped to the selected market without listings
+   from the other market.
+2. **Admin creation parity:** in Admin -> Create, create one **draft venue**
+   and one **draft event** in Lusaka. The Region selector represents a live D8
+   market, not a country. Confirm each draft retains Lusaka; for the event,
+   confirm currency displays/returns as ZMW without an editable currency
+   choice. Neither draft needs to be published for this contract check.
+3. **Partner application and creation:** use a user who has not yet submitted
+   a partner application to confirm Step 2 offers the live market selector and
+   persists the chosen market. An already approved partner will not see this
+   selector: its application `region_id` is the fixed scope used automatically
+   by venue/event creation and the D8-venue picker. With an approved partner,
+   create one eligible draft and confirm it stays in the application market.
+
+## Current selector behavior
+
+- Main currently exposes two live markets: **Lagos (Nigeria)** and **Lusaka
+  (Zambia)**. Production data confirms their labels are `Lagos` and `Lusaka`;
+  a listing Region selector that literally displays `Nigeria` is stale or a
+  different screen and is not the current catalog response.
+- `countries` is a grouping and operational boundary. A country is not a
+  selectable feed/listing region. Admin creation currently shows only live
+  markets because it shares the `useRegion()` query (`is_live = true`).
+- Livingstone, Kitwe, Ndola, and Siavonga are valid but inactive market rows;
+  they intentionally do not appear in consumer, admin-creation, or partner
+  application selectors yet.
+- The admin creation form still initializes its selection to Lusaka. The
+  options themselves are database-driven; only that initial default is
+  hard-coded and should be removed when the form becomes country/market aware.
+- A partner chooses a market on Step 2 of the initial application. The server
+  stores both canonical `region_id` and a compatibility display city. Admin
+  approval accepts or rejects the application but does not assign a different
+  market.
+- Once an application is approved, the onboarding form redirects to the
+  dashboard. Venue/event creation reads the stored application `region_id`,
+  which is why existing Lusaka partners appear automatically scoped to Lusaka.
+  There is currently no approved-partner market-change UI or admin reassignment
+  control; that should be a deliberate audited workflow rather than a casual
+  dropdown.
 
 ## Stop conditions
 
