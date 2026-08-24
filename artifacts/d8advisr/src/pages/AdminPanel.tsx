@@ -152,6 +152,8 @@ export function AdminPanel() {
   const [partnerReviewLoading, setPartnerReviewLoading] = useState<string | null>(null);
   const [venuePlacementRequests, setVenuePlacementRequests] = useState<VenuePlacementAdminRequest[]>([]);
   const [venueListingReviews, setVenueListingReviews] = useState<VenueListingReview[]>([]);
+  const [venueReviewReasons, setVenueReviewReasons] = useState<Record<string, string>>({});
+  const [venueReviewLoading, setVenueReviewLoading] = useState<string | null>(null);
   const [reverificationTasks, setReverificationTasks] = useState<ReverificationTask[]>([]);
   const [reverificationTasksLoading, setReverificationTasksLoading] = useState(false);
   const [reverificationTasksError, setReverificationTasksError] = useState<string | null>(null);
@@ -455,13 +457,19 @@ export function AdminPanel() {
   const updateVenueListingStatus = async (
     venueId: string,
     status: 'live' | 'needs_update' | 'hidden',
-    reason: string | null = status === 'live' ? null : 'admin_review'
+    reason: string | null = null
   ) => {
     const previous = venueListingReviews;
+    setVenueReviewLoading(venueId);
     setVenueListingReviews(current => current.filter(review => review.id !== venueId));
 
     try {
       await setVenueListingStatus(venueId, status, reason);
+      setVenueReviewReasons(current => {
+        const next = { ...current };
+        delete next[venueId];
+        return next;
+      });
       await loadAdminVenues();
       await loadReverificationTasks();
       if (selectedId) await loadVenueChangeLog(selectedId);
@@ -470,6 +478,8 @@ export function AdminPanel() {
       setVenueListingReviews(previous);
       setSubmissionsError(message);
       logAdminIssue('Could not update venue listing status', { venueId, status, error: message });
+    } finally {
+      setVenueReviewLoading(null);
     }
   };
 
@@ -2164,6 +2174,8 @@ export function AdminPanel() {
           const reason = reviewReasonLabel(review.reverificationReason);
           const missingCover = !review.coverImage;
           const thinGallery = media.length < 3;
+          const reviewReason = venueReviewReasons[review.id] ?? '';
+          const isSaving = venueReviewLoading === review.id;
 
           return (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
@@ -2245,21 +2257,33 @@ export function AdminPanel() {
             <div className="grid grid-cols-1 gap-2">
               <button
                 onClick={() => void updateVenueListingStatus(review.id, 'live')}
+                disabled={isSaving}
                 className="flex-1 bg-[#00C851] text-white rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
               >
-                <CheckCircle size={14} /> Approve listing
+                <CheckCircle size={14} /> {isSaving ? 'Saving...' : 'Approve listing'}
               </button>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Reason for returning the listing</span>
+                <textarea
+                  value={reviewReason}
+                  onChange={event => setVenueReviewReasons(current => ({ ...current, [review.id]: event.target.value }))}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="Explain what the partner should update before resubmitting."
+                  className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-[13px] text-gray-800 placeholder:text-gray-400 focus:border-[#FF5A5F] focus:outline-none"
+                />
+              </label>
               <button
-                onClick={() => void updateVenueListingStatus(review.id, 'needs_update')}
-                className="flex-1 bg-gray-100 text-gray-600 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5 hover:bg-red-50 hover:text-red-600 transition-colors"
+                onClick={() => void updateVenueListingStatus(review.id, 'needs_update', reviewReason.trim())}
+                disabled={isSaving || !reviewReason.trim()}
+                className={cn(
+                  "flex-1 rounded-xl border py-2.5 text-[13px] font-bold transition-colors flex items-center justify-center gap-1.5",
+                  !isSaving && reviewReason.trim()
+                    ? "bg-amber-50 text-amber-700 border-amber-100 active:scale-95"
+                    : "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed"
+                )}
               >
-                <XCircle size={14} /> Needs update
-              </button>
-              <button
-                onClick={() => void updateVenueListingStatus(review.id, 'needs_update', 'needs_better_photos')}
-                className="flex-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl font-bold text-[13px] py-2.5 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
-              >
-                <Eye size={14} /> Needs better photos
+                <XCircle size={14} /> {isSaving ? 'Saving...' : 'Return for updates'}
               </button>
             </div>
           </div>

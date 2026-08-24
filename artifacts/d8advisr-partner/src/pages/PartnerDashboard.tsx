@@ -177,7 +177,15 @@ export function PartnerDashboard() {
         body: 'Your partner account is approved. Add venue details so D8 can review the listing before it appears publicly.',
         action: 'Complete listing',
       }
-    : venueListing.status === 'live' && (venueListing.verificationStatus === 'reverify_required' || venueListing.hasPendingRevision)
+    : venueListing.status === 'needs_update'
+      ? {
+          title: 'Listing needs updates',
+          body: venueListing.reverificationReason
+            ? `D8 review: ${venueListing.reverificationReason}`
+            : 'D8 needs more information before this venue can appear publicly.',
+          action: 'Update and resubmit',
+        }
+      : venueListing.status === 'live' && (venueListing.verificationStatus === 'reverify_required' || venueListing.hasPendingRevision)
       ? {
           title: 'Listing in review',
           body: 'Your venue is still visible while D8 reviews the latest updates.',
@@ -285,7 +293,9 @@ export function PartnerDashboard() {
                 </div>
                 {venueListing && (
                   <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100 shrink-0">
-                    {venueInReview ? 'in review' : venueListing.status.replace('_', ' ')}
+                    {venueListing.status === 'needs_update'
+                      ? 'needs update'
+                      : venueInReview ? 'in review' : venueListing.status.replace('_', ' ')}
                   </span>
                 )}
               </div>
