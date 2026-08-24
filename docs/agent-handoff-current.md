@@ -143,12 +143,14 @@ consumer/Auth identity; existing partner ownership is not a release-blocking
 preservation requirement. Do not import staging fixtures or abandon staging as
 the future migration-test environment.
 
-The main database promotion is now complete: all migrations through
+The main database and client promotion is now complete: all migrations through
 `20260822003000` are recorded remotely, database lint is clean, and the
 production read-only API smoke preserved the 16-venue/6-event baseline while
 confirming private-table denial. An encrypted Auth/consumer snapshot exists in
-the user's internal Documents folder. GitHub/Vercel `main` promotion and its
-post-deployment browser smoke are the immediate remaining release steps.
+the user's internal Documents folder. GitHub `main` fast-forwarded to
+`0252af3`, both Vercel projects deployed successfully, and both production
+domains/assets returned HTTP 200. The short authenticated post-deployment
+browser smoke is the immediate remaining release evidence.
 
 ### Completed D4 slices
 

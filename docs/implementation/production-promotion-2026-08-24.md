@@ -1,6 +1,6 @@
 # Production Promotion Plan - 24 August 2026
 
-Status: main database promoted and verified; GitHub/Vercel promotion pending
+Status: main database, GitHub main, and Vercel promoted; authenticated browser smoke pending
 
 Production Supabase project: `evfftzhrucwwfnertiup` (`D8Advisr_`)
 
@@ -293,6 +293,22 @@ Post-deployment smoke:
 
 Partner application/ownership cleanup can follow as a separate audited task.
 Do not delete shared Auth identities merely to obtain a clean partner table.
+
+Completed 24 August 2026:
+
+- GitHub `main` fast-forwarded from `4fef000` to verified release commit
+  `0252af3` without force-push;
+- the non-deploying `backup/production-baseline-2026-08-24` branch contains the
+  same release commit;
+- both Vercel deployment statuses completed successfully;
+- `https://d8advisr.com/` returned HTTP 200 and served its JavaScript asset;
+  and
+- `https://partner.d8advisr.com/` returned HTTP 200 and served its JavaScript
+  asset.
+
+The remaining release evidence is the authenticated browser smoke for a
+legitimate existing consumer, seeded admin, and partner email/password flow.
+It is not replaced by anonymous HTTP or API checks.
 
 ## Rollback reasoning
 
