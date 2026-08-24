@@ -13,6 +13,7 @@
     "test:session-lifecycle:static": "node scripts/check-session-lifecycle.mjs",
     "test:production-snapshot:static": "node scripts/production-preflight-snapshot.mjs --self-test",
     "production:snapshot": "node scripts/production-preflight-snapshot.mjs snapshot",
+    "test:production:readonly": "node scripts/production-readonly-smoke.mjs",
     "build:staging": "pnpm --filter @workspace/d8advisr exec vite build --config vite.config.ts --mode staging && pnpm --filter @workspace/d8advisr-partner exec vite build --config vite.config.ts --mode staging",
     "test:staging": "node scripts/staging-smoke.mjs",
     "test:staging:full": "node scripts/staging-smoke.mjs --require-identities",

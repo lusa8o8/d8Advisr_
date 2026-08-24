@@ -1,6 +1,6 @@
 # Production Promotion Plan - 24 August 2026
 
-Status: migration inventory complete; production writes not started
+Status: main database promoted and verified; GitHub/Vercel promotion pending
 
 Production Supabase project: `evfftzhrucwwfnertiup` (`D8Advisr_`)
 
@@ -173,6 +173,10 @@ The encrypted file contains password hashes and other sensitive Auth/consumer
 data, so it must not be committed, emailed unencrypted, or left on a shared
 machine. The repository ignores `/local-backups/` as a secondary safeguard.
 
+Completed 24 August 2026: the encrypted snapshot was written to the internal
+Windows Documents folder and verified by the utility before any migration was
+applied. The file itself is deliberately outside Git and must remain encrypted.
+
 Supabase documents dashboard backup/PITR behavior in
 [Database Backups](https://supabase.com/docs/guides/platform/backups) and Auth
 user preservation in
@@ -221,6 +225,23 @@ Compare the pre/post Auth UUID fingerprints and consumer-table counts. New
 empty audit/notification/reference rows are expected; loss of an existing
 consumer UUID or owned row is a stop condition.
 
+Completed 24 August 2026:
+
+- all 56 expected migrations applied without a migration failure;
+- linked remote history matches local history through `20260822003000`;
+- `supabase db lint --linked --level warning` returned no schema errors;
+- the Docker/pg-delta message after `db push` was a non-fatal local catalog
+  cache warning after the hosted migrations had completed;
+- `pnpm run test:production:readonly` confirmed the pre-migration public
+  baseline of 16 venues and 6 events, plus 2 regions;
+- the new reference catalogs are readable; and
+- plans, partner applications, and consumer notifications remain denied to
+  anonymous callers.
+
+The production-safe smoke uses only the main anonymous key, refuses any other
+project ref, and performs no writes. It lives at
+`scripts/production-readonly-smoke.mjs`.
+
 ### Gate 5 - client build and environment parity
 
 Before pushing GitHub `main`:
@@ -233,6 +254,15 @@ Before pushing GitHub `main`:
 - confirm partner production has the same main URL/anonymous key, not staging;
 - run the full workspace type/static gate; and
 - build both clients locally with production-equivalent environment values.
+
+Source verification completed 24 August 2026:
+
+- `pnpm run check:phase46d4` passed, including typechecks; and
+- `pnpm run build:staging` built both clients successfully.
+
+The existing bundle-size, sourcemap-location, and stale Browserslist notices
+remain non-blocking. Production Vercel environment parity and the final
+production-domain browser smoke remain required around the `main` push.
 
 Vercel deploys the configured production branch automatically, so the database
 must be compatible before `main` is pushed. See

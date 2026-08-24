@@ -143,6 +143,13 @@ consumer/Auth identity; existing partner ownership is not a release-blocking
 preservation requirement. Do not import staging fixtures or abandon staging as
 the future migration-test environment.
 
+The main database promotion is now complete: all migrations through
+`20260822003000` are recorded remotely, database lint is clean, and the
+production read-only API smoke preserved the 16-venue/6-event baseline while
+confirming private-table denial. An encrypted Auth/consumer snapshot exists in
+the user's internal Documents folder. GitHub/Vercel `main` promotion and its
+post-deployment browser smoke are the immediate remaining release steps.
+
 ### Completed D4 slices
 
 Slice one (`98a833b`) added canonical `event_venue_relationships`, immutable

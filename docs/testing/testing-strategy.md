@@ -2,7 +2,7 @@
 
 Status: required delivery framework
 
-Updated: 20 August 2026
+Updated: 24 August 2026
 
 ## Purpose
 
@@ -76,6 +76,24 @@ Each database slice must cover:
 Never use production as the first migration test. Production promotion is a
 separate explicit decision after staging migration inventory, smoke checks,
 browser acceptance, and rollback reasoning.
+
+### Production promotion checks
+
+Production checks are deliberately read-only. Before a production migration,
+create and verify the encrypted Auth/consumer snapshot documented in
+`docs/implementation/production-promotion-2026-08-24.md`. After migration,
+verify linked history and lint, then run:
+
+```powershell
+Set-Location H:\d8Advisr_
+pnpm run test:production:readonly
+```
+
+This smoke refuses any Supabase project other than main, uses only the
+anonymous key, and performs GET requests. It verifies baseline public counts,
+new reference-catalog visibility, and anonymous denial for representative
+consumer and partner tables. It must never reuse staging fixture scripts or
+gain a service-role key merely to make production testing more comprehensive.
 
 ### Layer 4 - browser acceptance
 
