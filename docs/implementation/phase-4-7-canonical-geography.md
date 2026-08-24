@@ -90,6 +90,7 @@ Implementation completed on 24 August 2026:
 
 The static/session/typecheck gate and both staging-mode client builds pass.
 No schema, RLS, identity, or production data changes were made.
+Implementation commit: `eeb32f2`.
 
 1. Change consumer venue/event hooks to accept a region ID and filter
    `region_id`, with naming/types that make display-city misuse difficult.
@@ -186,8 +187,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 
 ## Rollout order
 
-1. Complete the two high-level Slice 4.7A browser journeys, commit, and deploy
-   the client repair.
+1. Complete the two high-level Slice 4.7A browser journeys and deploy the
+   committed client repair.
 2. Relink CLI to staging; implement and test 4.7B migration there.
 3. Implement/test 4.7C against staging with client compatibility.
 4. Capture a new main preflight inventory and use a production dry run.

@@ -416,8 +416,8 @@ region-ID listing writes. See:
 - `docs/adr/0002-canonical-market-geography.md`; and
 - `docs/implementation/phase-4-7-canonical-geography.md`.
 
-Slice 4.7A is implemented and its automated, build, and main read-only gates
-pass. Its two high-level local browser journeys remain before deployment.
+Slice 4.7A is implemented in `eeb32f2`; its automated, build, and main
+read-only gates pass. Its two high-level local browser journeys remain before deployment.
 Country catalog and canonical write work remain Slices 4.7B-C and must start
 on staging.
 
