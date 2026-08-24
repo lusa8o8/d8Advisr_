@@ -10,7 +10,7 @@ import { useVenues } from '@/hooks/useVenues';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
 const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID?.trim();
-const DEFAULT_MAP_CENTER = { lat: -15.3875, lng: 28.3228 };
+const SAFE_MAP_CENTER = { lat: 0, lng: 20 };
 
 let mapsLoaderConfigured = false;
 
@@ -128,11 +128,13 @@ function useMapTheme(): MapTheme {
 
 function GoogleVenueMap({
   center,
+  zoom,
   mapTheme,
   venues,
   onVenueSelect,
 }: {
   center: google.maps.LatLngLiteral;
+  zoom: number;
   mapTheme: MapTheme;
   venues: MappedVenue[];
   onVenueSelect: (venueId: string) => void;
@@ -187,7 +189,7 @@ function GoogleVenueMap({
 
         const map = new mapsLibrary.Map(containerRef.current, {
           center,
-          zoom: 13,
+          zoom,
           mapId: GOOGLE_MAPS_MAP_ID,
           colorScheme:
             mapTheme === 'dark'
@@ -253,7 +255,7 @@ function GoogleVenueMap({
       markerClassRef.current = null;
       mapRef.current = null;
     };
-  }, [center.lat, center.lng, mapTheme, retryCount]);
+  }, [center.lat, center.lng, mapTheme, retryCount, zoom]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -261,6 +263,7 @@ function GoogleVenueMap({
     if (!map || !AdvancedMarkerElement || loadState !== 'ready') return;
 
     map.setCenter(center);
+    map.setZoom(zoom);
 
     // Clean up previous markers and clusterer
     if (clustererRef.current) {
@@ -321,7 +324,7 @@ function GoogleVenueMap({
       });
       markersRef.current = [];
     };
-  }, [center, loadState, mapGeneration, venues]);
+  }, [center, loadState, mapGeneration, venues, zoom]);
 
   const handleRecenter = useCallback(() => {
     if (userLocation && mapRef.current) {
@@ -423,7 +426,11 @@ export function MapView() {
   }, [mappedVenues, searchQuery]);
 
   const mapCenter = useMemo<google.maps.LatLngLiteral>(() => {
-    if (mappedVenues.length === 0) return DEFAULT_MAP_CENTER;
+    if (mappedVenues.length === 0) {
+      return activeRegion.center_lat !== null && activeRegion.center_lng !== null
+        ? { lat: activeRegion.center_lat, lng: activeRegion.center_lng }
+        : SAFE_MAP_CENTER;
+    }
 
     const total = mappedVenues.reduce(
       (sum, venue) => ({
@@ -437,7 +444,7 @@ export function MapView() {
       lat: total.lat / mappedVenues.length,
       lng: total.lng / mappedVenues.length,
     };
-  }, [mappedVenues]);
+  }, [activeRegion.center_lat, activeRegion.center_lng, mappedVenues]);
 
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const selectedVenue = mappedVenues.find(venue => venue.id === selectedVenueId);
@@ -453,6 +460,7 @@ export function MapView() {
     >
       <GoogleVenueMap
         center={mapCenter}
+        zoom={activeRegion.default_zoom}
         mapTheme={mapTheme}
         venues={filteredVenues}
         onVenueSelect={setSelectedVenueId}

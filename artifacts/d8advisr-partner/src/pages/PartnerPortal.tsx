@@ -132,6 +132,17 @@ export function PartnerPortal() {
   const canContinue = type !== null;
   const canSubmit = name.trim() && city && contact.trim();
 
+  const selectRegion = (regionId: string) => {
+    const previousCallingCode = regions.find(region => region.id === city)?.country?.calling_code;
+    const nextCallingCode = regions.find(region => region.id === regionId)?.country?.calling_code;
+    setCity(regionId);
+    setContact(current => {
+      const trimmed = current.trim();
+      if (!nextCallingCode || (trimmed && trimmed !== previousCallingCode)) return current;
+      return `${nextCallingCode} `;
+    });
+  };
+
   const submit = async () => {
     if (!type || !canSubmit) return;
     setSubmitting(true);
@@ -270,7 +281,7 @@ export function PartnerPortal() {
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">City *</label>
               <select
                 value={city}
-                onChange={e => setCity(e.target.value)}
+                onChange={e => selectRegion(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-xl border border-gray-200 text-[14px] text-gray-800 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-white"
               >
                 <option value="">Select region</option>

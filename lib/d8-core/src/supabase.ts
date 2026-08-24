@@ -459,6 +459,9 @@ export type Database = {
           currency_code: string;
           currency_symbol: string;
           timezone: string;
+          center_lat: number | null;
+          center_lng: number | null;
+          default_zoom: number;
           is_live: boolean;
           created_at: string;
           updated_at: string;
@@ -474,6 +477,7 @@ export type Database = {
           code: string;
           name: string;
           continent_code: string;
+          calling_code: string;
           is_active: boolean;
           created_at: string;
           updated_at: string;

@@ -329,6 +329,10 @@ export function AdminPanel() {
     setSubmissionsLoading(false);
   };
 
+  useEffect(() => {
+    if (view === 'submissions') void loadSubmissions();
+  }, [view]);
+
   const loadReverificationTasks = async () => {
     setReverificationTasksLoading(true);
     setReverificationTasksError(null);

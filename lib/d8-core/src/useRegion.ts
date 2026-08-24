@@ -4,7 +4,9 @@ import { supabase } from './supabase';
 import type { Database } from './supabase';
 import { useProfile } from './useProfile';
 
-export type Region = Database['public']['Tables']['regions']['Row'];
+export type Region = Database['public']['Tables']['regions']['Row'] & {
+  country: { calling_code: string } | null;
+};
 export type RegionArea = Database['public']['Tables']['region_areas']['Row'];
 export type ListingCategory = Database['public']['Tables']['listing_categories']['Row'];
 export type ListingVibe = Database['public']['Tables']['listing_vibes']['Row'];
@@ -21,7 +23,7 @@ export function useRegion() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('regions')
-        .select('*')
+        .select('*,country:countries(calling_code)')
         .eq('is_live', true)
         .order('name');
 
@@ -49,6 +51,10 @@ export function useRegion() {
     currency_code: 'NGN',
     currency_symbol: '₦',
     timezone: 'Africa/Lagos',
+    center_lat: 6.5244,
+    center_lng: 3.3792,
+    default_zoom: 12,
+    country: { calling_code: '+234' },
     is_live: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()

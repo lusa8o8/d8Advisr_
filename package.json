@@ -72,6 +72,8 @@
     "check:phase47b": "pnpm run test:phase47a:clients && pnpm run test:phase47b:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:phase47c1:static": "node scripts/check-phase47c1-contract.mjs",
     "check:phase47c1": "pnpm run test:phase47a:clients && pnpm run test:phase47b:static && pnpm run test:phase47c1:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
+    "test:market-presentation:static": "node scripts/check-market-presentation-contract.mjs",
+    "check:market-presentation": "pnpm run test:market-presentation:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",
     "test:staging:phase45:media": "node scripts/staging-phase45-media-smoke.mjs",
     "test:staging:phase45:partner-revision": "node scripts/staging-phase45-partner-revision-smoke.mjs",
