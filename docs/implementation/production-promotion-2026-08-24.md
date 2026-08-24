@@ -1,6 +1,6 @@
 # Production Promotion Plan - 24 August 2026
 
-Status: discovery complete; production writes not started
+Status: migration inventory complete; production writes not started
 
 Production Supabase project: `evfftzhrucwwfnertiup` (`D8Advisr_`)
 
@@ -80,6 +80,10 @@ still fast-forwards GitHub `main` after the database gate.
 
 Do not force-push. Reconfirm the remote head immediately before the final push.
 
+Completed 24 August 2026: commit `5104157` and all preceding local work were
+pushed to the non-deploying GitHub branch
+`backup/production-baseline-2026-08-24`. GitHub `main` remains unchanged.
+
 ### Gate 1 - close or accept the known partner browser risk
 
 The placement browser journey passed. The repaired dispute-response journey
@@ -122,6 +126,11 @@ boundary. Do not use `migration repair` merely to make the list green. Inspect
 schema/history divergence first, following the official
 [Supabase migration guidance](https://supabase.com/docs/guides/deployment/database-migrations).
 
+Completed 24 August 2026: the CLI is linked to main. Remote history ends at
+`20260725020000_route_neutral_account_context.sql`; the dry run contains the
+expected continuous 56-migration sequence from `20260811150000` through
+`20260822003000`, with no extra or missing versions.
+
 ### Gate 3 - recoverable production snapshot
 
 Before applying migrations, confirm a restore path that includes Auth users,
@@ -137,6 +146,42 @@ not only public tables:
    account recovery and the consumer-owned public tables.
 4. Inventory Storage separately; database backups contain Storage metadata but
    not the actual stored objects.
+
+The main project currently reports no available physical backups and PITR is
+disabled. This release therefore uses the encrypted preflight snapshot utility
+at `scripts/production-preflight-snapshot.mjs`. It needs no Docker or new
+dependency: it uses the workspace's existing PostgreSQL client, refuses any
+linked project other than main, opens a repeatable-read/read-only transaction,
+and captures Auth identities plus the consumer-owned and baseline listing
+tables. Storage object metadata is included, but Storage object bytes are not.
+
+Run from a private PowerShell session. Do not paste either secret into chat.
+Use a backup destination on a different physical disk from the external source
+drive, and retain the encryption passphrase separately:
+
+```powershell
+Set-Location <external-drive>:\d8Advisr_
+
+$databaseSecret = Read-Host "Paste the MAIN database password" -AsSecureString
+$databaseCredential = New-Object System.Management.Automation.PSCredential("postgres", $databaseSecret)
+$backupSecret = Read-Host "Create a backup encryption passphrase (16+ characters)" -AsSecureString
+$backupCredential = New-Object System.Management.Automation.PSCredential("snapshot", $backupSecret)
+
+$env:PRODUCTION_DB_PASSWORD = $databaseCredential.GetNetworkCredential().Password
+$env:PRODUCTION_BACKUP_PASSPHRASE = $backupCredential.GetNetworkCredential().Password
+$env:PRODUCTION_BACKUP_PATH = "C:\Users\Lusa\Documents\d8advisr-main-preflight-2026-08-24.json.enc"
+
+pnpm run production:snapshot
+
+Remove-Item Env:PRODUCTION_DB_PASSWORD, Env:PRODUCTION_BACKUP_PASSPHRASE, Env:PRODUCTION_BACKUP_PATH
+Remove-Variable databaseSecret, databaseCredential, backupSecret, backupCredential
+```
+
+The command must end with `PASS encrypted snapshot round-trip verification`.
+It prints only counts and an Auth UUID fingerprint; the rows remain encrypted.
+The encrypted file contains password hashes and other sensitive Auth/consumer
+data, so it must not be committed, emailed unencrypted, or left on a shared
+machine. The repository ignores `/local-backups/` as a secondary safeguard.
 
 Supabase documents dashboard backup/PITR behavior in
 [Database Backups](https://supabase.com/docs/guides/platform/backups) and Auth

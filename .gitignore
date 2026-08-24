@@ -31,6 +31,7 @@ node_modules
 /.sass-cache
 /connect.lock
 /coverage
+/local-backups/
 /d8advisr-vercel.env
 .env
 .env.*
