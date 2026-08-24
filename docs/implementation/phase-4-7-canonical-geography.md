@@ -1,6 +1,7 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slices 4.7A, 4.7B, and 4.7C1 complete on main. Slice 4.7C2 is next.
+Status: Slices 4.7A, 4.7B, and 4.7C1 complete on main. The authenticated
+4.7C1 browser journey passed on 24 August 2026. Slice 4.7C2 is in progress.
 
 Date: 24 August 2026
 
@@ -193,6 +194,22 @@ deliveries:
   location edit and live-revision audit payload. Until then, existing listing
   location editors retain their compatibility contract and must not be used
   to reinterpret physical locality as a market key.
+
+4.7C2 is delivered as two independently gated changes:
+
+- **4.7C2A - venues:** admin draft corrections, admin live revisions and
+  approvals, partner venue writes, and partner live-revision validation carry
+  canonical `region_id`. Discovery market and physical city remain separate;
+  partner-managed venues stay within the approved account market.
+- **4.7C2B - events:** admin draft/live edits and partner event writes carry
+  canonical `region_id`; material market changes remain inside event-policy
+  confirmation and audit; currency is derived server-side; and a selected D8
+  venue must belong to the selected market.
+
+Both changes must update the active function versions rather than editing
+historical migrations. Client display-name inference is removed from edit
+payloads. Unknown IDs, partner cross-market writes, and cross-market D8 venue
+links fail explicitly.
 
 4.7C1 was delivered to main on 24 August 2026 through migration
 `20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,

@@ -426,8 +426,9 @@ pushed to `main`; deployment status was not re-inspected during 4.7B.
 Slice 4.7B is complete on main through migration `20260824120000`: the country
 catalog, normalized market metadata, generic administrative context, and four
 inactive Zambia markets passed pre/post production gates. Canonical profile
-and listing writes remain Slice 4.7C, which does not inherit the direct-main
-exception automatically.
+and creation writes are complete through Slice 4.7C1, whose authenticated
+browser journey passed on 24 August 2026. Slice 4.7C2 is now in progress as
+separately gated venue (C2A) and event (C2B) edit/revision contracts.
 
 The phase does not add PostGIS, nationwide discovery, occurrence generation,
 or speculative geography data. Phase 4.6D4 resumes after the geography gate.

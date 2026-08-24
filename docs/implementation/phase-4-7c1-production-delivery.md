@@ -1,5 +1,9 @@
 # Phase 4.7C1 - Canonical Write Foundation
 
+Authenticated browser acceptance passed on 24 August 2026. Consumer discovery,
+admin listing writes, partner application scope, map switching, currency, and
+market isolation behaved as expected against the main project.
+
 Status: complete on main
 
 Date: 24 August 2026
