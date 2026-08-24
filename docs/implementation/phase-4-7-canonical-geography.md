@@ -1,7 +1,8 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slice 4.7A implementation, automated verification, and local browser
-acceptance complete; deployment pending. Slices 4.7B and 4.7C remain planned.
+Status: Slice 4.7A implementation, automated verification, browser acceptance,
+and push complete. Slice 4.7B authorized for direct main-project delivery;
+Slice 4.7C remains planned.
 
 Date: 24 August 2026
 
@@ -138,8 +139,14 @@ This slice restores the main venue feed without waiting for the schema work.
 
 ### Slice 4.7B - country-aware region catalog
 
-1. Relink the CLI to staging before creating or applying a migration. Main is
-   never the first target.
+Delivery exception accepted on 24 August 2026: because D8Advisr is pre-launch,
+the owner explicitly authorized testing and applying this additive slice on the
+main project. Staging-first delivery is deferred until post-launch. This does
+not authorize destructive migration, consumer/Auth identity mutation, active
+market changes, or importing speculative content.
+
+1. Confirm the CLI is linked to main, capture a preflight inventory/available
+   backup evidence, and keep the migration additive and forward-repairable.
 2. Add `countries`, seed Nigeria and Zambia, and validate ISO country plus UN
    M49 continent codes.
 3. Add/backfill `regions.slug`, add the country foreign key, and enforce
@@ -228,7 +235,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 ## Rollout order
 
 1. Deploy the browser-accepted Slice 4.7A client repair.
-2. Relink CLI to staging; implement and test 4.7B migration there.
+2. Under the recorded pre-launch exception, implement, inspect, and apply the
+   additive 4.7B migration directly to main after static/lint/preflight gates.
 3. Implement/test 4.7C against staging with client compatibility.
 4. Capture a new main preflight inventory and use a production dry run.
 5. Promote tested forward migrations, run production read-only checks, then
@@ -244,7 +252,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 - a listing write can still choose a region from an ambiguous display name;
 - staging fixtures reveal null `region_id` rows that the plan cannot preserve;
 - a migration would rename existing region primary keys; or
-- production would become the first environment for a new migration.
+- any direct-main change exceeds the explicitly authorized additive 4.7B
+  catalog/metadata/seed scope.
 
 ## Excluded
 

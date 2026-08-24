@@ -154,6 +154,13 @@ independent from market membership. Do not add country-specific province,
 state, district, municipality, or LGA logic. The evidence and examples are in
 `docs/research/cross-country-discovery-market-validation-2026-08-24.md`.
 
+The owner explicitly authorized a pre-launch exception for Slice 4.7B: apply
+the additive catalog/metadata/inactive-seed migration to main directly and
+defer staging-first delivery until post-launch. This exception does not permit
+destructive changes, consumer/Auth mutations, market activation, or speculative
+content. Main is linked as `evfftzhrucwwfnertiup`; verify that exact ref before
+every remote command and capture pre/post read-only evidence.
+
 Do not change old production event dates to populate the feed. All six main
 events are currently in the past; recurrence normalization remains Phase 4.6F.
 
@@ -325,7 +332,9 @@ Phase 7 work, not incidental refactoring during D4/5.
 - Preserve unrelated user changes in a dirty worktree.
 - Never rewrite an applied migration.
 - Never expose `.env*.local` values or database passwords.
-- Never test a new migration in production first.
+- Use staging first after launch. The sole current exception is the explicitly
+  authorized, additive Phase 4.7B pre-launch main-project delivery recorded in
+  its implementation plan.
 - Keep browser test lists high-level; automated tests own smaller permission
   and mutation assertions.
 - Do not push unless the user explicitly asks.
