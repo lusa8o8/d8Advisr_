@@ -140,8 +140,9 @@ selection, and partner event references/currency now query canonical
 `region_id`. Its client contract, session lifecycle, typechecks, both builds,
 and main read-only predicate smoke pass in `eeb32f2`. Both high-level browser
 journeys passed on 24 August; the partner journey correctly displayed staging
-venues because it ran with the staging build. Deployment remains. Then relink
-the CLI to staging before any country/profile/write migration. The
+venues because it ran with the staging build. The client repair was pushed to
+`main`; deployment status was not re-inspected during the database-only 4.7B
+slice. The
 bounded schema work adds a countries catalog, country-scoped region slugs,
 inactive Livingstone, Kitwe, Ndola, and Siavonga, canonical
 `profiles.region_id`, and market-ID-based listing writes without removing
@@ -160,6 +161,15 @@ defer staging-first delivery until post-launch. This exception does not permit
 destructive changes, consumer/Auth mutations, market activation, or speculative
 content. Main is linked as `evfftzhrucwwfnertiup`; verify that exact ref before
 every remote command and capture pre/post read-only evidence.
+
+Slice 4.7B is now complete on main. Migration `20260824120000` is recorded
+locally/remotely, linked database lint is clean, and the post-deploy smoke
+preserved 16 venues, 6 events, 2 live public markets, and private-table denial.
+Nigeria/Zambia are public active country references; Livingstone, Kitwe, Ndola,
+and Siavonga are seeded inactive and hidden from anonymous clients. See
+`docs/implementation/phase-4-7b-production-delivery.md`. Phase 4.7C is next but
+requires its own delivery decision; do not silently extend the direct-main
+exception.
 
 Do not change old production event dates to populate the feed. All six main
 events are currently in the past; recurrence normalization remains Phase 4.6F.

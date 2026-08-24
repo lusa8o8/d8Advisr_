@@ -1,8 +1,7 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slice 4.7A implementation, automated verification, browser acceptance,
-and push complete. Slice 4.7B authorized for direct main-project delivery;
-Slice 4.7C remains planned.
+Status: Slices 4.7A and 4.7B complete on main. Slice 4.7C remains planned and
+does not inherit the 4.7B direct-main exception automatically.
 
 Date: 24 August 2026
 
@@ -163,6 +162,21 @@ market changes, or importing speculative content.
 7. Additively validate existing country-admin assignments against the catalog;
    do not activate geographic admin enforcement.
 
+Delivered to main on 24 August 2026 through migration
+`20260824120000_phase47b_country_market_catalog.sql`:
+
+- Nigeria and Zambia exist in the operational country catalog;
+- Lagos/Lusaka have normalized country-scoped slugs and generic ISO
+  subdivision context;
+- Livingstone, Kitwe, Ndola, and Siavonga exist as inactive, country-qualified
+  markets with no invented areas or content;
+- country and country-admin foreign keys validated transactionally;
+- anonymous clients still see only Lagos and Lusaka; and
+- venue/event/private-table baselines and database lint remain unchanged.
+
+Implementation evidence: `47e7a2d` and
+`docs/implementation/phase-4-7b-production-delivery.md`.
+
 ### Slice 4.7C - canonical profile and listing writes
 
 1. Add nullable `profiles.region_id`, backfill unambiguous Lagos/Lusaka values,
@@ -235,8 +249,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 ## Rollout order
 
 1. Deploy the browser-accepted Slice 4.7A client repair.
-2. Under the recorded pre-launch exception, implement, inspect, and apply the
-   additive 4.7B migration directly to main after static/lint/preflight gates.
+2. Completed: under the recorded pre-launch exception, the additive 4.7B
+   migration was applied directly to main after static/lint/preflight gates.
 3. Implement/test 4.7C against staging with client compatibility.
 4. Capture a new main preflight inventory and use a production dry run.
 5. Promote tested forward migrations, run production read-only checks, then

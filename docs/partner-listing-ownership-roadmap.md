@@ -421,10 +421,13 @@ metadata and physical locality remains independent. See:
 
 Slice 4.7A is implemented in `eeb32f2`; its automated, build, main read-only,
 and two high-level browser gates pass. The partner browser journey used the
-staging build and correctly showed staging-created venues. Deployment remains.
-Country catalog and canonical write work remain Slices 4.7B-C and must start
-with 4.7B under the documented pre-launch direct-main exception; 4.7C remains
-separate and does not inherit that exception automatically.
+staging build and correctly showed staging-created venues. The repair was
+pushed to `main`; deployment status was not re-inspected during 4.7B.
+Slice 4.7B is complete on main through migration `20260824120000`: the country
+catalog, normalized market metadata, generic administrative context, and four
+inactive Zambia markets passed pre/post production gates. Canonical profile
+and listing writes remain Slice 4.7C, which does not inherit the direct-main
+exception automatically.
 
 The phase does not add PostGIS, nationwide discovery, occurrence generation,
 or speculative geography data. Phase 4.6D4 resumes after the geography gate.
