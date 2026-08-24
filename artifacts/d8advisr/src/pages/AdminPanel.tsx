@@ -2168,7 +2168,7 @@ export function AdminPanel() {
           </div>
         );
 
-        const ListingCard = ({ review }: { review: VenueListingReview }) => {
+        const renderListingCard = (review: VenueListingReview) => {
           const media = [review.coverImage, ...review.images]
             .filter((url, index, arr): url is string => Boolean(url) && arr.indexOf(url) === index);
           const reason = reviewReasonLabel(review.reverificationReason);
@@ -2178,7 +2178,7 @@ export function AdminPanel() {
           const isSaving = venueReviewLoading === review.id;
 
           return (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+          <div key={review.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#FFF0F1] text-[#FF5A5F]">
@@ -2336,7 +2336,7 @@ export function AdminPanel() {
                   Venue listing reviews ({venueListingReviews.length})
                 </p>
                 <div className="flex flex-col gap-3 mb-6">
-                  {venueListingReviews.map(review => <ListingCard key={review.id} review={review} />)}
+                  {venueListingReviews.map(renderListingCard)}
                 </div>
               </>
             )}
