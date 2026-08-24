@@ -64,12 +64,17 @@ export function usePartner() {
           logPartnerIssue('Could not load owned venue listing status', partnerErrorMessage(venueError));
         }
 
-        try {
-          const options = await fetchVenueOptions(userId, application.city);
-          setVenueOptions(options);
-        } catch (venueOptionsError) {
+        if (application.region_id) {
+          try {
+            const options = await fetchVenueOptions(userId, application.region_id);
+            setVenueOptions(options);
+          } catch (venueOptionsError) {
+            setVenueOptions([]);
+            logPartnerIssue('Could not load D8 venue options for event location linking', partnerErrorMessage(venueOptionsError));
+          }
+        } else {
           setVenueOptions([]);
-          logPartnerIssue('Could not load D8 venue options for event location linking', partnerErrorMessage(venueOptionsError));
+          logPartnerIssue('Partner application has no canonical region; D8 venue options were not loaded');
         }
       }
 

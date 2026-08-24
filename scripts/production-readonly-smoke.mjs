@@ -51,6 +51,16 @@ async function assertPublicRead(url, apiKey, table, minimumRows) {
   console.log(`PASS public ${table}: ${count} rows`);
 }
 
+async function assertFilteredPublicRead(url, apiKey, label, path, minimumRows = 0) {
+  const { response, body } = await request(url, apiKey, path);
+  assert(response.status === 200, `${label} returned HTTP ${response.status}: ${body}`);
+  const count = exactCount(response, body);
+  assert(Number.isInteger(count), `${label} response did not expose a count`);
+  assert(count >= minimumRows, `${label} expected at least ${minimumRows} rows, received ${count}`);
+  console.log(`PASS ${label}: ${count} rows`);
+  return count;
+}
+
 async function assertAnonymousDenied(url, apiKey, table) {
   const { response } = await request(url, apiKey, `/rest/v1/${table}?select=*&limit=1`);
   assert(
@@ -75,6 +85,25 @@ await assertPublicRead(url, apiKey, 'events', 6);
 await assertPublicRead(url, apiKey, 'regions', 2);
 await assertPublicRead(url, apiKey, 'listing_categories', 1);
 await assertPublicRead(url, apiKey, 'listing_vibes', 1);
+
+// Mirror the canonical market predicates used by the consumer clients. Display-city
+// spelling and casing are deliberately excluded from the discovery contract.
+await assertFilteredPublicRead(
+  url,
+  apiKey,
+  'canonical Lusaka venue feed',
+  '/rest/v1/venues?select=id&region_id=eq.lusaka&is_active=eq.true&listing_status=eq.live&limit=1000',
+  16,
+);
+const upcomingEventCount = await assertFilteredPublicRead(
+  url,
+  apiKey,
+  'canonical upcoming Lusaka events',
+  `/rest/v1/events?select=id&region_id=eq.lusaka&or=${encodeURIComponent(`(event_status.eq.live,and(event_status.eq.cancelled,cancelled_at.gte.${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}))`)}&starts_at=gte.${encodeURIComponent(new Date().toISOString())}&limit=1000`,
+);
+if (upcomingEventCount === 0) {
+  console.log('INFO canonical upcoming Lusaka events: production currently has no future live inventory');
+}
 
 for (const table of ['plans', 'partner_applications', 'consumer_notifications']) {
   await assertAnonymousDenied(url, apiKey, table);

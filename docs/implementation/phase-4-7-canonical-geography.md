@@ -1,6 +1,7 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: discovery and implementation plan complete; implementation not started
+Status: Slice 4.7A implemented and automated verification complete; local
+browser acceptance pending. Slices 4.7B and 4.7C remain planned.
 
 Date: 24 August 2026
 
@@ -73,6 +74,23 @@ occurrence modeling.
 No database migration is required for this slice because both environments
 already expose `region_id`.
 
+Implementation completed on 24 August 2026:
+
+- consumer Home, upcoming events, and Map now filter by `region_id` and receive
+  `activeRegion.id`;
+- the partner D8-venue picker filters by the approved application's
+  `region_id`, and safely returns no options for an unmigrated application
+  rather than guessing from display text;
+- partner event reference and currency lookup use `profile.region_id`;
+- `test:phase47a:clients` prevents display-city filtering from returning to
+  these paths; and
+- `test:production:readonly` now exercises the canonical Lusaka feed
+  predicates. It confirms 16 live Lusaka venues and reports zero upcoming
+  events because main currently contains no future live inventory.
+
+The static/session/typecheck gate and both staging-mode client builds pass.
+No schema, RLS, identity, or production data changes were made.
+
 1. Change consumer venue/event hooks to accept a region ID and filter
    `region_id`, with naming/types that make display-city misuse difficult.
 2. Pass `activeRegion.id` from Home Discovery and Map.
@@ -122,11 +140,11 @@ This slice restores the main venue feed without waiting for the schema work.
 
 ## Automated gates
 
-The phase should expose small composable commands:
+Slice 4.7A exposes the first small composable gate; later slices will add the
+combined phase and staging database gates:
 
 ```powershell
-pnpm run check:phase47
-pnpm run check:phase47:staging
+pnpm run check:phase47a
 pnpm run build:staging
 pnpm run test:production:readonly
 ```
@@ -168,7 +186,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 
 ## Rollout order
 
-1. Implement, verify, commit, and deploy Slice 4.7A.
+1. Complete the two high-level Slice 4.7A browser journeys, commit, and deploy
+   the client repair.
 2. Relink CLI to staging; implement and test 4.7B migration there.
 3. Implement/test 4.7C against staging with client compatibility.
 4. Capture a new main preflight inventory and use a production dry run.

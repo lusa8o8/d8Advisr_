@@ -57,15 +57,14 @@ export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListi
   };
 }
 
-export async function fetchVenueOptions(userId: string, cityValue: string): Promise<PartnerVenueOption[]> {
-  const city = cityValue?.split(',')[0]?.trim();
+export async function fetchVenueOptions(userId: string, regionId: string): Promise<PartnerVenueOption[]> {
   const query = supabase
     .from('venues')
     .select('id,name,city,area,partner_id')
     .eq('is_active', true)
     .eq('listing_status', 'live')
+    .eq('region_id', regionId)
     .order('name', { ascending: true });
-  if (city) query.eq('city', city);
   const { data, error } = await query;
   throwIfError(error);
   return (data ?? []).map(row => ({

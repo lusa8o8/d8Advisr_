@@ -62,10 +62,9 @@ export function HomeDiscovery() {
   const [paymentLinked, setPaymentLinked] = useState(false);
   const [showGemGate, setShowGemGate] = useState(false);
   const isDesktop = useIsDesktop();
-  // Listings store the display city name (for example Lusaka), while
-  // regions use lowercase IDs (for example lusaka).
-  const { venues: rawVenues, loading: venuesLoading, error: venuesError } = useVenues(activeRegion.name);
-  const { events: rawEvents, loading: eventsLoading, error: eventsError } = useEvents(activeRegion.name, 6);
+  // Discovery is keyed by the canonical D8 market ID, never display-city text.
+  const { venues: rawVenues, loading: venuesLoading, error: venuesError } = useVenues(activeRegion.id);
+  const { events: rawEvents, loading: eventsLoading, error: eventsError } = useEvents(activeRegion.id, 6);
 
   useEffect(() => {
     setPaymentLinked(localStorage.getItem('d8advisr_payment_linked') === 'true');

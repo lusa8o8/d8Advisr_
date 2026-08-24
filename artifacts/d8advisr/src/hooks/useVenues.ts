@@ -14,7 +14,7 @@ function logDataIssue(scope: string, message: string, detail?: unknown) {
   }
 }
 
-export function useVenues(city?: string) {
+export function useVenues(regionId?: string) {
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,27 +31,27 @@ export function useVenues(city?: string) {
         .eq('listing_status', 'live')
         .order('rating', { ascending: false });
 
-      if (city) query.eq('city', city);
+      if (regionId) query.eq('region_id', regionId);
 
       try {
         const { data, error } = await query;
         if (!active) return;
         if (error) {
           setError(error.message);
-          logDataIssue('venues', 'Supabase query failed', { city, error: error.message });
+          logDataIssue('venues', 'Supabase query failed', { regionId, error: error.message });
         } else {
           const rows = data ?? [];
           setError(null);
           setVenues(rows);
           if (rows.length === 0) {
-            logDataIssue('venues', 'No active venues matched the home filter', { city });
+            logDataIssue('venues', 'No active venues matched the home filter', { regionId });
           }
         }
       } catch (error) {
         if (!active) return;
         const message = error instanceof Error ? error.message : 'Unknown venue query failure';
         setError(message);
-        logDataIssue('venues', 'Supabase query threw before completion', { city, error: message });
+        logDataIssue('venues', 'Supabase query threw before completion', { regionId, error: message });
       } finally {
         if (active) setLoading(false);
       }
@@ -60,12 +60,12 @@ export function useVenues(city?: string) {
     loadVenues();
 
     return () => { active = false; };
-  }, [city]);
+  }, [regionId]);
 
   return { venues, loading, error };
 }
 
-export function useEvents(city?: string, limit = 10) {
+export function useEvents(regionId?: string, limit = 10) {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,14 +86,14 @@ export function useEvents(city?: string, limit = 10) {
         .order('starts_at', { ascending: true })
         .limit(limit * 2);
 
-      if (city) query.eq('city', city);
+      if (regionId) query.eq('region_id', regionId);
 
       try {
         const { data, error } = await query;
         if (!active) return;
         if (error) {
           setError(error.message);
-          logDataIssue('events', 'Supabase query failed', { city, from: now, limit, error: error.message });
+          logDataIssue('events', 'Supabase query failed', { regionId, from: now, limit, error: error.message });
         } else {
           const rows = [...(data ?? [])]
             .sort((left, right) => Number(left.event_status === 'cancelled') - Number(right.event_status === 'cancelled'))
@@ -101,14 +101,14 @@ export function useEvents(city?: string, limit = 10) {
           setError(null);
           setEvents(rows);
           if (rows.length === 0) {
-            logDataIssue('events', 'No upcoming live events matched the home filter', { city, from: now, limit });
+            logDataIssue('events', 'No upcoming live events matched the home filter', { regionId, from: now, limit });
           }
         }
       } catch (error) {
         if (!active) return;
         const message = error instanceof Error ? error.message : 'Unknown event query failure';
         setError(message);
-        logDataIssue('events', 'Supabase query threw before completion', { city, from: now, limit, error: message });
+        logDataIssue('events', 'Supabase query threw before completion', { regionId, from: now, limit, error: message });
       } finally {
         if (active) setLoading(false);
       }
@@ -117,7 +117,7 @@ export function useEvents(city?: string, limit = 10) {
     loadEvents();
 
     return () => { active = false; };
-  }, [city, limit]);
+  }, [regionId, limit]);
 
   return { events, loading, error };
 }

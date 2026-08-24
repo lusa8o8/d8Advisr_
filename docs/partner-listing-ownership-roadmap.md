@@ -416,6 +416,11 @@ region-ID listing writes. See:
 - `docs/adr/0002-canonical-market-geography.md`; and
 - `docs/implementation/phase-4-7-canonical-geography.md`.
 
+Slice 4.7A is implemented and its automated, build, and main read-only gates
+pass. Its two high-level local browser journeys remain before deployment.
+Country catalog and canonical write work remain Slices 4.7B-C and must start
+on staging.
+
 The phase does not add PostGIS, nationwide discovery, occurrence generation,
 or speculative geography data. Phase 4.6D4 resumes after the geography gate.
 
@@ -640,9 +645,9 @@ Primary references:
 
 ## Immediate Next Step
 
-Follow `docs/implementation/phase-4-7-canonical-geography.md`. Deliver Slice
-4.7A first to restore main discovery using existing `region_id`, then test the
-country/profile/write schema slices on staging before any further main
-migration. Resume the repaired D4 partner browser journey and slice four only
-after the geography gate. Do not begin Phase 5 claims until D4 automated and
-browser acceptance closes the authority boundary.
+Follow `docs/implementation/phase-4-7-canonical-geography.md`. Browser-check
+and release the implemented Slice 4.7A repair, then test the country/profile/
+write schema slices on staging before any further main migration. Resume the
+repaired D4 partner browser journey and slice four only after the geography
+gate. Do not begin Phase 5 claims until D4 automated and browser acceptance
+closes the authority boundary.

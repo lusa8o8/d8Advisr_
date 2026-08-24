@@ -66,6 +66,8 @@
     "test:staging:phase46d4:workflows": "node scripts/staging-phase46d4-partner-workflows-smoke.mjs",
     "check:phase46d4": "pnpm run test:phase46d4:foundation && pnpm run test:phase46d4:sync && pnpm run test:phase46d4:workflows && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "check:phase46d4:staging": "pnpm run test:staging:phase46d4:foundation && pnpm run test:staging:phase46d4:sync && pnpm run test:staging:phase46d4:workflows",
+    "test:phase47a:clients": "node scripts/check-phase47a-clients.mjs",
+    "check:phase47a": "pnpm run test:phase47a:clients && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",
     "test:staging:phase45:media": "node scripts/staging-phase45-media-smoke.mjs",
     "test:staging:phase45:partner-revision": "node scripts/staging-phase45-partner-revision-smoke.mjs",

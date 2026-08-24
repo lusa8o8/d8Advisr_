@@ -389,8 +389,8 @@ export function MapView() {
   const [, setLocation] = useLocation();
   const isDesktop = useIsDesktop();
   const { activeRegion } = useRegion();
-  // Venue rows use display city names rather than region IDs.
-  const { venues } = useVenues(activeRegion.name);
+  // Map inventory shares the same canonical market boundary as discovery.
+  const { venues } = useVenues(activeRegion.id);
   const mapTheme = useMapTheme();
   const [searchQuery, setSearchQuery] = useState('');
 

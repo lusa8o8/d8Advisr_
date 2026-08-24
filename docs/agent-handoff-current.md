@@ -135,9 +135,11 @@ The authoritative new documents are:
 - `docs/adr/0002-canonical-market-geography.md`; and
 - `docs/implementation/phase-4-7-canonical-geography.md`.
 
-Implement Slice 4.7A first: feed, map, events, and partner D8-venue selection
-must query `region_id`, with an exact production-safe feed predicate test. Then
-relink the CLI to staging before any country/profile/write migration. The
+Slice 4.7A is implemented locally: feed, map, events, partner D8-venue
+selection, and partner event references/currency now query canonical
+`region_id`. Its client contract, session lifecycle, typechecks, both builds,
+and main read-only predicate smoke pass. Local browser acceptance and commit
+remain. Then relink the CLI to staging before any country/profile/write migration. The
 bounded schema work adds a countries catalog, country-scoped region slugs,
 inactive Livingstone and Kitwe, canonical `profiles.region_id`, and
 region-ID-based listing writes without removing compatibility `city` fields.

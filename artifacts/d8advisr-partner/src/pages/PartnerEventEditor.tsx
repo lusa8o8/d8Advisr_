@@ -90,8 +90,8 @@ export function PartnerEventEditor() {
   const { profile, saveEvent, events, venueOptions, loading } = usePartner();
   const { user } = useAuth();
   const { regions } = useRegion();
-  const { categories, vibes: vibeOptions, isLoading: referencesLoading } = useListingReferences('event', profile?.city);
-  const currencySymbol = regions.find(r => r.id === profile?.city)?.currency_symbol || 'K';
+  const { categories, vibes: vibeOptions, isLoading: referencesLoading } = useListingReferences('event', profile?.region_id ?? undefined);
+  const currencySymbol = regions.find(r => r.id === profile?.region_id)?.currency_symbol || 'K';
 
   const existing = editId ? events.find(e => e.id === editId) : null;
   const draftKey = `d8:partner-event:${user?.id ?? 'anonymous'}:${editId ?? 'new'}:v2`;
