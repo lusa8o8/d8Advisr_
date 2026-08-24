@@ -1,8 +1,8 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: production baseline promotion is the immediate priority; Phase 4.6D4
-slices 1-3 are implemented and staging-verified, with one browser retest and
-slice four still remaining
+Status: Phase 4.7 canonical geography is the immediate production follow-up;
+Phase 4.6D4 slices 1-3 remain implemented and staging-verified, with one
+browser retest and slice four still remaining afterward
 
 Created: 2026-08-11
 
@@ -400,6 +400,25 @@ Delivery state on 21 August 2026:
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
+### Phase 4.7 - Canonical geography and discovery integrity
+
+Outcome: restore the promoted main venue feed and make country-aware
+`region_id` the sole authority for discovery and listing geography before D4
+and claims add more location-dependent workflows.
+
+This is an immediate corrective phase rather than scope added to event-policy
+work. Main and staging format the compatibility `city` field differently,
+while both already agree on `region_id`. The phase first repairs feed/map and
+partner venue reads, then adds the countries catalog, country-scoped region
+slugs, inactive Livingstone/Kitwe records, canonical profile location, and
+region-ID listing writes. See:
+
+- `docs/adr/0002-canonical-market-geography.md`; and
+- `docs/implementation/phase-4-7-canonical-geography.md`.
+
+The phase does not add PostGIS, nationwide discovery, occurrence generation,
+or speculative geography data. Phase 4.6D4 resumes after the geography gate.
+
 Phase 4.6D supersedes the speculative pre-approval portions of the v1.0 event
 policy. Approved partners continue to publish directly. Published event edits
 are validated, confirmed when material, audited, and applied without a routine
@@ -621,11 +640,9 @@ Primary references:
 
 ## Immediate Next Step
 
-Follow `docs/implementation/production-promotion-2026-08-24.md`: protect the
-external-drive history on GitHub without triggering production, inventory and
-back up the existing main Supabase project, apply the already staging-verified
-migrations, verify legitimate consumer identities/data, then fast-forward
-GitHub `main` and monitor both Vercel projects. Staging data is not copied.
-After the stable baseline is live, rerun the repaired partner browser journey
-and resume fresh D4 slice-four discovery. Do not begin Phase 5 claims until D4
-automated and browser acceptance closes the authority boundary.
+Follow `docs/implementation/phase-4-7-canonical-geography.md`. Deliver Slice
+4.7A first to restore main discovery using existing `region_id`, then test the
+country/profile/write schema slices on staging before any further main
+migration. Resume the repaired D4 partner browser journey and slice four only
+after the geography gate. Do not begin Phase 5 claims until D4 automated and
+browser acceptance closes the authority boundary.

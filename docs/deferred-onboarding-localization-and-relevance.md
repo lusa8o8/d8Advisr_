@@ -17,7 +17,11 @@ The review also confirmed:
 - only city, budget_pref, and vibe_prefs are currently persisted;
 - there is no explicit versioned relevance score using all onboarding signals.
 
-This is intentionally deferred beyond Phase 4 browser acceptance.
+Canonical profile/market identity is no longer fully deferred: Phase 4.7 adds
+and adopts `profiles.region_id` as part of the production feed correction and
+continent-scale geography foundation. Budget purchasing-power normalization,
+intent/relevance design, and the broader onboarding-order redesign remain
+deferred in this document.
 
 ## Recommended dependency order
 

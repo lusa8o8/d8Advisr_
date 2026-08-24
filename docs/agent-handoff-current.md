@@ -120,7 +120,36 @@ incorrect venue. They never gain event-editing authority. Ordinary event edits
 preserve placement. Changing/removing the venue closes the old relationship
 and creates or withdraws the canonical relationship transactionally.
 
-## Current phase: Phase 4.6D4
+## Current priority: Phase 4.7 canonical geography
+
+The promoted main database contains 16 active live Lusaka venues, but the
+consumer feed/map query the compatibility `city` field using display name
+`Lusaka`. Main legacy rows store lower-case `lusaka`; staging rows store
+display `Lusaka`. Both environments already store canonical
+`region_id = 'lusaka'`. Commit `a18067f` fixed staging by switching from region
+ID to display name and therefore became a production regression after the
+baseline promotion. No listing rows were lost.
+
+The authoritative new documents are:
+
+- `docs/adr/0002-canonical-market-geography.md`; and
+- `docs/implementation/phase-4-7-canonical-geography.md`.
+
+Implement Slice 4.7A first: feed, map, events, and partner D8-venue selection
+must query `region_id`, with an exact production-safe feed predicate test. Then
+relink the CLI to staging before any country/profile/write migration. The
+bounded schema work adds a countries catalog, country-scoped region slugs,
+inactive Livingstone and Kitwe, canonical `profiles.region_id`, and
+region-ID-based listing writes without removing compatibility `city` fields.
+
+Do not change old production event dates to populate the feed. All six main
+events are currently in the past; recurrence normalization remains Phase 4.6F.
+
+After the Phase 4.7 release gate, return to Phase 4.6D4 below. The short
+authenticated production browser smoke remains evidence to collect alongside
+the Phase 4.7 consumer feed verification.
+
+## Paused phase: Phase 4.6D4
 
 Authoritative documents:
 
@@ -132,12 +161,13 @@ Authoritative documents:
 
 Do not restart the older speculative Phase 4.6B/4.6C plan from the historical
 roadmap table. Phase 4.6D2 and D3 replaced routine review with the accepted v1.1
-direct-publication/audit/notification policy. The immediate work is D4 closure,
-then Phase 5 claims.
+direct-publication/audit/notification policy. D4 closure remains required before
+Phase 5 claims, but Phase 4.7 now runs first because discovery is broken on main
+and its geography contract affects future D4/claim location behavior.
 
-The user changed the immediate priority on 24 August: promote the current
-tested baseline into the existing main Supabase project and fast-forward
-GitHub `main` before continuing D4 slice four. The production plan is
+Earlier on 24 August the user prioritized promoting the tested baseline into
+the existing main Supabase project before continuing D4 slice four. That
+promotion is complete. Its production plan and evidence are in
 `docs/implementation/production-promotion-2026-08-24.md`. Preserve every
 consumer/Auth identity; existing partner ownership is not a release-blocking
 preservation requirement. Do not import staging fixtures or abandon staging as
@@ -148,9 +178,8 @@ The main database and client promotion is now complete: all migrations through
 production read-only API smoke preserved the 16-venue/6-event baseline while
 confirming private-table denial. An encrypted Auth/consumer snapshot exists in
 the user's internal Documents folder. GitHub `main` fast-forwarded to
-`0252af3`, both Vercel projects deployed successfully, and both production
-domains/assets returned HTTP 200. The short authenticated post-deployment
-browser smoke is the immediate remaining release evidence.
+`63c8cf8`, both Vercel projects deployed successfully, and both production
+domains/assets returned HTTP 200.
 
 ### Completed D4 slices
 
