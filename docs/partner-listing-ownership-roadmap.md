@@ -519,8 +519,8 @@ usage warrants them.
 
 ### Bounded admin listing-retirement detour
 
-Status: discovery and implementation plan complete; implementation awaits
-explicit acceptance.
+Status: plan accepted; Slice 1 is implemented locally and awaits the encrypted
+main-project pre-migration snapshot. Slice 2 has not started.
 
 Administrators currently have no safe product action for removing obsolete
 seeded, imported, unclaimed, or D8-admin-created venues and events. Raw database

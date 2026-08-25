@@ -20,12 +20,13 @@ consumer slice. Phases 5 (claims), 6 (membership RLS cutover), and 7 (broad
 repository cleanup) are deliberately deferred. Do not resume them merely
 because older sections below describe their original sequence.
 
-A bounded admin listing-retirement detour has completed discovery and planning
-in `docs/implementation/admin-listing-retirement.md`; no runtime implementation
-has started. The proposed contract uses reversible retirement, not raw delete,
-because the existing foreign-key graph can erase consumer and audit history.
-Do not implement it or displace Phase 4.8 until the owner explicitly accepts
-the plan.
+A bounded admin listing-retirement detour is tracked in
+`docs/implementation/admin-listing-retirement.md`. The owner accepted the plan
+and Slice 1 is implemented locally in commit `9b1a56c`; migration
+`20260825130000` is not yet on the main project because the required encrypted
+pre-migration snapshot still needs to run. Slice 2 has not started. The
+contract uses reversible retirement, not raw delete, because the existing
+foreign-key graph can erase consumer and audit history.
 
 ## Start here
 

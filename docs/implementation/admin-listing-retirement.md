@@ -1,6 +1,7 @@
 # Admin Listing Retirement
 
-Status: discovery and implementation plan complete; runtime implementation has
+Status: Slice 1 is implemented and committed locally. Main-project migration
+delivery is waiting only for the encrypted pre-migration snapshot; Slice 2 has
 not started.
 
 Decision date: 25 August 2026
@@ -143,6 +144,38 @@ from cancellation. Adding `retired_at` avoids overloading `hidden`, `paused`,
 or `cancelled` and avoids a broad status-enum migration.
 
 Do not remove database rows or storage objects in this slice.
+
+#### Slice 1 implementation evidence
+
+Implemented in migration `20260825130000_admin_listing_retirement.sql` and
+commit `9b1a56c`:
+
+- retirement metadata and current/retired indexes on venues and events;
+- immutable `listing_retirement_audit` records without destructive listing
+  foreign-key cascades;
+- admin-only, idempotent, optimistic-concurrency retire/restore RPCs;
+- legacy null-source eligibility based on absence of partner ownership;
+- upcoming-event cancellation, 24-hour cancellation visibility, and linked
+  future-event venue guardrails;
+- trigger protection against direct retirement-field changes and all updates
+  to already-retired rows;
+- removal of browser-role venue/event delete grants and delete policies; and
+- replacement of broad admin `FOR ALL` policies with explicit select, insert,
+  and update policies.
+
+Verification completed locally:
+
+- `pnpm run check:admin-listing-retirement`;
+- Phase 4.6D4 foundation, transactional-sync, and workflow static checks;
+- main-project migration parity and dry-run (only migration `20260825130000`
+  is pending); and
+- main-project anonymous read/isolation smoke: 19 venues, 8 events, canonical
+  Lusaka reads intact, and private tables denied.
+
+The main project currently reports no managed backups. Before applying the
+migration, run `scripts/production-snapshot-prompt.ps1`; it prompts securely,
+writes only an encrypted ignored artifact under `local-backups`, verifies its
+round trip, and clears the temporary environment variables.
 
 ### Slice 2 - read contracts and admin UI
 
