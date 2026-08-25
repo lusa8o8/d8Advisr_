@@ -1,7 +1,7 @@
 # Admin Listing Retirement
 
-Status: Slice 1 is delivered to the main project and verified. Slice 2 has not
-started.
+Status: Slices 1 and 2 are delivered to the main project and pass automated
+verification. The two high-level browser journeys remain for manual closure.
 
 Decision date: 25 August 2026
 
@@ -214,6 +214,48 @@ User-facing failure messages must distinguish unauthorized ownership,
 concurrent edits, future live events, cancellation required, and already
 retired state.
 
+#### Slice 2 implementation evidence
+
+Implemented in migration
+`20260825140000_admin_listing_retirement_read_contract.sql` and commit
+`ba8484c`:
+
+- public and partner venue/event RLS now requires `retired_at IS NULL`;
+- authenticated admins can read retirement metadata without exposing that
+  metadata to anonymous clients;
+- partner operational venue/event reads add an explicit retirement filter;
+- admin placement, listing-review, reverification, and pending-revision queues
+  explicitly exclude retired listings;
+- ordinary admin venue/event directories and creation selectors exclude
+  retired rows and show current-only counts;
+- a separate `Retired` directory retains the reason and detail access;
+- eligible D8-admin, imported, community, and legacy-unowned detail pages offer
+  reasoned retire/restore confirmation, while partner-owned listings do not;
+- upcoming live events direct the admin to cancellation first; and
+- restore copy and RPC behavior return listings only to draft/paused review,
+  never directly to public visibility.
+
+Public consumer queries deliberately rely on the database RLS predicate rather
+than selecting retirement metadata in browser code. This keeps retirement
+reasons private while making the exclusion authoritative for every anonymous
+and authenticated consumer query.
+
+Automated delivery evidence on 25 August 2026:
+
+- `pnpm run check:admin-listing-retirement` passed migration, client-contract,
+  session-lifecycle, and full workspace type checks;
+- the consumer production build completed (existing bundle-size and sourcemap
+  warnings only);
+- migration `20260825140000` was applied to main project
+  `evfftzhrucwwfnertiup`, and local/remote histories match;
+- linked database lint reports no schema errors; and
+- the production read-only smoke remained at 19 public venues and 8 public
+  events, with private retirement audit, direct deletes, and all four lifecycle
+  RPCs denied to anonymous callers.
+
+No listing row was retired or restored during automated delivery. Those state
+changes are reserved for the explicit browser journeys below.
+
 ### Slice 3 - controlled purge tooling (deferred)
 
 Only add irreversible purge tooling if accumulated retired data or media cost
@@ -265,8 +307,8 @@ It is not a prerequisite for the admin feature.
 2. Implement Slice 1 and commit the database boundary independently.
 3. Run automated migration/role tests before client work.
 4. Implement Slice 2 and commit the admin/read-contract boundary.
-5. Run the two browser journeys.
-6. Update this document with delivery evidence and only then consider the
+5. Run the two browser journeys. **Pending.**
+6. Update this document with browser evidence and only then consider the
    detour closed.
 
 Current owner direction is to deliver pre-launch work against the main project
