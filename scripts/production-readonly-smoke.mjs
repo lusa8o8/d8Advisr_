@@ -75,6 +75,43 @@ async function assertAnonymousDenied(url, apiKey, table) {
   console.log(`PASS private ${table}: anonymous HTTP ${response.status}`);
 }
 
+async function assertAnonymousDeleteDenied(url, apiKey, table) {
+  const response = await fetch(
+    `${url}/rest/v1/${table}?id=eq.00000000-0000-4000-8000-000000000000`,
+    {
+      method: 'DELETE',
+      headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` },
+    },
+  );
+  assert(
+    response.status === 401 || response.status === 403,
+    `${table} anonymous delete expected HTTP 401/403, received ${response.status}`,
+  );
+  console.log(`PASS protected ${table}: anonymous delete HTTP ${response.status}`);
+}
+
+async function assertAnonymousRetirementRpcDenied(url, apiKey, functionName, idKey) {
+  const response = await fetch(`${url}/rest/v1/rpc/${functionName}`, {
+    method: 'POST',
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      [idKey]: '00000000-0000-4000-8000-000000000000',
+      p_expected_updated_at: new Date(0).toISOString(),
+      p_reason: 'anonymous denial check',
+      p_request_key: crypto.randomUUID(),
+    }),
+  });
+  assert(
+    [401, 403, 404].includes(response.status),
+    `${functionName} anonymous call expected HTTP 401/403/404, received ${response.status}`,
+  );
+  console.log(`PASS protected ${functionName}: anonymous HTTP ${response.status}`);
+}
+
 const env = await readEnv('artifacts/d8advisr/.env.local');
 const url = env.VITE_SUPABASE_URL?.replace(/\/$/, '');
 const apiKey = env.VITE_SUPABASE_ANON_KEY;
@@ -126,8 +163,17 @@ await assertFilteredPublicCount(
   0,
 );
 
-for (const table of ['plans', 'partner_applications', 'consumer_notifications']) {
+for (const table of ['plans', 'partner_applications', 'consumer_notifications', 'listing_retirement_audit']) {
   await assertAnonymousDenied(url, apiKey, table);
 }
+
+for (const table of ['venues', 'events']) {
+  await assertAnonymousDeleteDenied(url, apiKey, table);
+}
+
+await assertAnonymousRetirementRpcDenied(url, apiKey, 'admin_retire_venue', 'p_venue_id');
+await assertAnonymousRetirementRpcDenied(url, apiKey, 'admin_restore_venue', 'p_venue_id');
+await assertAnonymousRetirementRpcDenied(url, apiKey, 'admin_retire_event', 'p_event_id');
+await assertAnonymousRetirementRpcDenied(url, apiKey, 'admin_restore_event', 'p_event_id');
 
 console.log(`PASS production read-only smoke for ${productionProjectRef}`);

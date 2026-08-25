@@ -1,8 +1,7 @@
 # Admin Listing Retirement
 
-Status: Slice 1 is implemented and committed locally. Main-project migration
-delivery is waiting only for the encrypted pre-migration snapshot; Slice 2 has
-not started.
+Status: Slice 1 is delivered to the main project and verified. Slice 2 has not
+started.
 
 Decision date: 25 August 2026
 
@@ -172,10 +171,25 @@ Verification completed locally:
 - main-project anonymous read/isolation smoke: 19 venues, 8 events, canonical
   Lusaka reads intact, and private tables denied.
 
-The main project currently reports no managed backups. Before applying the
-migration, run `scripts/production-snapshot-prompt.ps1`; it prompts securely,
-writes only an encrypted ignored artifact under `local-backups`, verifies its
-round trip, and clears the temporary environment variables.
+The main project reported no managed backups. Before delivery, the secure
+wrapper created and round-trip verified ignored encrypted snapshot
+`local-backups/main-preflight-2026-08-25T152815-196Z.json.enc` (119,849 bytes),
+then cleared the temporary secrets.
+
+Migration `20260825130000` was applied to project `evfftzhrucwwfnertiup` on
+25 August 2026. Post-delivery evidence:
+
+- local and remote migration histories match;
+- linked database lint reports no schema errors;
+- public inventory remained 19 venues and 8 events, with 19 canonical Lusaka
+  venues and 2 canonical upcoming Lusaka events;
+- anonymous reads of `listing_retirement_audit` return HTTP 401;
+- anonymous direct venue/event deletes return HTTP 401; and
+- all four retirement/restore RPCs reject anonymous calls with HTTP 401.
+
+No listing, consumer, Auth, or Storage row was physically deleted. Browser
+roles now lack direct listing deletion; Slice 2 will expose the audited admin
+retire/restore workflow.
 
 ### Slice 2 - read contracts and admin UI
 

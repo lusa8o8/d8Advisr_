@@ -22,11 +22,13 @@ because older sections below describe their original sequence.
 
 A bounded admin listing-retirement detour is tracked in
 `docs/implementation/admin-listing-retirement.md`. The owner accepted the plan
-and Slice 1 is implemented locally in commit `9b1a56c`; migration
-`20260825130000` is not yet on the main project because the required encrypted
-pre-migration snapshot still needs to run. Slice 2 has not started. The
-contract uses reversible retirement, not raw delete, because the existing
-foreign-key graph can erase consumer and audit history.
+and Slice 1 is delivered to the main project through migration
+`20260825130000` and commit `9b1a56c`. An encrypted preflight snapshot was
+round-trip verified first; migration parity, linked database lint, public
+inventory, private audit isolation, and anonymous delete/RPC denial all pass.
+Slice 2 has not started. The contract uses reversible retirement, not raw
+delete, because the existing foreign-key graph can erase consumer and audit
+history.
 
 ## Start here
 
