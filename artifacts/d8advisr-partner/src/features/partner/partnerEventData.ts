@@ -102,6 +102,7 @@ export async function fetchPartnerEvents(userId: string): Promise<PartnerEvent[]
     .from('events')
     .select(EVENT_CLIENT_SELECT)
     .eq('partner_id', userId)
+    .is('retired_at', null)
     .order('created_at', { ascending: false });
   throwIfError(error);
   const rows = (data ?? []) as Record<string, unknown>[];
@@ -167,6 +168,7 @@ export async function savePartnerEvent(
       .from('events')
       .select('event_status, updated_at, region_id')
       .eq('id', editId)
+      .is('retired_at', null)
       .single();
     throwIfError(fetchError);
 

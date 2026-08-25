@@ -20,6 +20,10 @@ export interface Venue {
   source: string | null;
   partnerId: string | null;
   operatorOrganizationId: string | null;
+  retiredAt: string | null;
+  retiredBy: string | null;
+  retirementReason: string | null;
+  retiredFromStatus: string | null;
   updatedAt: string;
   listingStatus: string;
   verificationStatus: string;
@@ -62,11 +66,15 @@ export interface AdminVenueRow {
   partner_id: string | null;
   operator_organization_id: string | null;
   source: string | null;
+  retired_at: string | null;
+  retired_by: string | null;
+  retirement_reason: string | null;
+  retired_from_status: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type AdminView = 'list' | 'detail' | 'tracker' | 'health' | 'submissions' | 'create';
+export type AdminView = 'list' | 'detail' | 'retired' | 'tracker' | 'health' | 'submissions' | 'create';
 
 export type SubmissionStatus = 'pending' | 'approved' | 'needs_update' | 'rejected';
 export type SubmissionKind = 'venue' | 'event';
@@ -588,6 +596,10 @@ export function adminVenueFromRow(row: AdminVenueRow): Venue {
     source: row.source,
     partnerId: row.partner_id,
     operatorOrganizationId: row.operator_organization_id,
+    retiredAt: row.retired_at,
+    retiredBy: row.retired_by,
+    retirementReason: row.retirement_reason,
+    retiredFromStatus: row.retired_from_status,
     updatedAt: row.updated_at,
     listingStatus: row.listing_status,
     verificationStatus: row.verification_status,
@@ -629,6 +641,10 @@ export interface AdminEventRow {
   external_location_address: string | null;
   emoji: string | null;
   event_status: string;
+  retired_at: string | null;
+  retired_by: string | null;
+  retirement_reason: string | null;
+  retired_from_status: string | null;
   created_at: string;
   updated_at: string;
   venues?: { name?: string | null } | { name?: string | null }[] | null;
@@ -661,6 +677,10 @@ export interface AdminEvent {
   externalLocationAddress: string | null;
   emoji: string;
   eventStatus: string;
+  retiredAt: string | null;
+  retiredBy: string | null;
+  retirementReason: string | null;
+  retiredFromStatus: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -693,6 +713,10 @@ export function adminEventFromRow(row: AdminEventRow): AdminEvent {
     externalLocationAddress: row.external_location_address,
     emoji: row.emoji ?? '✨',
     eventStatus: row.event_status,
+    retiredAt: row.retired_at,
+    retiredBy: row.retired_by,
+    retirementReason: row.retirement_reason,
+    retiredFromStatus: row.retired_from_status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

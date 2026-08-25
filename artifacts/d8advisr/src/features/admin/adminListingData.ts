@@ -39,7 +39,7 @@ function throwIfError(error: { message: string } | null) {
 export async function fetchAdminVenues(): Promise<Venue[]> {
   const { data, error } = await supabase
     .from('venues')
-    .select('id,name,category,city,region_id,area,address,tier,price_tier,description,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,partner_id,operator_organization_id,source,created_at,updated_at')
+    .select('id,name,category,city,region_id,area,address,tier,price_tier,description,cover_image,images,vibes,rating,review_count,avg_cost_pp,open_hours,listing_status,verification_status,reverification_reason,last_verified_at,next_verification_due_at,is_active,is_hidden_gem,partner_id,operator_organization_id,source,retired_at,retired_by,retirement_reason,retired_from_status,created_at,updated_at')
     .order('updated_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as AdminVenueRow[]).map(adminVenueFromRow);
@@ -59,6 +59,7 @@ export async function fetchVenuePlacementRequests(): Promise<VenuePlacementAdmin
     .from('events')
     .select('id,title,category,cover_image,starts_at,event_status,venue_id,venue_page_status,partner_id,created_at,venues(id,name,city,area)')
     .eq('venue_page_status', 'requested')
+    .is('retired_at', null)
     .order('created_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as VenuePlacementAdminRow[]).map(venuePlacementAdminRequestFromRow);
@@ -69,6 +70,7 @@ export async function fetchVenueListingReviews(): Promise<VenueListingReview[]> 
     .from('venues')
     .select('id,name,category,city,area,address,cover_image,images,partner_id,listing_status,verification_status,reverification_reason,created_at,updated_at')
     .in('listing_status', ['draft', 'submitted', 'under_review', 'needs_update'])
+    .is('retired_at', null)
     .order('updated_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as VenueListingReviewRow[]).map(venueListingReviewFromRow);
@@ -77,7 +79,8 @@ export async function fetchVenueListingReviews(): Promise<VenueListingReview[]> 
 export async function fetchReverificationTasks(): Promise<ReverificationTask[]> {
   const { data, error } = await supabase
     .from('venue_reverification_tasks')
-    .select('id,venue_id,reason,status,triggered_by,created_at,resolved_at,notes,live_revision_id,venues(id,name,category,city,area,tier,listing_status,verification_status,cover_image)')
+    .select('id,venue_id,reason,status,triggered_by,created_at,resolved_at,notes,live_revision_id,venues!inner(id,name,category,city,area,tier,listing_status,verification_status,cover_image,retired_at)')
+    .is('venues.retired_at', null)
     .order('created_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as ReverificationTaskRow[]).map(reverificationTaskFromRow);
@@ -108,8 +111,9 @@ export async function fetchVenueChangeLog(venueId: string): Promise<VenueChangeL
 export async function fetchPendingVenueLiveRevisions(): Promise<VenueLiveRevision[]> {
   const { data, error } = await supabase
     .from('venue_live_revisions')
-    .select('id,venue_id,status,previous_values,proposed_values,submitted_by,reviewed_by,review_note,created_at,updated_at,revision_source')
+    .select('id,venue_id,status,previous_values,proposed_values,submitted_by,reviewed_by,review_note,created_at,updated_at,revision_source,venues!inner(retired_at)')
     .eq('status', 'pending')
+    .is('venues.retired_at', null)
     .order('created_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as VenueLiveRevisionRow[]).map(venueLiveRevisionFromRow);
@@ -282,10 +286,55 @@ export async function insertVenueInspection(input: {
 export async function fetchAdminEvents(): Promise<AdminEvent[]> {
   const { data, error } = await supabase
     .from('events')
-    .select('id,region_id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,emoji,event_status,created_at,updated_at,venues(name)')
+    .select('id,region_id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,emoji,event_status,retired_at,retired_by,retirement_reason,retired_from_status,created_at,updated_at,venues(name)')
     .order('updated_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as unknown as AdminEventRow[]).map(adminEventFromRow);
+}
+
+export interface AdminRetirementResult {
+  listing_id: string;
+  target_type: 'venue' | 'event';
+  status: string;
+  is_active?: boolean;
+  retired_at: string | null;
+  retired_from_status?: string | null;
+  updated_at: string;
+  idempotent: boolean;
+}
+
+async function runRetirementRpc(
+  rpc: 'admin_retire_venue' | 'admin_restore_venue' | 'admin_retire_event' | 'admin_restore_event',
+  idKey: 'p_venue_id' | 'p_event_id',
+  listingId: string,
+  expectedUpdatedAt: string,
+  reason: string,
+): Promise<AdminRetirementResult> {
+  const { data, error } = await supabase.rpc(rpc, {
+    [idKey]: listingId,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_reason: reason.trim(),
+    p_request_key: crypto.randomUUID(),
+  });
+  throwIfError(error);
+  if (!data) throw new Error('Listing lifecycle update failed');
+  return data as AdminRetirementResult;
+}
+
+export function retireAdminVenue(venueId: string, expectedUpdatedAt: string, reason: string) {
+  return runRetirementRpc('admin_retire_venue', 'p_venue_id', venueId, expectedUpdatedAt, reason);
+}
+
+export function restoreAdminVenue(venueId: string, expectedUpdatedAt: string, reason: string) {
+  return runRetirementRpc('admin_restore_venue', 'p_venue_id', venueId, expectedUpdatedAt, reason);
+}
+
+export function retireAdminEvent(eventId: string, expectedUpdatedAt: string, reason: string) {
+  return runRetirementRpc('admin_retire_event', 'p_event_id', eventId, expectedUpdatedAt, reason);
+}
+
+export function restoreAdminEvent(eventId: string, expectedUpdatedAt: string, reason: string) {
+  return runRetirementRpc('admin_restore_event', 'p_event_id', eventId, expectedUpdatedAt, reason);
 }
 
 export async function updateAdminDraftEvent(

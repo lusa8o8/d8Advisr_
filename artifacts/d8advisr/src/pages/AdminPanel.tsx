@@ -57,6 +57,10 @@ import {
   setVenueListingStatus,
   setVenuePlacementStatus,
   setVenueTier,
+  retireAdminVenue,
+  restoreAdminVenue,
+  retireAdminEvent,
+  restoreAdminEvent,
 } from '@/features/admin/adminListingData';
 import { AdminListingCreate } from '@/features/admin/AdminListingCreate';
 import { AdminVenueDraftEdit } from '@/features/admin/AdminVenueDraftEdit';
@@ -94,7 +98,9 @@ const HEALTH_LABEL: Record<Health, string> = {
 
 const TIERS: Tier[] = ['Verified', 'D8 Approved', 'Hidden Gem'];
 const NOISE_LEVELS: NoiseLevel[] = ['quiet', 'moderate', 'lively', 'loud'];
-type AdminNavTab = 'venues' | 'events' | 'tracker' | 'health' | 'submissions' | 'create';
+type AdminNavTab = 'venues' | 'events' | 'retired' | 'tracker' | 'health' | 'submissions' | 'create';
+type RetirementIntent = { target: 'venue' | 'event'; action: 'retire' | 'restore' };
+const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
 const PRICE_LEVEL_LABELS: Record<string, string> = {
   '$': '1 - Budget',
   '$$': '2 - Moderate',
@@ -111,7 +117,7 @@ function displayChangeValue(field: string, value: string | null) {
 
 function adminSectionFromLocation(location: string): { tab: AdminNavTab; view: AdminView } {
   const section = new URL(location, window.location.origin).searchParams.get('section') as AdminNavTab | null;
-  if (section === 'tracker' || section === 'health' || section === 'submissions' || section === 'create') {
+  if (section === 'retired' || section === 'tracker' || section === 'health' || section === 'submissions' || section === 'create') {
     return { tab: section, view: section };
   }
   return { tab: 'venues', view: 'list' };
@@ -127,7 +133,27 @@ function logAdminIssue(message: string, detail?: unknown) {
 }
 
 function adminErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
+  return String(error);
+}
+
+function retirementErrorMessage(error: unknown) {
+  const code = adminErrorMessage(error);
+  const messages: Record<string, string> = {
+    partner_owned_venue_cannot_be_admin_retired: 'Partner-owned venues cannot be retired from this admin flow.',
+    partner_owned_event_cannot_be_admin_retired: 'Partner-owned events cannot be retired from this admin flow.',
+    venue_has_upcoming_live_events: 'Cancel or move every upcoming live event before retiring this venue.',
+    upcoming_live_event_must_be_cancelled_first: 'Cancel this upcoming event before retiring it.',
+    event_cancellation_visibility_window_active: 'This cancelled event remains visible for 24 hours. Retire it after that window ends.',
+    venue_retirement_conflict: 'This venue changed in another session. Reload and review it before trying again.',
+    event_retirement_conflict: 'This event changed in another session. Reload and review it before trying again.',
+    venue_restore_conflict: 'This venue changed in another session. Reload and review it before restoring.',
+    event_restore_conflict: 'This event changed in another session. Reload and review it before restoring.',
+    venue_already_retired: 'This venue is already retired.',
+    event_already_retired: 'This event is already retired.',
+  };
+  return messages[code] ?? code.replaceAll('_', ' ');
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -193,6 +219,11 @@ export function AdminPanel() {
   const [eventPolicyAccepted, setEventPolicyAccepted] = useState(false);
   const [eventPublishingLoading, setEventPublishingLoading] = useState(false);
   const [eventPublishError, setEventPublishError] = useState<string | null>(null);
+  const [retirementIntent, setRetirementIntent] = useState<RetirementIntent | null>(null);
+  const [retirementReason, setRetirementReason] = useState('');
+  const [retirementAccepted, setRetirementAccepted] = useState(false);
+  const [retirementLoading, setRetirementLoading] = useState(false);
+  const [retirementError, setRetirementError] = useState<string | null>(null);
 
   const selectedVenue = venues.find(v => v.id === selectedId) ?? null;
   const selectedEvent = events.find(e => e.id === selectedId) ?? null;
@@ -229,24 +260,35 @@ export function AdminPanel() {
   }, [location]);
   const canEditSelectedEventDraft = Boolean(
     selectedEvent &&
+    !selectedEvent.retiredAt &&
     selectedEvent.source === 'd8_admin' &&
     selectedEvent.partnerId === null &&
     selectedEvent.eventStatus === 'draft'
   );
   const canEditSelectedEventLive = Boolean(
     selectedEvent &&
+    !selectedEvent.retiredAt &&
     selectedEvent.source === 'd8_admin' &&
     selectedEvent.partnerId === null &&
     selectedEvent.eventStatus === 'live'
   );
   const canEditSelectedDraft = Boolean(
     selectedVenue
+    && !selectedVenue.retiredAt
     && selectedVenue.source === 'd8_admin'
     && selectedVenue.partnerId === null
     && !selectedVenue.isActive
     && ['draft', 'submitted', 'under_review', 'needs_update'].includes(selectedVenue.listingStatus)
   );
-  const canEditSelectedLive = Boolean(selectedVenue && selectedVenue.source === 'd8_admin' && selectedVenue.partnerId === null && selectedVenue.isActive && selectedVenue.listingStatus === 'live');
+  const canEditSelectedLive = Boolean(selectedVenue && !selectedVenue.retiredAt && selectedVenue.source === 'd8_admin' && selectedVenue.partnerId === null && selectedVenue.isActive && selectedVenue.listingStatus === 'live');
+  const canManageSelectedVenueLifecycle = Boolean(selectedVenue
+    && selectedVenue.partnerId === null
+    && selectedVenue.source !== 'partner'
+    && (!selectedVenue.operatorOrganizationId || selectedVenue.operatorOrganizationId === D8_PLATFORM_ORGANIZATION_ID));
+  const canManageSelectedEventLifecycle = Boolean(selectedEvent
+    && selectedEvent.partnerId === null
+    && selectedEvent.source !== 'partner'
+    && (!selectedEvent.organizerOrganizationId || selectedEvent.organizerOrganizationId === D8_PLATFORM_ORGANIZATION_ID));
   const selectedPendingLiveRevision = selectedVenue ? liveVenueRevisions.find(revision => revision.venueId === selectedVenue.id) ?? null : null;
   const selectedInspection = selectedVenue
     ? venueInspections.find(inspection => inspection.venue_id === selectedVenue.id) ?? null
@@ -485,14 +527,19 @@ export function AdminPanel() {
 
   // ── Filtered list ──────────────────────────────────────────────────────────
 
-  const filtered = venues.filter(v => {
+  const currentVenues = venues.filter(venue => !venue.retiredAt);
+  const currentEvents = events.filter(event => !event.retiredAt);
+  const retiredVenues = venues.filter(venue => Boolean(venue.retiredAt));
+  const retiredEvents = events.filter(event => Boolean(event.retiredAt));
+
+  const filtered = currentVenues.filter(v => {
     if (filterTier !== 'All' && v.tier !== filterTier) return false;
     if (filterHealth !== 'All' && v.health !== filterHealth) return false;
     if (search && !v.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const filteredEvents = events.filter(e => {
+  const filteredEvents = currentEvents.filter(e => {
     if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -514,6 +561,40 @@ export function AdminPanel() {
     });
     if (events.some(event => event.id === id)) void loadEventRevisionHistory(id);
     else void loadVenueChangeLog(id);
+  };
+
+  const openRetirementModal = (intent: RetirementIntent) => {
+    setRetirementIntent(intent);
+    setRetirementReason('');
+    setRetirementAccepted(false);
+    setRetirementError(null);
+  };
+
+  const handleListingLifecycle = async () => {
+    if (!retirementIntent || retirementReason.trim().length < 3 || !retirementAccepted || retirementLoading) return;
+    const listing = retirementIntent.target === 'venue' ? selectedVenue : selectedEvent;
+    if (!listing) return;
+    setRetirementLoading(true);
+    setRetirementError(null);
+    try {
+      if (retirementIntent.target === 'venue') {
+        if (retirementIntent.action === 'retire') await retireAdminVenue(listing.id, listing.updatedAt, retirementReason);
+        else await restoreAdminVenue(listing.id, listing.updatedAt, retirementReason);
+      } else {
+        if (retirementIntent.action === 'retire') await retireAdminEvent(listing.id, listing.updatedAt, retirementReason);
+        else await restoreAdminEvent(listing.id, listing.updatedAt, retirementReason);
+      }
+      setRetirementIntent(null);
+      setSelectedId(null);
+      setEditingDraft(false);
+      setEditingLive(false);
+      await Promise.all([loadAdminVenues(), loadAdminEvents()]);
+      openAdminSection('retired', 'retired');
+    } catch (error) {
+      setRetirementError(retirementErrorMessage(error));
+    } finally {
+      setRetirementLoading(false);
+    }
   };
 
 
@@ -644,7 +725,9 @@ export function AdminPanel() {
         <div className="flex items-center gap-3">
           {view !== 'list' && (
             <button
-              onClick={() => setView('list')}
+              onClick={() => view === 'detail' && navTab === 'retired'
+                ? setView('retired')
+                : openAdminSection('venues', 'list')}
               className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-95 transition-transform"
             >
               <ArrowLeft size={18} />
@@ -680,12 +763,17 @@ export function AdminPanel() {
           <button onClick={() => openAdminSection('venues', 'list')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'venues' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
-            <ClipboardList size={13} /> Venues ({venues.length})
+            <ClipboardList size={13} /> Venues ({currentVenues.length})
           </button>
           <button onClick={() => openAdminSection('events', 'list')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
               navTab === 'events' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
-            <CalendarDays size={13} /> Events ({events.length})
+            <CalendarDays size={13} /> Events ({currentEvents.length})
+          </button>
+          <button onClick={() => openAdminSection('retired', 'retired')}
+            className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all",
+              navTab === 'retired' ? "bg-[#FF5A5F] text-white" : "text-white/50 hover:text-white/80")}>
+            <RotateCcw size={13} /> Retired ({retiredVenues.length + retiredEvents.length})
           </button>
           <button onClick={() => openAdminSection('tracker', 'tracker')}
             className={cn("shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all relative",
@@ -723,12 +811,52 @@ export function AdminPanel() {
       {/* ── LIST VIEW ───────────────────────────────────────────────────────── */}
       {view === 'create' && (
         <AdminListingCreate
-          venues={venues}
+          venues={currentVenues}
           onVenueCreated={async id => {
             await loadAdminVenues();
             setSelectedId(id);
           }}
         />
+      )}
+
+      {view === 'retired' && (
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4">
+          <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4">
+            <p className="text-[15px] font-black text-gray-900">Retired listings</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-gray-500">Hidden from consumers, partners, operational queues and creation selectors. Restore only after reviewing why the listing was retired.</p>
+          </div>
+          {retiredVenues.length === 0 && retiredEvents.length === 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-[13px] text-gray-500">No retired listings.</div>
+          )}
+          {retiredVenues.length > 0 && (
+            <div className="mb-5 space-y-2.5">
+              <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">Venues ({retiredVenues.length})</p>
+              {retiredVenues.map(venue => (
+                <button key={venue.id} onClick={() => openDetail(venue.id)} className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><p className="text-[14px] font-bold text-gray-900">{venue.name}</p><p className="mt-1 text-[11px] text-gray-500">{venue.category} · {venue.city}</p></div>
+                    <ChevronRight size={16} className="shrink-0 text-gray-300" />
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-[11px] text-gray-500">{venue.retirementReason}</p>
+                </button>
+              ))}
+            </div>
+          )}
+          {retiredEvents.length > 0 && (
+            <div className="space-y-2.5">
+              <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">Events ({retiredEvents.length})</p>
+              {retiredEvents.map(event => (
+                <button key={event.id} onClick={() => openDetail(event.id)} className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><p className="text-[14px] font-bold text-gray-900">{event.emoji} {event.title}</p><p className="mt-1 text-[11px] text-gray-500">{event.category} · {event.city}</p></div>
+                    <ChevronRight size={16} className="shrink-0 text-gray-300" />
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-[11px] text-gray-500">{event.retirementReason}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {view === 'list' && (
@@ -881,6 +1009,12 @@ export function AdminPanel() {
             </div>
             <h2 className="font-black text-gray-900 text-[18px] leading-tight mt-2">{selectedVenue.name}</h2>
             <p className="text-[13px] text-gray-500 mt-0.5">{selectedVenue.category} · {selectedVenue.city}</p>
+            {selectedVenue.retiredAt && (
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] text-red-700">
+                <p className="font-bold">Retired {formatDateTime(selectedVenue.retiredAt)}</p>
+                <p className="mt-1">{selectedVenue.retirementReason}</p>
+              </div>
+            )}
             {selectedPendingLiveRevision && (
               <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] font-semibold text-amber-700">
                 Partner changes are awaiting review below. Current listing tabs remain unchanged until approval.
@@ -921,8 +1055,23 @@ export function AdminPanel() {
             />
           )}
 
+          {canManageSelectedVenueLifecycle && (
+            <div className={cn("mx-4 mt-4 rounded-2xl border p-4 shadow-sm", selectedVenue.retiredAt ? "border-blue-200 bg-blue-50" : "border-red-200 bg-red-50")}>
+              <p className={cn("text-[13px] font-bold", selectedVenue.retiredAt ? "text-blue-800" : "text-red-800")}>{selectedVenue.retiredAt ? 'Restore venue' : 'Retire venue'}</p>
+              <p className={cn("mt-1 text-[11px] leading-relaxed", selectedVenue.retiredAt ? "text-blue-700" : "text-red-700")}>
+                {selectedVenue.retiredAt
+                  ? `Restoring returns this listing to draft review; it will not go live automatically. Previous status: ${selectedVenue.retiredFromStatus ?? 'unknown'}.`
+                  : 'Retirement removes this D8-managed venue from discovery and operational queues. Upcoming live events must be handled first.'}
+              </p>
+              <button onClick={() => openRetirementModal({ target: 'venue', action: selectedVenue.retiredAt ? 'restore' : 'retire' })}
+                className={cn("mt-3 rounded-xl px-3.5 py-2 text-[12px] font-bold text-white", selectedVenue.retiredAt ? "bg-blue-600" : "bg-red-600")}>
+                {selectedVenue.retiredAt ? 'Review and restore' : 'Review and retire'}
+              </button>
+            </div>
+          )}
+
           {/* Tier control */}
-          <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+          {!selectedVenue.retiredAt && <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Shield size={15} className="text-[#FF5A5F]" />
@@ -972,11 +1121,11 @@ export function AdminPanel() {
                 {adminActionError}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Section tabs */}
           <div className="flex mx-4 mt-4 bg-white rounded-2xl border border-gray-200 p-1 shadow-sm">
-            {(['listing', 'media', 'experience', 'review'] as const).map(s => (
+            {(selectedVenue.retiredAt ? (['listing', 'media'] as const) : (['listing', 'media', 'experience', 'review'] as const)).map(s => (
               <button key={s} onClick={() => setActiveSection(s)}
                 className={cn("flex-1 py-2 rounded-xl text-[12px] font-bold transition-all capitalize",
                   activeSection === s ? "bg-[#141414] text-white" : "text-gray-500 hover:text-gray-800")}>
@@ -1374,7 +1523,7 @@ export function AdminPanel() {
                   <Pencil size={13} /> Edit live event
                 </button>
               )}
-              {selectedEvent.eventStatus === 'draft' && (
+              {selectedEvent.eventStatus === 'draft' && !selectedEvent.retiredAt && (
                 <button
                   onClick={() => {
                     setEventPolicyAccepted(false);
@@ -1414,6 +1563,24 @@ export function AdminPanel() {
 
           {!editingDraft && !editingLive && (
             <div className="px-4 pt-4 pb-8 space-y-4">
+              {canManageSelectedEventLifecycle && (
+                <div className={cn("rounded-2xl border p-4 shadow-sm", selectedEvent.retiredAt ? "border-blue-200 bg-blue-50" : "border-red-200 bg-red-50")}>
+                  <p className={cn("text-[13px] font-bold", selectedEvent.retiredAt ? "text-blue-800" : "text-red-800")}>{selectedEvent.retiredAt ? 'Restore event' : 'Retire event'}</p>
+                  <p className={cn("mt-1 text-[11px] leading-relaxed", selectedEvent.retiredAt ? "text-blue-700" : "text-red-700")}>
+                    {selectedEvent.retiredAt
+                      ? `Restoring returns this event to ${selectedEvent.retiredFromStatus === 'draft' ? 'draft' : 'paused'}; it will not go live automatically. Reason: ${selectedEvent.retirementReason ?? 'Not recorded'}`
+                      : selectedEvent.eventStatus === 'live' && new Date(selectedEvent.startsAt).getTime() > Date.now()
+                        ? 'Upcoming live events must be cancelled first so interested consumers retain the cancellation history.'
+                        : 'Retirement removes this D8-managed event from discovery and operational queues while keeping an audit trail.'}
+                  </p>
+                  <button onClick={() => openRetirementModal({ target: 'event', action: selectedEvent.retiredAt ? 'restore' : 'retire' })}
+                    disabled={!selectedEvent.retiredAt && selectedEvent.eventStatus === 'live' && new Date(selectedEvent.startsAt).getTime() > Date.now()}
+                    className={cn("mt-3 rounded-xl px-3.5 py-2 text-[12px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40", selectedEvent.retiredAt ? "bg-blue-600" : "bg-red-600")}>
+                    {selectedEvent.retiredAt ? 'Review and restore' : 'Review and retire'}
+                  </button>
+                </div>
+              )}
+
               {/* Summary Cards Grid */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
@@ -2375,6 +2542,45 @@ export function AdminPanel() {
       })()}
 
       {/* ── Event Publication Confirmation Modal ── */}
+      {retirementIntent && (retirementIntent.target === 'venue' ? selectedVenue : selectedEvent) && (() => {
+        const listingName = retirementIntent.target === 'venue' ? selectedVenue!.name : selectedEvent!.title;
+        const currentStatus = retirementIntent.target === 'venue' ? selectedVenue!.listingStatus : selectedEvent!.eventStatus;
+        const isRestore = retirementIntent.action === 'restore';
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+              <div className="flex items-start gap-3">
+                <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", isRestore ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600")}><RotateCcw size={20} /></div>
+                <div><h2 className="text-[18px] font-black text-gray-900">{isRestore ? 'Restore' : 'Retire'} {retirementIntent.target}</h2><p className="mt-1 text-[12px] text-gray-500">{listingName}</p></div>
+              </div>
+              <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-[12px] leading-relaxed text-gray-700">
+                <p><strong>Current state:</strong> {currentStatus.replaceAll('_', ' ')}</p>
+                <p className="mt-2">{isRestore ? 'The listing returns to draft or paused review. Restoration never republishes it automatically.' : 'The listing is removed from consumer discovery, partner tools, operational queues and creation selectors. Its audit history is retained.'}</p>
+              </div>
+              <label className="mt-4 block">
+                <span className="text-[12px] font-bold text-gray-700">Reason (required)</span>
+                <textarea value={retirementReason} onChange={event => setRetirementReason(event.target.value)} rows={3} maxLength={500}
+                  placeholder={isRestore ? 'Why is this listing safe to restore?' : 'Why should this listing be retired?'}
+                  className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-[13px] focus:border-[#FF5A5F] focus:outline-none" />
+                <span className="mt-1 block text-right text-[10px] text-gray-400">{retirementReason.trim().length}/500</span>
+              </label>
+              <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 p-4">
+                <input type="checkbox" checked={retirementAccepted} onChange={event => setRetirementAccepted(event.target.checked)} className="mt-1" />
+                <span className="text-[12px] leading-5 text-gray-700">I reviewed the listing, its current state and the lifecycle impact described above.</span>
+              </label>
+              {retirementError && <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">{retirementError}</div>}
+              <div className="mt-5 flex gap-2">
+                <button type="button" onClick={() => setRetirementIntent(null)} disabled={retirementLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Keep listing</button>
+                <button type="button" onClick={() => void handleListingLifecycle()} disabled={!retirementAccepted || retirementReason.trim().length < 3 || retirementLoading}
+                  className={cn("flex-1 rounded-xl px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40", isRestore ? "bg-blue-600" : "bg-red-600")}>
+                  {retirementLoading ? 'Saving...' : isRestore ? 'Restore to review' : 'Retire listing'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {showEventPublishModal && selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">

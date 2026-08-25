@@ -29,6 +29,7 @@ export async function fetchOwnedVenue(userId: string): Promise<PartnerVenueListi
     .from('venues')
     .select('id,name,region_id,category,description,address,area,price_tier,avg_cost_pp,vibes,open_hours,contact_phone,website_url,cover_image,images,listing_status,verification_status,reverification_reason,is_active,updated_at')
     .eq('partner_id', userId)
+    .is('retired_at', null)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -63,6 +64,7 @@ export async function fetchVenueOptions(userId: string, regionId: string): Promi
     .select('id,name,city,area,partner_id')
     .eq('is_active', true)
     .eq('listing_status', 'live')
+    .is('retired_at', null)
     .eq('region_id', regionId)
     .order('name', { ascending: true });
   const { data, error } = await query;
@@ -153,6 +155,7 @@ export async function savePartnerVenue(
     .from('venues')
     .select('id,listing_status,updated_at')
     .eq('partner_id', userId)
+    .is('retired_at', null)
     .maybeSingle();
   throwIfError(lookupError);
 
