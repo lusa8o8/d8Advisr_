@@ -20,6 +20,13 @@ consumer slice. Phases 5 (claims), 6 (membership RLS cutover), and 7 (broad
 repository cleanup) are deliberately deferred. Do not resume them merely
 because older sections below describe their original sequence.
 
+A bounded admin listing-retirement detour has completed discovery and planning
+in `docs/implementation/admin-listing-retirement.md`; no runtime implementation
+has started. The proposed contract uses reversible retirement, not raw delete,
+because the existing foreign-key graph can erase consumer and audit history.
+Do not implement it or displace Phase 4.8 until the owner explicitly accepts
+the plan.
+
 ## Start here
 
 The repository is carried on an external drive. Its drive letter may differ on

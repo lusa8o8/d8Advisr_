@@ -517,6 +517,24 @@ The implemented D4 boundary is accepted for MVP. The remaining dedicated admin
 dispute queue and richer consumer dispute treatment are deferred until real
 usage warrants them.
 
+### Bounded admin listing-retirement detour
+
+Status: discovery and implementation plan complete; implementation awaits
+explicit acceptance.
+
+Administrators currently have no safe product action for removing obsolete
+seeded, imported, unclaimed, or D8-admin-created venues and events. Raw database
+deletion is not the contract: it can cascade through events, interests,
+notifications, audits, revisions, and venue relationships, while published
+events are already protected from deletion.
+
+Use `docs/implementation/admin-listing-retirement.md`. The proposed MVP action
+is reversible retirement with required reason and audit, restoration only to
+draft, explicit cancellation for upcoming published events, and a block when a
+venue still has future live events. Physical purge is deferred maintenance.
+This bounded detour does not reopen claims, membership cutover, or the broader
+admin/partner expansion, and Phase 4.8 remains the active product workstream.
+
 ### Phase 4.8 — Consumer launch readiness
 
 Status: next active workstream; begin with fresh discovery rather than assuming
