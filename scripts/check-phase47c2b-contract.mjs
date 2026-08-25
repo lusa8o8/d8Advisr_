@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const read = path => readFile(resolve(root, path), 'utf8');
 const migration = await read('supabase/migrations/20260824200000_phase47c2b_event_region_edits.sql');
+const triggerOrderRepair = await read('supabase/migrations/20260825110000_fix_event_venue_region_trigger_order.sql');
 const adminData = await read('artifacts/d8advisr/src/features/admin/adminListingData.ts');
 const adminModel = await read('artifacts/d8advisr/src/features/admin/adminListingModel.ts');
 const draftEditor = await read('artifacts/d8advisr/src/features/admin/AdminEventDraftEdit.tsx');
@@ -40,5 +41,9 @@ for (const [name, source] of [['draft', draftEditor], ['live', liveEditor]]) {
 }
 assert(partnerData.includes(".select('event_status, updated_at, region_id')"), 'Partner live edits must read current canonical scope');
 assert(partnerData.includes('region_id: application.region_id'), 'Partner event writes must carry approved region_id');
+
+assert(triggerOrderRepair.includes('drop trigger if exists "01_enforce_event_venue_region_scope"'), 'The premature cross-market trigger must be removed');
+assert(triggerOrderRepair.includes('create trigger "c_enforce_event_venue_region_scope"'), 'The cross-market guard must run after canonical a_/b_ triggers');
+assert(triggerOrderRepair.indexOf('drop trigger if exists "01_enforce_event_venue_region_scope"') < triggerOrderRepair.indexOf('create trigger "c_enforce_event_venue_region_scope"'), 'The replacement guard must be ordered after removal');
 
 console.log('Phase 4.7C2B event region edit contract checks passed.');
