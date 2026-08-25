@@ -5,6 +5,7 @@ const root = resolve(import.meta.dirname, '..');
 const read = path => readFile(resolve(root, path), 'utf8');
 const migration = await read('supabase/migrations/20260824200000_phase47c2b_event_region_edits.sql');
 const triggerOrderRepair = await read('supabase/migrations/20260825110000_fix_event_venue_region_trigger_order.sql');
+const deferredInvariantRepair = await read('supabase/migrations/20260825120000_defer_event_venue_region_invariant.sql');
 const adminData = await read('artifacts/d8advisr/src/features/admin/adminListingData.ts');
 const adminModel = await read('artifacts/d8advisr/src/features/admin/adminListingModel.ts');
 const draftEditor = await read('artifacts/d8advisr/src/features/admin/AdminEventDraftEdit.tsx');
@@ -45,5 +46,29 @@ assert(partnerData.includes('region_id: application.region_id'), 'Partner event 
 assert(triggerOrderRepair.includes('drop trigger if exists "01_enforce_event_venue_region_scope"'), 'The premature cross-market trigger must be removed');
 assert(triggerOrderRepair.includes('create trigger "c_enforce_event_venue_region_scope"'), 'The cross-market guard must run after canonical a_/b_ triggers');
 assert(triggerOrderRepair.indexOf('drop trigger if exists "01_enforce_event_venue_region_scope"') < triggerOrderRepair.indexOf('create trigger "c_enforce_event_venue_region_scope"'), 'The replacement guard must be ordered after removal');
+
+for (const token of [
+  'drop trigger if exists "c_enforce_event_venue_region_scope"',
+  'security definer',
+  'from public.events event',
+  'where event.id = new.id',
+  'final_event.event_location_kind',
+  'final_event.venue_id',
+  'final_event.region_id',
+  'create constraint trigger "event_venue_region_scope_final"',
+  'after insert or update of region_id, event_location_kind, venue_id on public.events',
+  'deferrable initially deferred',
+]) assert(deferredInvariantRepair.includes(token), `Deferred venue/market invariant repair is missing: ${token}`);
+
+assert(
+  deferredInvariantRepair.indexOf('drop trigger if exists "c_enforce_event_venue_region_scope"')
+    < deferredInvariantRepair.indexOf('create constraint trigger "event_venue_region_scope_final"'),
+  'The immediate venue/market trigger must be removed before the deferred final-state guard is created',
+);
+assert(
+  deferredInvariantRepair.indexOf('from public.events event')
+    < deferredInvariantRepair.indexOf("final_event.event_location_kind = 'd8_venue'"),
+  'The deferred guard must re-read and validate the final event row rather than its queued intermediate NEW tuple',
+);
 
 console.log('Phase 4.7C2B event region edit contract checks passed.');

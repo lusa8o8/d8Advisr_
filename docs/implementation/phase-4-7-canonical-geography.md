@@ -264,6 +264,18 @@ The invariant itself is unchanged. Static/type checks, linked schema lint,
 production read-only smoke, and the no-pending-migrations dry-run pass after
 the repair.
 
+The admin browser acceptance journey then exposed a second ordering edge case
+for live revisions that move an event and attach a D8 venue in the destination
+market in the same confirmation. The wrapper correctly validates that venue
+against the requested market, but its mature revision core writes the location
+before the wrapper writes `region_id`; the immediate row trigger therefore saw
+an invalid intermediate state. Migration
+`20260825120000_defer_event_venue_region_invariant.sql` replaces that trigger
+with an `INITIALLY DEFERRED` constraint trigger which re-reads and validates the
+final event row at transaction end. Invalid final venue/market pairs still roll
+back, while valid combined edits remain one atomic revision. The RPC's early
+payload validation remains in place for a useful client error.
+
 4.7C1 was delivered to main on 24 August 2026 through migration
 `20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,
 production read-only smoke, the combined static/type gate, and both client
