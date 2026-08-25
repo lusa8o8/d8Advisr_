@@ -1,0 +1,235 @@
+# Phase 4.8A — Event Provenance and Action Links
+
+Status: discovery complete; bounded implementation plan proposed; no schema or
+client implementation has started.
+
+Decision date: 25 August 2026
+
+## Outcome
+
+Make researched and imported event listings attributable, reviewable, and
+useful before launch. D8 must retain the evidence used to create an event, show
+a restrained public citation, and send a consumer to the correct external
+ticket or registration destination without pretending D8 sells the ticket.
+
+This is a launch-readiness prerequisite for the proposed Lusaka seed batch. Do
+not insert that batch until the data foundation and admin intake are available.
+
+## Discovery evidence
+
+### Existing database contract
+
+- `events.source` is listing ownership/origin (`d8_admin`, `partner`, `import`,
+  or `community`). It is not a citation and must not be repurposed.
+- `events` has no source URL, official URL, ticket URL, registration URL, or
+  source-verification metadata.
+- An event already has separate draft/publication, live revision,
+  cancellation, retirement, and D8-venue-attribution lifecycles. Evidence and
+  outbound links must not overload those fields.
+- Published-event revisions are immutable/audited, but their payload does not
+  include citation or action-link changes.
+- Public event RLS exposes only non-retired live and cancelled events. Child
+  records need the same parent visibility boundary.
+- `listing_admin_audit_log.metadata` is admin-only operational metadata, not a
+  public citation store.
+
+### Existing clients
+
+- Admin event create, draft edit, live edit, and detail surfaces do not accept
+  or display sources or consumer action links.
+- The partner editor has no such fields and writes new drafts directly before
+  using the publication/revision RPCs.
+- Consumer event detail reads only `events` plus the linked venue. It has no
+  primary external CTA or source disclosure.
+- Consumer event detail still has a hardcoded catalogue for legacy non-UUID
+  routes. Those records must not be made to look sourced or production-backed.
+
+### Seed-readiness findings
+
+- An event can have several evidence sources and a different ticket or
+  registration provider. One URL column cannot represent both.
+- Ticket pages often advertise “from Kx”. Existing `price_pp` is presented as a
+  canonical per-person amount, so minimum ticket tiers must not be copied into
+  it without verification.
+- Several researched conferences, expos, education, faith, professional, and
+  family events do not fit the current event-category catalogue. Category
+  expansion or exclusion is a separate seed-curation decision.
+- Conflicting dates, past events, generic conference-alert pages, recurring
+  annual assumptions, and unsupported social posts remain excluded or on hold.
+
+## MVP data contract
+
+Use two child tables. They serve different trust and display purposes and
+should not be collapsed into one generic URL list.
+
+### `event_sources`
+
+Purpose: factual provenance and verification evidence.
+
+Proposed fields:
+
+- `id uuid` primary key;
+- `event_id uuid` referencing `events`;
+- `source_type text`: `organizer`, `venue`, `ticketing`, `press`, `calendar`,
+  or `social`;
+- `publisher_name text`;
+- `source_title text` nullable;
+- `url text`;
+- `verification_status text`: `unverified`, `verified`, `stale`, or `rejected`;
+- `is_primary boolean` and `show_publicly boolean`;
+- `observed_at` and `last_checked_at` timestamps;
+- `verified_by uuid` nullable;
+- `internal_note text` nullable; and
+- created/updated actor and timestamp metadata.
+
+Enforce one URL per event, at most one primary public source, bounded text,
+HTTP(S) validation, and attributable verification changes. Do not copy or
+archive full third-party page content.
+
+### `event_action_links`
+
+Purpose: a consumer-facing action completed outside D8.
+
+Proposed fields:
+
+- `id uuid` primary key;
+- `event_id uuid` referencing `events`;
+- `link_type text`: `tickets`, `registration`, or `official`;
+- `provider_name text` and optional `label text`;
+- `url text`;
+- `status text`: `unverified`, `active`, `sold_out`, `closed`, or `invalid`;
+- `is_primary boolean`;
+- `last_checked_at timestamptz` nullable; and
+- created/updated actor and timestamp metadata.
+
+Enforce one URL per event and at most one primary active action. “Contact the
+organizer” is not an arbitrary link type in this slice; contact data and payment
+arrangements require their own explicit product contract.
+
+### Access boundary
+
+- Anonymous/consumer: only public sources and active or sold-out public actions
+  whose parent event is non-retired and live or cancelled.
+- Admin: all rows, including verification notes and invalid/stale links.
+- Admin writes: RPC-only, with request-key idempotency, optimistic event
+  version, validation, and audit.
+- Partner reads/writes: not added in Slice 1. Partner parity must join the
+  published-event revision contract rather than gain direct table mutation.
+- Automated link checking is deferred; a future service process may mark links
+  stale or invalid without deleting evidence.
+
+## Publication and presentation rules
+
+- Researched/imported events begin as drafts.
+- A new event with `source = 'import'` cannot transition to live without at
+  least one verified source. Existing records receive an explicit compatibility
+  review; do not invent citations for them.
+- Do not globally require ticket links for paid partner events in this slice.
+  D8 does not own checkout and the partner workflow has no complete alternative
+  payment contract.
+- Admin seed review treats a working ticket, registration, or official action
+  as a publication-quality requirement when the source claims online booking.
+- A “from” ticket price is not canonical `price_pp`. Leave it unresolved and
+  keep the event in draft until the semantics are verified.
+- Consumer detail shows one primary CTA (`Get tickets`, `Register`, or `View
+  official details`) and identifies the external provider before navigation.
+- Consumer detail shows one restrained citation such as “Information sourced
+  from TicketHost · checked 25 Aug 2026”. Feed cards remain uncluttered.
+- Cancelled events may retain evidence and official information, but ticket
+  actions must respect closed/invalid state and cancellation treatment.
+- External links use `noopener noreferrer`; the server rejects non-HTTP(S),
+  whitespace, and overlong URLs.
+
+## Mini plan
+
+### Slice 1 — Additive database foundation
+
+1. Add both tables, checks, partial unique indexes, parent indexes, RLS, column
+   grants, and admin-only mutation RPCs.
+2. Add dedicated immutable audit for source/link changes; do not squeeze
+   mutable evidence into event-creation metadata.
+3. Add the import-publication guard without changing ordinary partner event
+   publication.
+4. Add static checks for grants, RLS, URL schemes, primary uniqueness, import
+   publication, and forbidden direct client writes.
+5. Add role smoke coverage for anonymous, consumer, partner owner, other
+   partner, admin, and retired/draft/live/cancelled parent states.
+
+Suggested commit: `feat(db): add event provenance and action links`
+
+### Slice 2 — Admin intake and seed manifest
+
+1. Add repeatable Source and Tickets/registration sections to admin event draft
+   create/edit and detail surfaces.
+2. Keep saves idempotent and preserve unfinished form state.
+3. Show verification state, last-checked date, and actionable validation errors;
+   never expose internal notes to consumers.
+4. Create a versioned, reviewable seed manifest with source URLs, observed
+   facts, verification state, and stable request keys.
+5. Import only verified, future, taxonomy-compatible records as drafts. Keep
+   conflicts and unsupported categories in a documented hold list.
+
+Suggested commits:
+
+1. `feat(admin): manage event sources and action links`
+2. `chore(data): prepare reviewed Lusaka event drafts`
+
+### Slice 3 — Consumer trust surface
+
+1. Extend persisted event detail with public sources and action links.
+2. Add one primary external CTA, provider disclosure, citation, and
+   unavailable/sold-out/closed fallbacks.
+3. Keep legacy hardcoded event routes visually distinct or remove their
+   production reach; never fabricate citations.
+4. Verify desktop/mobile wrapping, keyboard focus, and safe navigation.
+
+Suggested commit: `feat(consumer): show event sources and external actions`
+
+### Slice 4 — Partner parity, deliberately later
+
+After the admin/import path works, discover partner operational need. If
+accepted, partner source/action editing must use an audited revision contract,
+including treatment of live primary ticket-destination changes. Do not begin
+with direct partner update policies on the child tables.
+
+## Verification framework
+
+### Automated
+
+- Static schema/RLS/grant and client-integration checks.
+- Table-driven URL, label, primary-selection, and display-state tests.
+- Database role matrix and bypass attempts.
+- Idempotent retry and optimistic-concurrency checks.
+- Draft/live/cancelled/retired parent visibility checks.
+- Import publication blocked without verified evidence and allowed with it.
+- Consumer mapper tests for active, sold-out, closed, invalid, multiple-source,
+  and no-link events.
+- Workspace typecheck and both client builds before release.
+
+### High-level browser journeys
+
+1. Admin creates an imported draft, adds two evidence sources and one ticket
+   link, reloads, and sees the same state without duplication.
+2. Publication is blocked without verified evidence, then succeeds after
+   verification; consumers see only public evidence and the primary safe CTA.
+3. A source becomes stale and a ticket action becomes sold out/closed; the
+   audit remains while consumer presentation updates correctly after refresh.
+
+## Delivery and rollback
+
+The schema is additive. Do not rewrite applied migrations and do not seed in
+the migration itself. Before a main-project migration, use the existing
+encrypted production snapshot/preflight. Apply schema first, run read-only and
+role checks, then deploy admin integration, import drafts, and finally deploy
+consumer presentation. A forward rollback can disable public policies and CTAs
+without deleting evidence.
+
+## Explicitly deferred
+
+- Ticket sales, checkout, refunds, inventory, affiliate tracking, and redirect
+  analytics;
+- scraping, link-health workers, and freshness counters;
+- semantic source scoring and automatic price extraction;
+- partner self-service mutation until revision semantics are designed;
+- category expansion not justified by accepted launch inventory; and
+- publication with materially ambiguous date, venue, organizer, or price.

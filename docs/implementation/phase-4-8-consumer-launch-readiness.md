@@ -1,6 +1,8 @@
 # Phase 4.8 — Consumer Launch Readiness
 
-Status: discovery is the immediate next work; no implementation slice has been
+Status: consumer discovery remains the active workstream. Event provenance and
+external action links are now a documented launch-readiness prerequisite before
+the researched Lusaka event seed batch; no implementation slice has been
 accepted yet.
 
 Decision date: 25 August 2026
@@ -59,6 +61,20 @@ The first implementation plan should prioritize, in order:
 - speculative personalization/relevance algorithms;
 - premature behavioral analytics counters; and
 - a framework migration or complete visual rewrite without discovery evidence.
+
+## Phase 4.8A prerequisite — event provenance and action links
+
+The proposed launch inventory exposed a trust gap: events cannot currently
+retain research evidence or provide a distinct ticket/registration destination.
+Do not seed researched events until the bounded contract in
+`docs/implementation/phase-4-8a-event-provenance-and-action-links.md` is
+implemented and verified.
+
+This prerequisite is intentionally narrow. It adds admin-first provenance and
+external-action data, a reviewed draft import path, and consumer detail-page
+disclosure. It does not add D8 ticket sales, scraping, affiliate tracking,
+partner self-service link edits, speculative analytics, or unrelated category
+expansion.
 
 ## Initial acceptance shape
 

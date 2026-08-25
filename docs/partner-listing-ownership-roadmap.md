@@ -551,6 +551,14 @@ sequence before implementation. Do not mix claims, membership cutover,
 repository cleanup, speculative analytics, or an unproven recommendation
 algorithm into this phase.
 
+The researched Lusaka launch inventory adds a bounded Phase 4.8A prerequisite:
+event evidence and external consumer actions must be first-class, separately
+modeled data before those records are seeded. Use
+`docs/implementation/phase-4-8a-event-provenance-and-action-links.md`. The
+admin-first foundation and consumer citation/CTA surface are in scope; ticket
+sales, scraping, affiliate analytics, automatic price extraction, and partner
+self-service link revisions are not.
+
 ### Phase 5 — Claim submission and approval
 
 Status: deliberately deferred until after consumer launch readiness and real
