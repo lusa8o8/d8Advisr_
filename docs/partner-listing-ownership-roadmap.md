@@ -432,6 +432,13 @@ browser journey passed on 24 August 2026. Slice 4.7C2 venue (C2A) and event
 `20260824180000` and `20260824200000`; automated gates pass and two high-level
 browser journeys remain before closing Phase 4.7.
 
+The first C2 browser attempt found and repaired admin creation parity in
+`0b4961e`: event venue options are market-scoped and reset on market changes,
+creation screens separate canonical market from physical locality, admin venue
+contact fields persist, and partner venue phone entry derives an empty prefix
+from country metadata. Migration `20260825100000` is applied on main. The
+updated high-level C2 journeys remain the closing gate.
+
 The phase does not add PostGIS, nationwide discovery, occurrence generation,
 or speculative geography data. Phase 4.6D4 resumes after the geography gate.
 

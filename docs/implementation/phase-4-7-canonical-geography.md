@@ -235,6 +235,22 @@ Keep acceptance at two high-level journeys:
    both records remain Lusaka-scoped in admin, and no cross-market venue is
    offered or accepted.
 
+Browser acceptance on 25 August exposed one remaining creation-screen gap:
+the admin event form offered live venues from every market, retained a stale
+venue ID after a market switch, and still presented the market label as the
+physical city. The server correctly rejected the inconsistent write with
+`event_venue_must_belong_to_selected_market`. Commit `0b4961e` keeps that
+guard, filters venue choices by canonical market, clears stale selections,
+and separates market from physical locality in both admin creation forms.
+
+The same bounded repair adds the previously missing admin venue phone and
+website inputs and persists them through migration
+`20260825100000_admin_creation_market_contact_parity.sql`. Partner venue phone
+entry now falls back to the approved market's country calling code when no
+saved venue/application contact exists. Focused static/type checks, both
+production builds, linked schema lint, production read-only smoke, and a
+post-apply no-pending-migrations dry-run pass.
+
 4.7C1 was delivered to main on 24 August 2026 through migration
 `20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,
 production read-only smoke, the combined static/type gate, and both client
