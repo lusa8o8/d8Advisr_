@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { CalendarPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { Venue } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
@@ -74,23 +74,30 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const submissionInFlight = useRef(false);
   const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
   const [venue, setVenue, clearVenue] = useSessionDraft(`${draftPrefix}:venue`, {
-    name: '', city: 'Lusaka', category: '', area: '', address: '', description: '',
+    name: '', regionId: 'lusaka', city: 'Lusaka', category: '', area: '', address: '', description: '',
     tier: 'Verified' as 'Verified' | 'D8 Approved' | 'Hidden Gem',
-    priceTier: '', averageCost: '', coverImage: '', images: [] as string[], vibes: '',
-  });
+    priceTier: '', averageCost: '', phone: '', website: '', coverImage: '', images: [] as string[], vibes: '',
+  }, 2);
   const [event, setEvent, clearEvent] = useSessionDraft(`${draftPrefix}:event`, {
-    title: '', city: 'Lusaka', category: '', description: '', startsAt: '', endsAt: '',
+    title: '', regionId: 'lusaka', city: 'Lusaka', category: '', description: '', startsAt: '', endsAt: '',
     locationKind: 'undisclosed' as EventLocation, venueId: '',
     externalLocationName: '', externalLocationAddress: '', price: '', currency: 'K',
     images: [] as string[],
     capacity: '', isFree: false, isFeatured: false, coverImage: '', vibes: '', emoji: '📅',
-  });
+  }, 2);
   const { regions } = useRegion();
-  const selectedCity = kind === 'venue' ? venue.city : event.city;
-  const selectedRegion = regions.find(item => item.name === selectedCity || item.id === selectedCity);
+  const selectedRegionId = kind === 'venue' ? venue.regionId : event.regionId;
+  const selectedRegion = regions.find(item => item.id === selectedRegionId);
   const references = useListingReferences(kind, selectedRegion?.id);
 
-  const liveVenues = venues.filter(item => item.isActive && item.listingStatus === 'live');
+  useEffect(() => {
+    if (kind !== 'venue' || !selectedRegion?.country?.calling_code) return;
+    setVenue(current => current.phone.trim()
+      ? current
+      : { ...current, phone: `${selectedRegion.country!.calling_code} ` });
+  }, [kind, selectedRegion?.country?.calling_code, setVenue]);
+
+  const liveVenues = venues.filter(item => item.isActive && item.listingStatus === 'live' && item.regionId === event.regionId);
 
   const createListing = async (policyAcknowledged: boolean) => {
     if (submissionInFlight.current) return;
@@ -106,11 +113,13 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
       if (kind === 'venue') {
         id = await createAdminVenue({
           requestKey,
-          regionId: selectedRegion?.id ?? '',
+          regionId: venue.regionId,
           name: venue.name, city: venue.city, category: venue.category,
           attribution, publicationStatus, area: venue.area, address: venue.address,
           description: venue.description, tier: venue.tier, priceTier: venue.priceTier,
           averageCostPerPerson: venue.averageCost ? Number(venue.averageCost) : undefined,
+          contactPhone: venue.phone,
+          websiteUrl: venue.website,
           coverImage: venue.coverImage, images: venue.images, vibes: tags(venue.vibes),
         });
         await onVenueCreated(id);
@@ -121,7 +130,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         const eventCapacity = parseEventCapacityInput(event.capacity);
         id = await createAdminEvent({
           requestKey,
-          regionId: selectedRegion?.id ?? '',
+          regionId: event.regionId,
           title: event.title, city: event.city, category: event.category,
           description: event.description, startsAt: new Date(event.startsAt).toISOString(),
           endsAt: event.endsAt ? new Date(event.endsAt).toISOString() : undefined,
@@ -138,7 +147,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
       requestKeys.current[kind] = null;
       if (kind === 'venue') {
         clearVenue();
-        setVenue(current => ({ ...current, name: '', category: '', area: '', address: '', description: '', priceTier: '', averageCost: '', coverImage: '', images: [], vibes: '' }));
+        setVenue(current => ({ ...current, name: '', category: '', area: '', address: '', description: '', priceTier: '', averageCost: '', phone: '', website: '', coverImage: '', images: [], vibes: '' }));
       } else {
         clearEvent();
         setEvent(current => ({ ...current, title: '', category: '', description: '', startsAt: '', endsAt: '', venueId: '', externalLocationName: '', externalLocationAddress: '', price: '', capacity: '', coverImage: '', images: [], vibes: '' }));
@@ -218,12 +227,17 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Venue name"><input required className={inputClass} value={venue.name} onChange={e => setVenue(v => ({ ...v, name: e.target.value }))} /></Field>
-                <Field label="Region"><select required className={inputClass} value={venue.city} onChange={e => setVenue(v => ({ ...v, city: e.target.value, area: '' }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
+                <Field label="Discovery market"><select required className={inputClass} value={venue.regionId} onChange={e => { const next = regions.find(item => item.id === e.target.value); const previous = regions.find(item => item.id === venue.regionId); setVenue(v => ({ ...v, regionId: e.target.value, city: !v.city.trim() || v.city === previous?.name ? next?.name ?? v.city : v.city, area: '', phone: !v.phone.trim() || v.phone.trim() === previous?.country?.calling_code ? `${next?.country?.calling_code ?? ''} ` : v.phone })); }}>{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+                <Field label="Physical city / locality"><input required className={inputClass} value={venue.city} onChange={e => setVenue(v => ({ ...v, city: e.target.value }))} /></Field>
                 <Field label="Category"><select required className={inputClass} value={venue.category} onChange={e => setVenue(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
                 <Field label="Area"><><input list="admin-region-areas" className={inputClass} value={venue.area} onChange={e => setVenue(v => ({ ...v, area: e.target.value }))} /><datalist id="admin-region-areas">{references.areas.map(item => <option key={item.id} value={item.name} />)}</datalist><span className="mt-1 block text-[10px] text-gray-400">Choose a reviewed area or type a manual fallback.</span></></Field>
               </div>
               <Field label="Address"><input className={inputClass} value={venue.address} onChange={e => setVenue(v => ({ ...v, address: e.target.value }))} /></Field>
               <Field label="Description"><textarea className={`${inputClass} min-h-24`} value={venue.description} onChange={e => setVenue(v => ({ ...v, description: e.target.value }))} /></Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="WhatsApp / phone"><input type="tel" maxLength={80} placeholder={selectedRegion?.country?.calling_code ? `${selectedRegion.country.calling_code} ` : 'International number'} className={inputClass} value={venue.phone} onChange={e => setVenue(v => ({ ...v, phone: e.target.value }))} /></Field>
+                <Field label="Website"><input type="url" maxLength={500} placeholder="https://" className={inputClass} value={venue.website} onChange={e => setVenue(v => ({ ...v, website: e.target.value }))} /></Field>
+              </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Tier"><select className={inputClass} value={venue.tier} onChange={e => setVenue(v => ({ ...v, tier: e.target.value as typeof venue.tier }))}><option>Verified</option><option>D8 Approved</option><option>Hidden Gem</option></select></Field>
                 <Field label="Price level"><select className={inputClass} value={venue.priceTier} onChange={e => setVenue(v => ({ ...v, priceTier: e.target.value }))}><option value="">Not set</option><option value="$">1 · Budget</option><option value="$$">2 · Moderate</option><option value="$$$">3 · Premium</option><option value="$$$$">4 · Luxury</option></select></Field>
@@ -236,7 +250,8 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Event title"><input required className={inputClass} value={event.title} onChange={e => setEvent(v => ({ ...v, title: e.target.value }))} /></Field>
-                <Field label="Region"><select required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))}>{regions.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
+                <Field label="Discovery market"><select required className={inputClass} value={event.regionId} onChange={e => { const next = regions.find(item => item.id === e.target.value); const previous = regions.find(item => item.id === event.regionId); setEvent(v => ({ ...v, regionId: e.target.value, city: !v.city.trim() || v.city === previous?.name ? next?.name ?? v.city : v.city, venueId: '' })); }}>{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+                <Field label="Physical city / locality"><input required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))} /></Field>
                 <Field label="Category"><select required className={inputClass} value={event.category} onChange={e => setEvent(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
                 <Field label="Event icon"><div className="flex flex-wrap gap-2">{EVENT_EMOJI_OPTIONS.map(icon => <button key={icon} type="button" aria-label={`Use ${icon} as the event icon`} onClick={() => setEvent(value => ({ ...value, emoji: icon }))} className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition ${event.emoji === icon ? 'bg-[#FFF0F1] ring-2 ring-[#FF5A5F]' : 'bg-gray-50 hover:bg-gray-100'}`}>{icon}</button>)}</div></Field>
                 <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value, endsAt: alignEventEndWithStart(v.startsAt, v.endsAt, e.target.value) }))} /></Field>
@@ -244,7 +259,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
               </div>
               <Field label="Description"><textarea className={`${inputClass} min-h-24`} value={event.description} onChange={e => setEvent(v => ({ ...v, description: e.target.value }))} /></Field>
               <Field label="Location"><select className={inputClass} value={event.locationKind} onChange={e => setEvent(v => ({ ...v, locationKind: e.target.value as EventLocation }))}><option value="undisclosed">Undisclosed</option><option value="d8_venue">Existing live D8 venue</option><option value="external">External location</option></select></Field>
-              {event.locationKind === 'd8_venue' && <Field label="Venue"><select required className={inputClass} value={event.venueId} onChange={e => setEvent(v => ({ ...v, venueId: e.target.value }))}><option value="">Choose venue</option>{liveVenues.map(item => <option key={item.id} value={item.id}>{item.name} — {item.city}</option>)}</select></Field>}
+              {event.locationKind === 'd8_venue' && <Field label="Venue"><><select required className={inputClass} value={event.venueId} onChange={e => setEvent(v => ({ ...v, venueId: e.target.value }))}><option value="">Choose venue</option>{liveVenues.map(item => <option key={item.id} value={item.id}>{item.name} — {item.city}</option>)}</select>{liveVenues.length === 0 && <span className="mt-1 block text-[10px] text-amber-600">No live D8 venues are available in this market. Choose an external or undisclosed location.</span>}</></Field>}
               {event.locationKind === 'external' && <div className="grid gap-3 sm:grid-cols-2"><Field label="Location name"><input required className={inputClass} value={event.externalLocationName} onChange={e => setEvent(v => ({ ...v, externalLocationName: e.target.value }))} /></Field><Field label="Location address"><input className={inputClass} value={event.externalLocationAddress} onChange={e => setEvent(v => ({ ...v, externalLocationAddress: e.target.value }))} /></Field></div>}
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Entry price / person"><input min="0.01" step="0.01" inputMode="decimal" disabled={event.isFree} type="number" className={inputClass} value={event.price} onChange={e => setEvent(v => ({ ...v, price: e.target.value }))} /></Field>

@@ -18,6 +18,8 @@ export interface AdminVenueCreationInput {
   tier?: 'Verified' | 'D8 Approved' | 'Hidden Gem';
   priceTier?: string;
   averageCostPerPerson?: number;
+  contactPhone?: string;
+  websiteUrl?: string;
   coverImage?: string;
   images?: string[];
   vibes?: string[];
@@ -70,6 +72,8 @@ export async function createAdminVenue(input: AdminVenueCreationInput): Promise<
       tier: input.tier ?? 'Verified',
       price_tier: input.priceTier?.trim() || null,
       avg_cost_pp: input.averageCostPerPerson ?? null,
+      contact_phone: input.contactPhone?.trim() || null,
+      website_url: input.websiteUrl?.trim() || null,
       cover_image: input.coverImage?.trim() || null,
       images: input.images ?? [],
       vibes: input.vibes ?? [],

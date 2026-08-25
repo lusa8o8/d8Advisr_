@@ -77,6 +77,8 @@
     "check:phase47c2a": "pnpm run test:phase47c1:static && pnpm run test:phase47c2a:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:phase47c2b:static": "node scripts/check-phase47c2b-contract.mjs",
     "check:phase47c2b": "pnpm run test:phase47c2a:static && pnpm run test:phase47c2b:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
+    "test:admin-creation-market-parity": "node scripts/check-admin-creation-market-parity.mjs",
+    "check:admin-creation-market-parity": "pnpm run test:phase47c2b:static && pnpm run test:admin-creation-market-parity && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:market-presentation:static": "node scripts/check-market-presentation-contract.mjs",
     "check:market-presentation": "pnpm run test:market-presentation:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",

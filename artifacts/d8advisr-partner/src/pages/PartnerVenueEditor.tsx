@@ -56,7 +56,7 @@ export function PartnerVenueEditor() {
   const [area, setArea]             = useState('');
   const [areaMode, setAreaMode]     = useState<AreaMode>('unset');
   const { regions } = useRegion();
-  const profileRegionValue          = normalizedRegionValue(profile?.city);
+  const profileRegionValue          = normalizedRegionValue(profile?.region_id ?? profile?.city);
   const selectedRegion             = regions.find(region =>
     normalizedRegionValue(region.id) === profileRegionValue
     || normalizedRegionValue(region.name) === profileRegionValue
@@ -64,7 +64,8 @@ export function PartnerVenueEditor() {
   const cityId                      = selectedRegion?.id ?? '';
   const cityName                    = selectedRegion?.name ?? profile?.city ?? '';
   const { categories, vibes: vibeOptions, areas, isLoading: referencesLoading } = useListingReferences('venue', cityId);
-  const [phone, setPhone]           = useState(profile?.contact ?? '');
+  const defaultCallingCode          = selectedRegion?.country?.calling_code;
+  const [phone, setPhone]           = useState(profile?.contact || (defaultCallingCode ? `${defaultCallingCode} ` : ''));
   const [website, setWebsite]       = useState('');
   const [priceTier, setPriceTier]   = useState('');
   const [averageCost, setAverageCost] = useState('');
@@ -92,7 +93,7 @@ export function PartnerVenueEditor() {
       setPriceTier(recovered.priceTier);
       setAverageCost(recovered.averageCost);
       setSelectedVibes(recovered.selectedVibes);
-      setPhone(recovered.phone);
+      setPhone(recovered.phone.trim() ? recovered.phone : defaultCallingCode ? `${defaultCallingCode} ` : '');
       setWebsite(recovered.website);
       setDesc(recovered.desc);
       setHours(recovered.hours);
@@ -114,7 +115,7 @@ export function PartnerVenueEditor() {
       setAverageCost(venueListing?.averageCostPerPerson?.toString() ?? '');
       setSelectedVibes(venueListing?.vibes ?? []);
       setDesc(venueListing?.description ?? '');
-      setPhone(venueListing?.contactPhone ?? '');
+      setPhone(venueListing?.contactPhone || profile.contact || (defaultCallingCode ? `${defaultCallingCode} ` : ''));
       setWebsite(venueListing?.websiteUrl ?? '');
       if (venueListing?.openHours) {
         setHours(DAYS.map(day => {
@@ -135,7 +136,7 @@ export function PartnerVenueEditor() {
       })));
     }
     hydratedDraftRef.current = draftKey;
-  }, [areas, draftKey, loading, profile, referencesLoading, venueListing]);
+  }, [areas, defaultCallingCode, draftKey, loading, profile, referencesLoading, venueListing]);
 
   useEffect(() => {
     if (hydratedDraftRef.current !== draftKey) return;
