@@ -251,6 +251,19 @@ saved venue/application contact exists. Focused static/type checks, both
 production builds, linked schema lint, production read-only smoke, and a
 post-apply no-pending-migrations dry-run pass.
 
+The current deployment then exposed a database-only follow-up: migration
+`20260824200000` named the cross-market D8-venue invariant trigger with a
+`01_` prefix. PostgreSQL orders triggers with the same timing/event by name,
+so the guard ran before `a_sync_event_reference_fields` populated
+`NEW.region_id` for the legacy admin creation core. The RPC's explicit
+payload/venue pre-check passed, but the premature row trigger rejected the
+same valid venue. Migration
+`20260825110000_fix_event_venue_region_trigger_order.sql` renames the guard to
+`c_enforce_event_venue_region_scope`, after the canonical `a_`/`b_` triggers.
+The invariant itself is unchanged. Static/type checks, linked schema lint,
+production read-only smoke, and the no-pending-migrations dry-run pass after
+the repair.
+
 4.7C1 was delivered to main on 24 August 2026 through migration
 `20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,
 production read-only smoke, the combined static/type gate, and both client

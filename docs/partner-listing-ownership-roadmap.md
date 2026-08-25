@@ -439,6 +439,11 @@ contact fields persist, and partner venue phone entry derives an empty prefix
 from country metadata. Migration `20260825100000` is applied on main. The
 updated high-level C2 journeys remain the closing gate.
 
+Migration `20260825110000` subsequently repaired trigger ordering on the
+legacy admin event-creation path: canonical region synchronization now runs
+before the cross-market D8-venue invariant. The protection was retained; only
+its evaluation point moved to the normalized row.
+
 The phase does not add PostGIS, nationwide discovery, occurrence generation,
 or speculative geography data. Phase 4.6D4 resumes after the geography gate.
 
