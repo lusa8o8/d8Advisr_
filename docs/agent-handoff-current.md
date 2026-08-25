@@ -1,10 +1,24 @@
 # D8Advisr Current Agent Handoff
 
-Updated: 24 August 2026
+Updated: 25 August 2026
 
 This is the authoritative context-restoration note for a new Codex session.
 It supersedes `docs/agent-handoff-2026-08-19.md`, which is retained only as
 historical evidence. Do not rely on conversation memory or the old handoff.
+
+## Current product priority
+
+The partner and administrator clients are accepted as sufficient for the MVP
+launch boundary, although they are not considered permanently finished. Phase
+4.6D4 is closed at that boundary and Phase 4.7 canonical geography is complete
+on main, including the final combined event-market/D8-venue edit browser test.
+
+The next active workstream is Phase 4.8 consumer launch readiness in
+`docs/implementation/phase-4-8-consumer-launch-readiness.md`. Start with a fresh
+code and browser-state audit, then write a bounded mini plan for the first
+consumer slice. Phases 5 (claims), 6 (membership RLS cutover), and 7 (broad
+repository cleanup) are deliberately deferred. Do not resume them merely
+because older sections below describe their original sequence.
 
 ## Start here
 
@@ -120,7 +134,7 @@ incorrect venue. They never gain event-editing authority. Ordinary event edits
 preserve placement. Changing/removing the venue closes the old relationship
 and creates or withdraws the canonical relationship transactionally.
 
-## Current priority: Phase 4.7 canonical geography
+## Completed priority: Phase 4.7 canonical geography
 
 The promoted main database contains 16 active live Lusaka venues, but the
 consumer feed/map query the compatibility `city` field using display name
@@ -174,11 +188,11 @@ exception.
 Do not change old production event dates to populate the feed. All six main
 events are currently in the past; recurrence normalization remains Phase 4.6F.
 
-After the Phase 4.7 release gate, return to Phase 4.6D4 below. The short
-authenticated production browser smoke remains evidence to collect alongside
-the Phase 4.7 consumer feed verification.
+Phase 4.7 is closed. The final production browser regression confirmed a live
+event could move markets and attach a destination-market D8 venue atomically,
+with correct persisted market, locality, currency, venue ID, and audit reason.
 
-## Paused phase: Phase 4.6D4
+## Closed at MVP boundary: Phase 4.6D4
 
 Authoritative documents:
 
@@ -190,9 +204,9 @@ Authoritative documents:
 
 Do not restart the older speculative Phase 4.6B/4.6C plan from the historical
 roadmap table. Phase 4.6D2 and D3 replaced routine review with the accepted v1.1
-direct-publication/audit/notification policy. D4 closure remains required before
-Phase 5 claims, but Phase 4.7 now runs first because discovery is broken on main
-and its geography contract affects future D4/claim location behavior.
+direct-publication/audit/notification policy. D4 is accepted at its MVP
+boundary, Phase 4.7 is complete, and ownership claims are deferred while the
+consumer application becomes launch-ready.
 
 Earlier on 24 August the user prioritized promoting the tested baseline into
 the existing main Supabase project before continuing D4 slice four. That
@@ -291,10 +305,10 @@ Set-Location <external-drive>:\d8Advisr_
 pnpm run dev:partner:staging
 ```
 
-## Next implementation after production promotion: D4 slice four
+## Deferred D4 expansion
 
-After recording the remaining slice-three browser result, run fresh discovery
-before edits.
+Do not implement the former slice-four scope unless real disputes, consumer
+confusion, support volume, or repeated manual admin handling justify it.
 Do not rely on this note for exact current code paths. Inspect the consumer
 event/venue reads and detail components, admin dashboard queues, existing admin
 notification model, relationship RLS/audit, `resolve_event_venue_dispute`, and
@@ -326,14 +340,11 @@ placement, admin resolution concurrency and audit, recipient deduplication,
 and regression of all `check:phase46d4` gates. Browser acceptance should remain
 two or three high-level cross-client journeys.
 
-## After D4
+## Deferred ownership and cleanup phases
 
-Phase 5 introduces claims on existing unclaimed listings and creates approved
-organization membership without changing venue IDs. Do not start Phase 5 until
-D4 automated and browser acceptance closes the venue-authority boundary.
-Phase 6 later backfills legacy `partner_id` ownership and cuts RLS over to
-memberships. Repository cleanup and bloat reduction remain separate measured
-Phase 7 work, not incidental refactoring during D4/5.
+Phase 5 claims, Phase 6 membership/RLS cutover, and Phase 7 broad cleanup are
+deliberately deferred while consumer launch readiness is prioritized. Their
+existing plans remain valid reference material, not active instructions.
 
 ## Working rules
 

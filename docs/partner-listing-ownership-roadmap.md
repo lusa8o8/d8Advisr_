@@ -1,8 +1,8 @@
 # Partner Listing Ownership and Repository Cleanup Roadmap
 
-Status: Phase 4.7 canonical geography is the immediate production follow-up;
-Phase 4.6D4 slices 1-3 remain implemented and staging-verified, with one
-browser retest and slice four still remaining afterward
+Status: partner/admin launch boundary and Phase 4.7 geography are complete for
+MVP. Consumer launch readiness is now the active workstream. Phases 5, 6, and
+7 are deliberately deferred.
 
 Created: 2026-08-11
 
@@ -396,7 +396,7 @@ Delivery state on 21 August 2026:
 | 4.6D1 | Partner admission, capability, and dual-client session closure | Complete: automated and all three browser journeys passed on 20 August 2026 |
 | 4.6D2 | Event-policy v1.1 enforcement cutover and removal of routine event review | Complete: automated gates and all browser journeys passed on 21 August 2026 |
 | 4.6D3 | Administrator event-policy v1.1 publication, edit, notification, and cancellation parity | Complete: automated and browser acceptance passed on 21 August 2026 |
-| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Slices 1-3 implemented; attribution/placement journey passed; dispute-response repair is staging-verified and awaits browser retest; consumer/admin dispute surfaces remain before Phase 5 |
+| 4.6D4 | Event venue attribution awareness, venue-page marketing placement, and incorrect-location disputes | Complete at the accepted MVP boundary; richer admin/consumer dispute operations are evidence-triggered follow-ups |
 | 4.6E | Reconfirmation, registration/ticket/refund-aware behavior | Deferred until those domains are real |
 | 4.6F | Normalized occurrences and occurrence-scoped revisions | Deferred until series-level behavior is proven |
 
@@ -429,8 +429,8 @@ inactive Zambia markets passed pre/post production gates. Canonical profile
 and creation writes are complete through Slice 4.7C1, whose authenticated
 browser journey passed on 24 August 2026. Slice 4.7C2 venue (C2A) and event
 (C2B) edit/revision contracts are implemented on main through migrations
-`20260824180000` and `20260824200000`; automated gates pass and two high-level
-browser journeys remain before closing Phase 4.7.
+`20260824180000` and `20260824200000`; automated gates and high-level browser
+acceptance passed by 25 August 2026.
 
 The first C2 browser attempt found and repaired admin creation parity in
 `0b4961e`: event venue options are market-scoped and reset on market changes,
@@ -445,7 +445,7 @@ before the cross-market D8-venue invariant. The protection was retained; only
 its evaluation point moved to the normalized row.
 
 The phase does not add PostGIS, nationwide discovery, occurrence generation,
-or speculative geography data. Phase 4.6D4 resumes after the geography gate.
+or speculative geography data. Phase 4.7 is closed.
 
 Phase 4.6D supersedes the speculative pre-approval portions of the v1.0 event
 policy. Approved partners continue to publish directly. Published event edits
@@ -513,10 +513,30 @@ automatically informs venue managers; approval controls only venue-page
 promotion, while inaccurate location claims use a separate dispute path. The
 contract is
 `docs/implementation/phase-4-6d4-event-venue-attribution-placement.md`.
-Because Phase 5 changes who may act for a venue, D4 database and UI enforcement
-must pass acceptance before claim submission begins.
+The implemented D4 boundary is accepted for MVP. The remaining dedicated admin
+dispute queue and richer consumer dispute treatment are deferred until real
+usage warrants them.
+
+### Phase 4.8 — Consumer launch readiness
+
+Status: next active workstream; begin with fresh discovery rather than assuming
+the current consumer problems or redesign scope from prior sessions.
+
+Outcome: make the consumer application coherent, trustworthy, responsive, and
+launch-ready across authentication, onboarding, discovery, planning, saved
+state, notifications, and venue/event details.
+
+Use `docs/implementation/phase-4-8-consumer-launch-readiness.md`. Discovery
+must distinguish real backend-connected behavior from hardcoded demo state,
+identify broken or incomplete journeys, and establish a small prioritized
+sequence before implementation. Do not mix claims, membership cutover,
+repository cleanup, speculative analytics, or an unproven recommendation
+algorithm into this phase.
 
 ### Phase 5 — Claim submission and approval
+
+Status: deliberately deferred until after consumer launch readiness and real
+operational demand for claims.
 
 Outcome: a real user claims an existing listing and receives approved access.
 
@@ -549,6 +569,9 @@ Likely commits:
 3. `feat(admin): review listing claims`
 
 ### Phase 6 — Existing partner backfill and RLS cutover
+
+Status: deliberately deferred. The compatible organization foundation remains
+in place; do not cut over access before the product needs multi-member control.
 
 Outcome: existing partner-owned content uses business memberships instead of
 direct user ownership.
@@ -585,6 +608,9 @@ Likely commits:
 3. `refactor(apps): read business-based ownership`
 
 ### Phase 7 — Legacy removal and targeted repository cleanup
+
+Status: deliberately deferred. Perform only narrowly necessary cleanup during
+consumer work; broad structural cleanup remains its own measured phase.
 
 Outcome: remove proven-dead ownership paths and reduce structural bloat without
 mixing unrelated product changes.
@@ -668,9 +694,7 @@ Primary references:
 
 ## Immediate Next Step
 
-Follow `docs/implementation/phase-4-7-canonical-geography.md`. Release the
-browser-accepted Slice 4.7A repair, then test the country/profile/write schema
-slices on staging before any further main migration. Resume the
-repaired D4 partner browser journey and slice four only after the geography
-gate. Do not begin Phase 5 claims until D4 automated and browser acceptance
-closes the authority boundary.
+Follow `docs/implementation/phase-4-8-consumer-launch-readiness.md`. Run fresh
+consumer code/runtime discovery, classify launch blockers and hardcoded demo
+state, then propose the smallest first implementation slice. Keep the accepted
+partner/admin boundary stable and leave Phases 5, 6, and 7 deferred.

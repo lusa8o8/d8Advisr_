@@ -1,6 +1,8 @@
 # Phase 4.6D4 - Event Venue Attribution, Awareness, and Placement
 
-Status: slices one through three complete; consumer and admin surfaces pending
+Status: complete at the accepted MVP boundary on 25 August 2026. The richer
+consumer dispute state and dedicated admin dispute queue are deferred until
+real usage makes them necessary.
 
 Decision date: 21 August 2026
 
@@ -261,6 +263,22 @@ the complete D4 staging gate passed. The staging workflow test proved an
 identical stale-version response retry returns the existing relationship
 version and leaves the response-notification count at one. Only the repaired
 browser journey remains pending.
+
+### MVP closure decision (25 August 2026)
+
+The implemented boundary is sufficient for launch: venue managers are informed
+when their venue is selected, can approve/revoke venue-page placement or report
+an incorrect location, organizers can respond or correct the venue, disputed
+attribution is suppressed, actions are audited, and the relevant partners are
+notified. An admin resolution RPC remains available for exceptional manual
+intervention.
+
+The remaining repaired browser journey is useful evidence but is not a launch
+or phase blocker because the database retry/notification contract passed the
+staging role test. A dedicated admin dispute queue, richer neutral consumer
+copy, and consumer dispute-resolution notifications are explicitly deferred.
+Reopen them only when real disputes, consumer confusion, support volume, or
+repeated manual admin intervention justify the work.
 
 ## Verification
 

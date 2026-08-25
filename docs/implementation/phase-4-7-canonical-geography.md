@@ -1,14 +1,12 @@
 # Phase 4.7 - Canonical Geography and Discovery Integrity
 
-Status: Slices 4.7A, 4.7B, 4.7C1, and the 4.7C2 implementation are complete
-on main. The authenticated 4.7C1 browser journey passed on 24 August 2026;
-the two high-level 4.7C2 browser journeys remain before the geography gate is
-fully closed.
+Status: complete on main. Slices 4.7A, 4.7B, 4.7C1, and 4.7C2 passed their
+automated, production-read, and high-level browser gates by 25 August 2026.
 
 Date: 24 August 2026
 
-Priority: immediate production follow-up, before Phase 4.6D4 slice four and
-Phase 5 claims
+Priority: completed production prerequisite; consumer launch readiness is the
+next product workstream.
 
 Decision record: `docs/adr/0002-canonical-market-geography.md`
 
@@ -276,6 +274,13 @@ final event row at transaction end. Invalid final venue/market pairs still roll
 back, while valid combined edits remain one atomic revision. The RPC's early
 payload validation remains in place for a useful client error.
 
+The final production browser regression moved an existing live event from
+Lagos back to Lusaka while attaching a Lusaka D8 venue in the same confirmed
+edit. The transaction succeeded, reloading the editor preserved market,
+physical locality, venue ID, and ZMW currency, and the reason appeared in audit
+history. No `event_venue_must_belong_to_selected_market` error remained. This
+closes the 4.7C2 edit-ordering gate.
+
 4.7C1 was delivered to main on 24 August 2026 through migration
 `20260824150000_phase47c1_canonical_write_foundation.sql`. Database lint,
 production read-only smoke, the combined static/type gate, and both client
@@ -360,7 +365,8 @@ event. Do not alter old production event dates merely to make the feed nonempty.
 5. Promote tested forward migrations, run production read-only checks, then
    deploy clients.
 6. Record authenticated consumer/admin/partner browser evidence.
-7. Resume the remaining Phase 4.6D4 browser retest and slice-four discovery.
+7. Completed: close Phase 4.6D4 at its accepted MVP boundary and move product
+   priority to consumer launch readiness.
 
 ## Stop conditions
 
