@@ -82,6 +82,8 @@
     "test:admin-listing-retirement:static": "node scripts/check-admin-listing-retirement-migration.mjs",
     "test:admin-listing-retirement:clients": "node scripts/check-admin-listing-retirement-clients.mjs",
     "check:admin-listing-retirement": "pnpm run test:admin-listing-retirement:static && pnpm run test:admin-listing-retirement:clients && pnpm run test:session-lifecycle:static && pnpm run typecheck",
+    "test:phase48a:static": "node scripts/check-phase48a-provenance-migration.mjs",
+    "check:phase48a": "pnpm run test:phase48a:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:market-presentation:static": "node scripts/check-market-presentation-contract.mjs",
     "check:market-presentation": "pnpm run test:market-presentation:static && pnpm run test:session-lifecycle:static && pnpm run typecheck",
     "test:staging:phase45:reference": "node scripts/staging-phase45-reference-smoke.mjs",

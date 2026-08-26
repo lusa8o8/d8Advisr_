@@ -90,6 +90,47 @@ async function assertAnonymousDeleteDenied(url, apiKey, table) {
   console.log(`PASS protected ${table}: anonymous delete HTTP ${response.status}`);
 }
 
+async function assertAnonymousInsertDenied(url, apiKey, table, body) {
+  const response = await fetch(`${url}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  assert(
+    response.status === 401 || response.status === 403,
+    `${table} anonymous insert expected HTTP 401/403, received ${response.status}`,
+  );
+  console.log(`PASS protected ${table}: anonymous insert HTTP ${response.status}`);
+}
+
+async function assertAnonymousProvenanceRpcDenied(url, apiKey) {
+  const response = await fetch(`${url}/rest/v1/rpc/admin_replace_event_provenance`, {
+    method: 'POST',
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_event_id: '00000000-0000-4000-8000-000000000000',
+      p_sources: [],
+      p_action_links: [],
+      p_expected_updated_at: new Date(0).toISOString(),
+      p_request_key: crypto.randomUUID(),
+      p_mark_as_import: false,
+    }),
+  });
+  assert(
+    [401, 403, 404].includes(response.status),
+    `admin_replace_event_provenance anonymous call expected HTTP 401/403/404, received ${response.status}`,
+  );
+  console.log(`PASS protected admin_replace_event_provenance: anonymous HTTP ${response.status}`);
+}
+
 async function assertAnonymousRetirementRpcDenied(url, apiKey, functionName, idKey) {
   const response = await fetch(`${url}/rest/v1/rpc/${functionName}`, {
     method: 'POST',
@@ -128,6 +169,8 @@ await assertPublicRead(url, apiKey, 'regions', 2);
 await assertPublicRead(url, apiKey, 'countries', 2, 'code');
 await assertPublicRead(url, apiKey, 'listing_categories', 1);
 await assertPublicRead(url, apiKey, 'listing_vibes', 1);
+await assertPublicRead(url, apiKey, 'event_sources', 0);
+await assertPublicRead(url, apiKey, 'event_action_links', 0);
 
 // Mirror the canonical market predicates used by the consumer clients. Display-city
 // spelling and casing are deliberately excluded from the discovery contract.
@@ -163,9 +206,30 @@ await assertFilteredPublicCount(
   0,
 );
 
-for (const table of ['plans', 'partner_applications', 'consumer_notifications', 'listing_retirement_audit']) {
+for (const table of [
+  'plans',
+  'partner_applications',
+  'consumer_notifications',
+  'listing_retirement_audit',
+  'event_provenance_audit',
+]) {
   await assertAnonymousDenied(url, apiKey, table);
 }
+
+await assertAnonymousInsertDenied(url, apiKey, 'event_sources', {
+  event_id: '00000000-0000-4000-8000-000000000000',
+  source_type: 'social',
+  publisher_name: 'Anonymous bypass',
+  url: 'https://example.com/blocked',
+});
+await assertAnonymousInsertDenied(url, apiKey, 'event_action_links', {
+  event_id: '00000000-0000-4000-8000-000000000000',
+  link_type: 'official',
+  provider_name: 'Anonymous bypass',
+  label: 'View official details',
+  url: 'https://example.com/blocked',
+});
+await assertAnonymousProvenanceRpcDenied(url, apiKey);
 
 for (const table of ['venues', 'events']) {
   await assertAnonymousDeleteDenied(url, apiKey, table);
