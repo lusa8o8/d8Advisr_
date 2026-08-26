@@ -559,6 +559,10 @@ admin-first foundation and consumer citation/CTA surface are in scope; ticket
 sales, scraping, affiliate analytics, automatic price extraction, and partner
 self-service link revisions are not.
 
+Phase 4.8A Slice 1 is delivered to the main project as an additive, empty data
+foundation. Slice 2 admin intake and the reviewed draft manifest are the
+immediate next work; no researched events have been seeded yet.
+
 ### Phase 5 — Claim submission and approval
 
 Status: deliberately deferred until after consumer launch readiness and real

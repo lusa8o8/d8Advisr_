@@ -1,7 +1,8 @@
 # Phase 4.8A — Event Provenance and Action Links
 
-Status: discovery complete; bounded implementation plan proposed; no schema or
-client implementation has started.
+Status: Slice 1 database foundation is delivered to the main project. Slice 2
+admin intake and the reviewed seed manifest are next. No event seed rows have
+been inserted.
 
 Decision date: 25 August 2026
 
@@ -156,6 +157,40 @@ arrangements require their own explicit product contract.
    partner, admin, and retired/draft/live/cancelled parent states.
 
 Suggested commit: `feat(db): add event provenance and action links`
+
+#### Slice 1 delivery — 26 August 2026
+
+Delivered migrations:
+
+- `20260826100000_event_provenance_and_action_links.sql`; and
+- `20260826103000_fix_event_provenance_parent_visibility.sql`.
+
+The first migration adds separate evidence, external-action, and immutable
+audit tables; admin-only idempotent replacement; server-owned listing origin;
+and the verified-source publication guard only for imported events. It creates
+no events and performs no backfill.
+
+Production verification found that an inline child-policy query required a
+table-level `events` grant that the hardened event contract deliberately does
+not expose. The forward repair replaces that query with a narrow
+security-definer boolean visibility helper. It does not widen event-table
+grants or return private event rows.
+
+Verified:
+
+- focused Phase 4.8A static contract checks;
+- session lifecycle and workspace typecheck;
+- pre/post production read-only baseline (19 venues, 8 events);
+- public empty reads for both new child tables;
+- anonymous insert denial for both child tables;
+- anonymous denial for the admin replacement RPC and audit table;
+- linked database lint with no schema errors; and
+- matching local/remote migration history through `20260826103000`.
+
+Authenticated admin mutation, optimistic-conflict, request retry, verified
+import publication, and consumer visibility with real rows remain acceptance
+for Slice 2's admin intake. Do not manufacture disposable identities or leave
+test event fixtures in the main project merely to close those checks early.
 
 ### Slice 2 — Admin intake and seed manifest
 

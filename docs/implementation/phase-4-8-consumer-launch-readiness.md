@@ -1,9 +1,9 @@
 # Phase 4.8 — Consumer Launch Readiness
 
-Status: consumer discovery remains the active workstream. Event provenance and
-external action links are now a documented launch-readiness prerequisite before
-the researched Lusaka event seed batch; no implementation slice has been
-accepted yet.
+Status: consumer discovery remains the active workstream. Phase 4.8A Slice 1
+event provenance/action-link database foundation is delivered; admin intake,
+reviewed draft import, and consumer presentation remain before the researched
+Lusaka seed batch can go live.
 
 Decision date: 25 August 2026
 
