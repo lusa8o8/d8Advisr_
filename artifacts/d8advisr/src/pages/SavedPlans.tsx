@@ -127,12 +127,13 @@ export function SavedPlans() {
   const upcomingCount = PLANS.filter(p => p.status === 'upcoming').length;
 
   return (
-    <div className={cn("flex-1 min-h-0 flex flex-col bg-[#F7F7F7]", consumerDesktopClass('standard'))}>
+    <div className="flex-1 min-h-0 flex flex-col bg-[#F7F7F7]">
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
 
         {/* ── HEADER ────────────────────────────────────────────────────────── */}
-        <div className="bg-white px-6 pt-10 lg:pt-14 pb-4 lg:pb-5 border-b border-gray-100 sticky top-0 z-20 shadow-sm">
-          <div className="flex items-center justify-between mb-1">
+        <div className="bg-white pt-10 lg:pt-14 pb-4 lg:pb-5 border-b border-gray-100 sticky top-0 z-20 shadow-sm">
+          <div className={cn(consumerDesktopClass('standard'), "px-6")}>
+            <div className="flex items-center justify-between mb-1">
             <div>
               <h1 className="text-[24px] font-black text-gray-900 leading-tight">My Plans</h1>
               <p className="text-[13px] text-gray-400 font-medium mt-0.5">
@@ -144,29 +145,30 @@ export function SavedPlans() {
             <button className="w-10 h-10 rounded-2xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 active:scale-95 transition-transform shadow-sm">
               <Filter size={18} />
             </button>
-          </div>
+            </div>
 
-          {/* Filter tabs */}
-          <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar">
-            {FILTER_TABS.map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveFilter(tab)}
-                className={cn(
-                  "whitespace-nowrap px-4 py-2 rounded-full text-[12px] font-bold transition-all shrink-0",
-                  activeFilter === tab
-                    ? "bg-[#FF5A5F] text-white shadow-sm"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                )}
-              >
-                {tab}
-              </button>
-            ))}
+            {/* Filter tabs */}
+            <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar">
+              {FILTER_TABS.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveFilter(tab)}
+                  className={cn(
+                    "whitespace-nowrap px-4 py-2 rounded-full text-[12px] font-bold transition-all shrink-0",
+                    activeFilter === tab
+                      ? "bg-[#FF5A5F] text-white shadow-sm"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  )}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* ── PLAN LIST ─────────────────────────────────────────────────────── */}
-        <div className="px-4 pt-4 flex flex-col gap-3">
+        <div className={cn(consumerDesktopClass('standard'), "px-4 pt-4 flex flex-col gap-3")}>
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center px-6">
               <span className="text-5xl mb-4">📋</span>
@@ -271,7 +273,7 @@ export function SavedPlans() {
         </div>
 
         {/* ── NEW PLAN PROMPT ───────────────────────────────────────────────── */}
-        <div className="mx-4 mt-4">
+        <div className={cn(consumerDesktopClass('standard'), "px-4 mt-4")}>
           <button
             onClick={() => setLocation('/plan/generate')}
             className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl border-2 border-dashed border-gray-300 text-gray-500 font-semibold text-[14px] active:scale-[0.98] transition-transform hover:border-[#FF5A5F]/50 hover:text-[#FF5A5F] group"

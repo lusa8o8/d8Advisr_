@@ -19,10 +19,11 @@ export function NotificationsCenter() {
   const { notifications, unreadCount, loading, markRead, markAllRead } = useConsumerNotifications();
 
   return (
-    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar", consumerDesktopClass('reading'))}>
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
       {/* Header */}
-      <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
-        <div className="flex justify-between items-center mb-2">
+      <div className="bg-card pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
+        <div className={cn(consumerDesktopClass('reading'), "px-6")}>
+          <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-4">
             <button
               onClick={() => window.history.back()}
@@ -40,10 +41,11 @@ export function NotificationsCenter() {
               <CheckCheck size={16} /> Mark all read
             </button>
           )}
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col pb-10">
+      <div className={cn(consumerDesktopClass('reading'), "flex flex-col pb-10")}>
         {loading ? (
           <div className="py-20 flex justify-center items-center">
             <Loader2 size={28} className="animate-spin text-primary" />

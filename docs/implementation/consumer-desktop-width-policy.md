@@ -48,17 +48,23 @@ constrained merely to satisfy this policy.
 2. Apply `reading` to standard utility/form pages and `standard` to the
    saved-plans/discovery-style pages. Keep Home's existing `max-w-5xl` shape.
    **Done for the first standard-page slice.**
+   The first browser review found that constraining a page root also constrained
+   its background and sticky header. Plans and Notifications now keep the page
+   canvas full width and constrain only their header contents and readable body.
+   Remaining pages should follow this same inner-surface pattern as they are
+   reviewed.
 3. Leave map, admin, media heroes, and onboarding-specific layouts untouched
    in this slice. **Done.**
 4. Run the consumer containment check, workspace typecheck, and diff hygiene;
    then perform a desktop browser pass at a wide viewport and at the 1024px
-   shell breakpoint. **Automated checks done; browser pass remains the next
-   acceptance step.**
+   shell breakpoint. **Automated checks and the wide-viewport browser pass are
+   done for Plans and Notifications; the 1024px pass and remaining page review
+   are still open.**
 
 ## Acceptance notes
 
-- At desktop widths, standard pages no longer stretch to the full area beside
-  the sidebar.
+- At desktop widths, reviewed surfaces keep their background/header full width
+  while the content column is centered (`standard` or `reading`).
 - At mobile widths, layout and full-bleed feed behavior are unchanged.
 - At the `lg` breakpoint, existing desktop shell spacing remains stable.
 - Full-width exceptions continue to use the entire available canvas.
