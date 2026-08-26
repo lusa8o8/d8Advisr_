@@ -4,6 +4,7 @@ import { Settings, Heart, Star, Award, ChevronRight, Camera, X, LogOut } from 'l
 import { BottomNav } from "@/components/SharedUI";
 import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
+import { useAuth } from "@workspace/d8-core/auth";
 
 const AVATARS = [
   { id: "romantic",    emoji: "🥰", label: "Romantic"     },
@@ -19,6 +20,7 @@ const AVATARS = [
 
 export function ProfileOverview() {
   const [, setLocation] = useLocation();
+  const { signOut } = useAuth();
   const { displayName, avatarUrl, profile } = useProfile();
   const { formatPrice, activeRegion } = useRegion();
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -37,6 +39,11 @@ export function ProfileOverview() {
   }
 
   const currentAvatar = AVATARS.find(a => a.id === avatar);
+
+  const handleSignOut = async () => {
+    await signOut();
+    setLocation('/');
+  };
 
   // Emoji choice always wins over OAuth avatar URL.
   // avatarUrl (from Google) only shows when no emoji is explicitly selected.
@@ -212,7 +219,7 @@ export function ProfileOverview() {
           {/* Sign Out */}
           <div className="pt-6 pb-2">
             <button
-              onClick={() => setLocation('/')}
+              onClick={() => void handleSignOut()}
               className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl border border-border bg-card text-primary font-bold text-[15px] hover:bg-[#FFF0F1] active:scale-[0.98] transition-all"
             >
               <LogOut size={18} strokeWidth={2.5} />
