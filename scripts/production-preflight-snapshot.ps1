@@ -1,9 +1,14 @@
 param(
-  [string]$OutputPath = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'd8advisr-main-preflight-2026-08-24.json.enc')
+  [string]$OutputPath
 )
 
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
+
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+  $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+  $OutputPath = Join-Path $workspaceRoot "local-backups\main-preflight-$timestamp.json.enc"
+}
 
 function ConvertFrom-SecureValue {
   param([System.Security.SecureString]$Value)
