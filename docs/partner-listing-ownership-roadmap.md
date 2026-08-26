@@ -519,26 +519,36 @@ usage warrants them.
 
 ### Bounded admin listing-retirement detour
 
-Status: plan accepted; Slice 1 is delivered and verified on the main project.
-Slice 2 has not started.
+Status: complete at MVP level and verified on the main project. Slice 1 provides
+the database lifecycle and audit boundary; Slice 2 provides the admin controls,
+retired directory, restoration flow, and retirement-aware reads. Automated
+checks and high-level browser journeys pass.
 
-Administrators currently have no safe product action for removing obsolete
-seeded, imported, unclaimed, or D8-admin-created venues and events. Raw database
-deletion is not the contract: it can cascade through events, interests,
-notifications, audits, revisions, and venue relationships, while published
-events are already protected from deletion.
+Administrators can safely retire obsolete seeded, imported, unclaimed, and
+D8-admin-created venues and events without physical deletion. Raw database
+deletion is not the contract because it can cascade through events, interests,
+notifications, audits, revisions, and venue relationships.
 
-Use `docs/implementation/admin-listing-retirement.md`. The proposed MVP action
-is reversible retirement with required reason and audit, restoration only to
-draft, explicit cancellation for upcoming published events, and a block when a
-venue still has future live events. Physical purge is deferred maintenance.
+Use `docs/implementation/admin-listing-retirement.md`. The delivered MVP action
+is reversible retirement with required reason and immutable audit, restoration
+only to a non-public draft/paused state, explicit cancellation for upcoming
+published events, and a block when a venue still has future live events. The
+normal 24-hour cancelled-event visibility window remains the default, with a
+separate acknowledged and audited administrator override for tests, duplicates,
+unsafe content, or operational mistakes. Physical purge remains deferred
+maintenance. Delivery is recorded in commits `9b1a56c`, `ba8484c`, `798bf4a`,
+and override commit `36cd2a1`.
+
 This bounded detour does not reopen claims, membership cutover, or the broader
-admin/partner expansion, and Phase 4.8 remains the active product workstream.
+admin/partner expansion. No further retirement work is required for consumer
+launch readiness unless browser behavior or operational evidence exposes a
+defect.
 
 ### Phase 4.8 — Consumer launch readiness
 
-Status: next active workstream; begin with fresh discovery rather than assuming
-the current consumer problems or redesign scope from prior sessions.
+Status: active workstream. Continue with fresh discovery for each consumer
+slice rather than assuming the current problems or redesign scope from prior
+sessions.
 
 Outcome: make the consumer application coherent, trustworthy, responsive, and
 launch-ready across authentication, onboarding, discovery, planning, saved
