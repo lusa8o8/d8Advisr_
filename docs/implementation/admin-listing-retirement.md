@@ -256,6 +256,17 @@ Automated delivery evidence on 25 August 2026:
 No listing row was retired or restored during automated delivery. Those state
 changes are reserved for the explicit browser journeys below.
 
+### Cancellation visibility override amendment - 26 August 2026
+
+The 24-hour cancelled-event visibility window remains the default consumer
+protection. Administrators may override it when a D8-managed event must be
+removed immediately, including duplicate tests, unsafe content, or operational
+mistakes. A recently cancelled event presents a second explicit warning in the
+retirement confirmation. The administrator must still provide the normal
+retirement reason, and the immutable retirement audit records
+`cancellation_visibility_overridden` along with whether the visibility window
+was active. Partner-owned event retirement remains outside this flow.
+
 ### Slice 3 - controlled purge tooling (deferred)
 
 Only add irreversible purge tooling if accumulated retired data or media cost
@@ -279,6 +290,8 @@ It is not a prerequisite for the admin feature.
   remain.
 - Event integrity: a published live event cannot be retired without
   cancellation; cancellation behavior and notification delivery remain intact.
+  A recent cancellation is blocked by default, while the explicit admin
+  override succeeds and is distinguishable in retirement audit state.
 - Venue integrity: a venue with a future live event cannot retire; no linked
   event is cascaded or mutated.
 - Restore: an eligible retired venue or never-published event restores as draft;
@@ -298,8 +311,9 @@ It is not a prerequisite for the admin feature.
    automatically.
 2. **Consumer-impact guardrails:** attempt to retire an upcoming live event and
    confirm the UI requires cancellation; attempt to retire its venue and confirm
-   the linked-future-event block. Cancel or move the event through the normal
-   flow, then confirm retirement becomes available without losing history.
+   the linked-future-event block. Cancel the event through the normal flow,
+   verify that retirement requires the separate 24-hour visibility override,
+   then confirm the audited override retires it without losing history.
 
 ## Delivery sequence
 

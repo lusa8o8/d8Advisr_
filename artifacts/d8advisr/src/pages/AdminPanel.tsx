@@ -231,6 +231,7 @@ export function AdminPanel() {
   const [retirementIntent, setRetirementIntent] = useState<RetirementIntent | null>(null);
   const [retirementReason, setRetirementReason] = useState('');
   const [retirementAccepted, setRetirementAccepted] = useState(false);
+  const [retirementVisibilityOverrideAccepted, setRetirementVisibilityOverrideAccepted] = useState(false);
   const [retirementLoading, setRetirementLoading] = useState(false);
   const [retirementError, setRetirementError] = useState<string | null>(null);
 
@@ -576,6 +577,7 @@ export function AdminPanel() {
     setRetirementIntent(intent);
     setRetirementReason('');
     setRetirementAccepted(false);
+    setRetirementVisibilityOverrideAccepted(false);
     setRetirementError(null);
   };
 
@@ -583,6 +585,12 @@ export function AdminPanel() {
     if (!retirementIntent || retirementReason.trim().length < 3 || !retirementAccepted || retirementLoading) return;
     const listing = retirementIntent.target === 'venue' ? selectedVenue : selectedEvent;
     if (!listing) return;
+    const cancellationVisibilityOverrideRequired = retirementIntent.target === 'event'
+      && retirementIntent.action === 'retire'
+      && selectedEvent?.eventStatus === 'cancelled'
+      && Boolean(selectedEvent.cancelledAt)
+      && new Date(selectedEvent.cancelledAt!).getTime() > Date.now() - 24 * 60 * 60 * 1000;
+    if (cancellationVisibilityOverrideRequired && !retirementVisibilityOverrideAccepted) return;
     setRetirementLoading(true);
     setRetirementError(null);
     try {
@@ -590,7 +598,7 @@ export function AdminPanel() {
         if (retirementIntent.action === 'retire') await retireAdminVenue(listing.id, listing.updatedAt, retirementReason);
         else await restoreAdminVenue(listing.id, listing.updatedAt, retirementReason);
       } else {
-        if (retirementIntent.action === 'retire') await retireAdminEvent(listing.id, listing.updatedAt, retirementReason);
+        if (retirementIntent.action === 'retire') await retireAdminEvent(listing.id, listing.updatedAt, retirementReason, cancellationVisibilityOverrideRequired);
         else await restoreAdminEvent(listing.id, listing.updatedAt, retirementReason);
       }
       setRetirementIntent(null);
@@ -2566,6 +2574,11 @@ export function AdminPanel() {
         const listingName = retirementIntent.target === 'venue' ? selectedVenue!.name : selectedEvent!.title;
         const currentStatus = retirementIntent.target === 'venue' ? selectedVenue!.listingStatus : selectedEvent!.eventStatus;
         const isRestore = retirementIntent.action === 'restore';
+        const cancellationVisibilityOverrideRequired = retirementIntent.target === 'event'
+          && retirementIntent.action === 'retire'
+          && selectedEvent?.eventStatus === 'cancelled'
+          && Boolean(selectedEvent.cancelledAt)
+          && new Date(selectedEvent.cancelledAt!).getTime() > Date.now() - 24 * 60 * 60 * 1000;
         return (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
             <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
@@ -2588,10 +2601,16 @@ export function AdminPanel() {
                 <input type="checkbox" checked={retirementAccepted} onChange={event => setRetirementAccepted(event.target.checked)} className="mt-1" />
                 <span className="text-[12px] leading-5 text-gray-700">I reviewed the listing, its current state and the lifecycle impact described above.</span>
               </label>
+              {cancellationVisibilityOverrideRequired && (
+                <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+                  <input type="checkbox" checked={retirementVisibilityOverrideAccepted} onChange={event => setRetirementVisibilityOverrideAccepted(event.target.checked)} className="mt-1" />
+                  <span className="text-[12px] leading-5 text-amber-900"><strong>Override the 24-hour cancellation notice.</strong> I understand this removes the event from discovery before consumers have had the normal visibility window. This override and my reason will be recorded.</span>
+                </label>
+              )}
               {retirementError && <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">{retirementError}</div>}
               <div className="mt-5 flex gap-2">
                 <button type="button" onClick={() => setRetirementIntent(null)} disabled={retirementLoading} className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-[13px] font-bold text-gray-600">Keep listing</button>
-                <button type="button" onClick={() => void handleListingLifecycle()} disabled={!retirementAccepted || retirementReason.trim().length < 3 || retirementLoading}
+                <button type="button" onClick={() => void handleListingLifecycle()} disabled={!retirementAccepted || (cancellationVisibilityOverrideRequired && !retirementVisibilityOverrideAccepted) || retirementReason.trim().length < 3 || retirementLoading}
                   className={cn("flex-1 rounded-xl px-4 py-3 text-[13px] font-bold text-white disabled:opacity-40", isRestore ? "bg-blue-600" : "bg-red-600")}>
                   {retirementLoading ? 'Saving...' : isRestore ? 'Restore to review' : 'Retire listing'}
                 </button>

@@ -286,7 +286,7 @@ export async function insertVenueInspection(input: {
 export async function fetchAdminEvents(): Promise<AdminEvent[]> {
   const { data, error } = await supabase
     .from('events')
-    .select('id,region_id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,emoji,event_status,retired_at,retired_by,retirement_reason,retired_from_status,created_at,updated_at,venues(name)')
+    .select('id,region_id,venue_id,partner_id,organizer_organization_id,source,title,description,category,vibes,cover_image,images,starts_at,ends_at,price_pp,currency,capacity,is_free,is_featured,city,event_location_kind,external_location_name,external_location_address,emoji,event_status,cancelled_at,retired_at,retired_by,retirement_reason,retired_from_status,created_at,updated_at,venues(name)')
     .order('updated_at', { ascending: false });
   throwIfError(error);
   return ((data ?? []) as unknown as AdminEventRow[]).map(adminEventFromRow);
@@ -309,12 +309,14 @@ async function runRetirementRpc(
   listingId: string,
   expectedUpdatedAt: string,
   reason: string,
+  extraArguments: Record<string, unknown> = {},
 ): Promise<AdminRetirementResult> {
   const { data, error } = await supabase.rpc(rpc, {
     [idKey]: listingId,
     p_expected_updated_at: expectedUpdatedAt,
     p_reason: reason.trim(),
     p_request_key: crypto.randomUUID(),
+    ...extraArguments,
   });
   throwIfError(error);
   if (!data) throw new Error('Listing lifecycle update failed');
@@ -329,8 +331,10 @@ export function restoreAdminVenue(venueId: string, expectedUpdatedAt: string, re
   return runRetirementRpc('admin_restore_venue', 'p_venue_id', venueId, expectedUpdatedAt, reason);
 }
 
-export function retireAdminEvent(eventId: string, expectedUpdatedAt: string, reason: string) {
-  return runRetirementRpc('admin_retire_event', 'p_event_id', eventId, expectedUpdatedAt, reason);
+export function retireAdminEvent(eventId: string, expectedUpdatedAt: string, reason: string, overrideCancellationVisibility = false) {
+  return runRetirementRpc('admin_retire_event', 'p_event_id', eventId, expectedUpdatedAt, reason, {
+    p_override_cancellation_visibility: overrideCancellationVisibility,
+  });
 }
 
 export function restoreAdminEvent(eventId: string, expectedUpdatedAt: string, reason: string) {

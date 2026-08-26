@@ -641,6 +641,7 @@ export interface AdminEventRow {
   external_location_address: string | null;
   emoji: string | null;
   event_status: string;
+  cancelled_at: string | null;
   retired_at: string | null;
   retired_by: string | null;
   retirement_reason: string | null;
@@ -677,6 +678,7 @@ export interface AdminEvent {
   externalLocationAddress: string | null;
   emoji: string;
   eventStatus: string;
+  cancelledAt: string | null;
   retiredAt: string | null;
   retiredBy: string | null;
   retirementReason: string | null;
@@ -713,6 +715,7 @@ export function adminEventFromRow(row: AdminEventRow): AdminEvent {
     externalLocationAddress: row.external_location_address,
     emoji: row.emoji ?? '✨',
     eventStatus: row.event_status,
+    cancelledAt: row.cancelled_at,
     retiredAt: row.retired_at,
     retiredBy: row.retired_by,
     retirementReason: row.retirement_reason,
