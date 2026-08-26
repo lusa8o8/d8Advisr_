@@ -5,7 +5,8 @@ import type { AdminEvent } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
 import { AdminListingMediaEditor } from './AdminListingMediaEditor';
-import { alignEventEndWithStart, EVENT_EMOJI_OPTIONS, EVENT_PUBLISHING_POLICY_PATH, EVENT_PUBLISHING_POLICY_VERSION, toDateTimeLocalInput } from '@workspace/d8-core/event-policy';
+import { alignEventEndWithStart, compileEventSchedule, EVENT_EMOJI_OPTIONS, EVENT_PUBLISHING_POLICY_PATH, EVENT_PUBLISHING_POLICY_VERSION, splitEventSchedule, toDateTimeLocalInput } from '@workspace/d8-core/event-policy';
+import { AdminImportedEventSchedule } from './AdminImportedEventSchedule';
 
 interface Props {
   event: AdminEvent;
@@ -47,6 +48,7 @@ function initialDraft(event: AdminEvent) {
     description: event.description ?? '',
     startsAt: toDateTimeLocalInput(event.startsAt),
     endsAt: toDateTimeLocalInput(event.endsAt),
+    importedSchedule: splitEventSchedule(event.startsAt, event.endsAt),
     locationKind: event.eventLocationKind,
     venueId: event.venueId ?? '',
     externalLocationName: event.externalLocationName ?? '',
@@ -79,11 +81,17 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
 
   useEffect(() => setDraft(initialDraft(event)), [event]);
 
-  const buildPayload = (): Record<string, unknown> => ({
+  const currentSchedule = () => event.source === 'import'
+    ? compileEventSchedule(draft.importedSchedule)
+    : { startsAt: draft.startsAt, endsAt: draft.endsAt || null };
+
+  const buildPayload = (): Record<string, unknown> => {
+    const schedule = currentSchedule();
+    return {
     title: draft.title.trim(), region_id: draft.regionId, city: draft.city.trim(),
     category: draft.category.trim() || null, description: draft.description.trim() || null,
-    starts_at: new Date(draft.startsAt).toISOString(),
-    ends_at: draft.endsAt ? new Date(draft.endsAt).toISOString() : null,
+    starts_at: new Date(schedule.startsAt).toISOString(),
+    ends_at: schedule.endsAt ? new Date(schedule.endsAt).toISOString() : null,
     event_location_kind: draft.locationKind,
     venue_id: draft.locationKind === 'd8_venue' ? (draft.venueId.trim() || null) : null,
     external_location_name: draft.locationKind === 'external' ? (draft.externalLocationName.trim() || null) : null,
@@ -93,7 +101,8 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
     is_free: draft.isFree, is_featured: draft.isFeatured,
     cover_image: draft.coverImage?.trim() || null, images: draft.images ?? [],
     vibes: tags(draft.vibes), emoji: draft.emoji?.trim() || '✨',
-  });
+    };
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -105,27 +114,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
     try {
       const result = await updateAdminLiveEvent(
         event.id,
-        {
-          title: draft.title.trim(),
-          region_id: draft.regionId,
-          city: draft.city.trim(),
-          category: draft.category.trim() || null,
-          description: draft.description.trim() || null,
-          starts_at: new Date(draft.startsAt).toISOString(),
-          ends_at: draft.endsAt ? new Date(draft.endsAt).toISOString() : null,
-          event_location_kind: draft.locationKind,
-          venue_id: draft.locationKind === 'd8_venue' ? (draft.venueId.trim() || null) : null,
-          external_location_name: draft.locationKind === 'external' ? (draft.externalLocationName.trim() || null) : null,
-          external_location_address: draft.locationKind === 'external' ? (draft.externalLocationAddress.trim() || null) : null,
-          price_pp: draft.isFree ? 0 : Number(draft.price) || 0,
-          capacity: draft.capacity ? Number(draft.capacity) : null,
-          is_free: draft.isFree,
-          is_featured: draft.isFeatured,
-          cover_image: draft.coverImage?.trim() || null,
-          images: draft.images ?? [],
-          vibes: tags(draft.vibes),
-          emoji: draft.emoji?.trim() || '✨',
-        },
+        buildPayload(),
         event.updatedAt,
         false,
       );
@@ -274,7 +263,7 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
             ))}
           </div>
         </label>
-        <label>
+        {event.source !== 'import' && <label>
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Starts</span>
           <input
             required
@@ -283,8 +272,8 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
             value={draft.startsAt}
             onChange={e => setDraft(c => ({ ...c, startsAt: e.target.value, endsAt: alignEventEndWithStart(c.startsAt, c.endsAt, e.target.value) }))}
           />
-        </label>
-        <label>
+        </label>}
+        {event.source !== 'import' && <label>
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Ends</span>
           <input
             type="datetime-local"
@@ -293,8 +282,10 @@ export function AdminEventLiveEdit({ event, onCancel, onSaved }: Props) {
             value={draft.endsAt}
             onChange={e => setDraft(c => ({ ...c, endsAt: e.target.value }))}
           />
-        </label>
+        </label>}
       </div>
+
+      {event.source === 'import' && <div className="mt-3"><AdminImportedEventSchedule value={draft.importedSchedule} onChange={importedSchedule => setDraft(current => ({ ...current, importedSchedule }))} /></div>}
 
       <label className="mt-3 block">
         <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Description</span>

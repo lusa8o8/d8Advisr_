@@ -5,7 +5,8 @@ import type { AdminEvent } from './adminListingModel';
 import { useListingReferences, useRegion } from '@/hooks/useRegion';
 import { VibePicker } from './AdminListingCreate';
 import { AdminListingMediaEditor } from './AdminListingMediaEditor';
-import { EVENT_EMOJI_OPTIONS } from '@workspace/d8-core/event-policy';
+import { compileEventSchedule, EVENT_EMOJI_OPTIONS, splitEventSchedule, toDateTimeLocalInput } from '@workspace/d8-core/event-policy';
+import { AdminImportedEventSchedule } from './AdminImportedEventSchedule';
 
 interface Props {
   event: AdminEvent;
@@ -27,8 +28,9 @@ function initialDraft(event: AdminEvent) {
     city: event.city,
     category: event.category ?? '',
     description: event.description ?? '',
-    startsAt: event.startsAt ? event.startsAt.slice(0, 16) : '',
-    endsAt: event.endsAt ? event.endsAt.slice(0, 16) : '',
+    startsAt: toDateTimeLocalInput(event.startsAt),
+    endsAt: toDateTimeLocalInput(event.endsAt),
+    importedSchedule: splitEventSchedule(event.startsAt, event.endsAt),
     locationKind: event.eventLocationKind,
     venueId: event.venueId ?? '',
     externalLocationName: event.externalLocationName ?? '',
@@ -63,14 +65,17 @@ export function AdminEventDraftEdit({ event, onCancel, onSaved }: Props) {
     setError(null);
 
     try {
+      const eventSchedule = event.source === 'import'
+        ? compileEventSchedule(draft.importedSchedule)
+        : { startsAt: draft.startsAt, endsAt: draft.endsAt || null };
       await updateAdminDraftEvent(event.id, {
         title: draft.title.trim(),
         region_id: draft.regionId,
         city: draft.city.trim(),
         category: draft.category.trim() || null,
         description: draft.description.trim() || null,
-        starts_at: new Date(draft.startsAt).toISOString(),
-        ends_at: draft.endsAt ? new Date(draft.endsAt).toISOString() : null,
+        starts_at: new Date(eventSchedule.startsAt).toISOString(),
+        ends_at: eventSchedule.endsAt ? new Date(eventSchedule.endsAt).toISOString() : null,
         event_location_kind: draft.locationKind,
         venue_id: draft.locationKind === 'd8_venue' ? (draft.venueId.trim() || null) : null,
         external_location_name: draft.locationKind === 'external' ? (draft.externalLocationName.trim() || null) : null,
@@ -110,9 +115,11 @@ export function AdminEventDraftEdit({ event, onCancel, onSaved }: Props) {
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Physical city / locality</span><input required className={inputClass} value={draft.city} onChange={e => setDraft(c => ({ ...c, city: e.target.value }))} /></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Category</span><select required className={inputClass} value={draft.category} onChange={e => setDraft(c => ({ ...c, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
         <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Event icon</span><div className="flex flex-wrap gap-2">{EVENT_EMOJI_OPTIONS.map(icon => <button key={icon} type="button" aria-label={`Use ${icon} as event icon`} onClick={() => setDraft(c => ({ ...c, emoji: icon }))} className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition ${draft.emoji === icon ? 'bg-[#FFF0F1] ring-2 ring-[#FF5A5F]' : 'bg-gray-50 hover:bg-gray-100'}`}>{icon}</button>)}</div></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Starts</span><input required type="datetime-local" className={inputClass} value={draft.startsAt} onChange={e => setDraft(c => ({ ...c, startsAt: e.target.value }))} /></label>
-        <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Ends</span><input type="datetime-local" className={inputClass} value={draft.endsAt} onChange={e => setDraft(c => ({ ...c, endsAt: e.target.value }))} /></label>
+        {event.source !== 'import' && <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Starts</span><input required type="datetime-local" className={inputClass} value={draft.startsAt} onChange={e => setDraft(c => ({ ...c, startsAt: e.target.value }))} /></label>}
+        {event.source !== 'import' && <label><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Ends</span><input type="datetime-local" className={inputClass} value={draft.endsAt} onChange={e => setDraft(c => ({ ...c, endsAt: e.target.value }))} /></label>}
       </div>
+
+      {event.source === 'import' && <div className="mt-3"><AdminImportedEventSchedule value={draft.importedSchedule} onChange={importedSchedule => setDraft(current => ({ ...current, importedSchedule }))} /></div>}
 
       <label className="mt-3 block"><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-400">Description</span><textarea maxLength={5000} className={`${inputClass} min-h-24 resize-y`} value={draft.description} onChange={e => setDraft(c => ({ ...c, description: e.target.value }))} /></label>
       

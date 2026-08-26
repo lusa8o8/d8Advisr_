@@ -225,6 +225,15 @@ admin-only RPC's stable request key and optimistic event version; imported
 records are first created as drafts, marked as imports through that RPC, and
 cannot be selected for direct publication during intake.
 
+A follow-up schedule correction removes the duplicate-looking timestamp
+experience for researched imports. Ordinary events retain the existing native
+start/end controls. Selecting `Researched/imported event` hides those controls
+and exposes one dedicated schedule with separate start date, start time,
+optional end date, and optional end time. Draft and live imported editors use
+the same component, and all paths still write canonical `starts_at` and
+`ends_at`. Evidence observation is now labelled `Evidence checked on` and is
+date-only so it cannot be mistaken for the event schedule.
+
 `data/event-imports/lusaka-launch-v1.json` is the first reviewed manifest. It
 contains two future, taxonomy-compatible draft records with stable creation and
 provenance request keys. Six unresolved groups remain explicit holds for
@@ -241,9 +250,14 @@ Verified locally:
 - session lifecycle checks; and
 - complete workspace typecheck.
 
+Authenticated detail-manager acceptance also saved two private unverified
+sources and one unverified action on an existing event, reloaded with exactly
+one copy of each, and removed all three successfully. The child rows were
+cleaned up; the immutable audit entries remain by design.
+
 Not yet performed:
 
-- authenticated admin create/reload/edit browser journey;
+- authenticated imported-event creation with the dedicated schedule UI;
 - intentional `--apply --confirm-main` of the two reviewed drafts; or
 - database acceptance with those real rows. Publication remains a separate
   human review after prices and action availability are rechecked.

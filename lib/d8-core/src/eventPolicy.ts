@@ -73,6 +73,49 @@ export function alignEventEndWithStart(
   return toDateTimeLocalInput(new Date(nextStartDate.getTime() + duration));
 }
 
+export interface EventScheduleParts {
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+}
+
+export function splitEventSchedule(
+  startsAt: string | Date | null | undefined,
+  endsAt: string | Date | null | undefined,
+): EventScheduleParts {
+  const start = toDateTimeLocalInput(startsAt);
+  const end = toDateTimeLocalInput(endsAt);
+  return {
+    startDate: start.slice(0, 10),
+    startTime: start.slice(11, 16),
+    endDate: end.slice(0, 10),
+    endTime: end.slice(11, 16),
+  };
+}
+
+export function compileEventSchedule(parts: EventScheduleParts): {
+  startsAt: string;
+  endsAt: string | null;
+} {
+  if (!parts.startDate || !parts.startTime) {
+    throw new Error('Enter both the event start date and start time.');
+  }
+  if (Boolean(parts.endDate) !== Boolean(parts.endTime)) {
+    throw new Error('Enter both the event end date and end time, or leave both blank.');
+  }
+
+  const startsAt = `${parts.startDate}T${parts.startTime}`;
+  const endsAt = parts.endDate && parts.endTime ? `${parts.endDate}T${parts.endTime}` : null;
+  const startTime = new Date(startsAt).getTime();
+  const endTime = endsAt ? new Date(endsAt).getTime() : null;
+  if (Number.isNaN(startTime)) throw new Error('Enter a valid event start date and time.');
+  if (endTime != null && (Number.isNaN(endTime) || endTime <= startTime)) {
+    throw new Error('Event end date and time must be after the start.');
+  }
+  return { startsAt, endsAt };
+}
+
 export function canPublishedPriceChange(args: {
   previouslyPublished: boolean;
   currentIsFree: boolean;

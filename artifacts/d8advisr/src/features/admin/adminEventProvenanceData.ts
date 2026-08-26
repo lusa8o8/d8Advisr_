@@ -158,7 +158,7 @@ export async function fetchAdminEventProvenance(
       verificationStatus: row.verification_status,
       isPrimary: row.is_primary,
       showPublicly: row.show_publicly,
-      observedAt: row.observed_at ? row.observed_at.slice(0, 16) : '',
+      observedAt: row.observed_at ? row.observed_at.slice(0, 10) : '',
       lastCheckedAt: row.last_checked_at,
       internalNote: row.internal_note ?? '',
     })),

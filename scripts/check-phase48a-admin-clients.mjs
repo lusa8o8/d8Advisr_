@@ -29,8 +29,26 @@ requireText('artifacts/d8advisr/src/features/admin/AdminEventProvenanceEditor.ts
   'Internal verification note (never public)',
   'Last checked',
   'Primary consumer action',
+  'evidence checked on',
+  'type="date"',
   "rel=\"noopener noreferrer\"",
 ], 'admin provenance editor');
+
+requireText('artifacts/d8advisr/src/features/admin/AdminImportedEventSchedule.tsx', [
+  'Researched event schedule',
+  'Start date',
+  'Start time',
+  'End date (optional)',
+  'End time (optional)',
+  'Multi-day events',
+], 'imported event schedule');
+
+requireText('lib/d8-core/src/eventPolicy.ts', [
+  'export interface EventScheduleParts',
+  'export function splitEventSchedule',
+  'export function compileEventSchedule',
+  'Event end date and time must be after the start.',
+], 'imported schedule contract');
 
 requireText('artifacts/d8advisr/src/features/admin/AdminListingCreate.tsx', [
   'event-provenance',
@@ -40,7 +58,22 @@ requireText('artifacts/d8advisr/src/features/admin/AdminListingCreate.tsx', [
   'replaceAdminEventProvenance(',
   'if (requestedPublication === \'live\') await publishAdminEvent(id)',
   'await onEventCreated(id)',
+  "eventProvenance.isImported\n          ? compileEventSchedule(event.importedSchedule)",
+  "!eventProvenance.isImported && <Field label=\"Starts\"",
+  'importedSchedule={<AdminImportedEventSchedule',
 ], 'admin event create integration');
+
+requireText('artifacts/d8advisr/src/features/admin/AdminEventDraftEdit.tsx', [
+  "event.source === 'import'",
+  'compileEventSchedule(draft.importedSchedule)',
+  '<AdminImportedEventSchedule',
+], 'imported draft schedule');
+
+requireText('artifacts/d8advisr/src/features/admin/AdminEventLiveEdit.tsx', [
+  "event.source === 'import'",
+  'compileEventSchedule(draft.importedSchedule)',
+  '<AdminImportedEventSchedule',
+], 'imported live schedule');
 
 requireText('artifacts/d8advisr/src/pages/AdminPanel.tsx', [
   '<AdminEventProvenanceManager',

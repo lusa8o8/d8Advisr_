@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ExternalLink, FileCheck2, Link2, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import type { AdminEvent } from './adminListingModel';
 import {
@@ -75,11 +75,13 @@ export function AdminEventProvenanceFields({
   onChange,
   allowImportToggle = true,
   importLocked = false,
+  importedSchedule,
 }: {
   value: EventProvenanceDraft;
   onChange: (next: EventProvenanceDraft) => void;
   allowImportToggle?: boolean;
   importLocked?: boolean;
+  importedSchedule?: ReactNode;
 }) {
   return (
     <div className="space-y-4">
@@ -101,6 +103,8 @@ export function AdminEventProvenanceFields({
         </label>
       )}
 
+      {value.isImported && importedSchedule}
+
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div>
@@ -120,7 +124,7 @@ export function AdminEventProvenanceFields({
                 <input aria-label={`Source ${index + 1} title`} maxLength={250} placeholder="Source title (optional)" className={inputClass} value={source.sourceTitle} onChange={e => onChange(updateSource(value, source.clientId, { sourceTitle: e.target.value }))} />
                 <input aria-label={`Source ${index + 1} URL`} type="url" maxLength={1000} placeholder="https://" className={inputClass} value={source.url} onChange={e => onChange(updateSource(value, source.clientId, { url: e.target.value }))} />
                 <select aria-label={`Source ${index + 1} verification status`} className={inputClass} value={source.verificationStatus} onChange={e => onChange(updateSource(value, source.clientId, { verificationStatus: e.target.value as EventSourceDraft['verificationStatus'] }))}><option value="unverified">Unverified</option><option value="verified">Verified now</option><option value="stale">Stale</option><option value="rejected">Rejected</option></select>
-                <input aria-label={`Source ${index + 1} observed at`} type="datetime-local" className={inputClass} value={source.observedAt} onChange={e => onChange(updateSource(value, source.clientId, { observedAt: e.target.value }))} />
+                <input aria-label={`Source ${index + 1} evidence checked on`} type="date" className={inputClass} value={source.observedAt.slice(0, 10)} onChange={e => onChange(updateSource(value, source.clientId, { observedAt: e.target.value }))} />
               </div>
               <textarea aria-label={`Source ${index + 1} internal note`} maxLength={1000} placeholder="Internal verification note (never public)" className={`${inputClass} mt-2 min-h-16 resize-y`} value={source.internalNote} onChange={e => onChange(updateSource(value, source.clientId, { internalNote: e.target.value }))} />
               <div className="mt-2 flex flex-wrap gap-4 text-[11px] font-semibold text-gray-600">

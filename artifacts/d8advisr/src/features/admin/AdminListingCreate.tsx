@@ -11,8 +11,10 @@ import {
   EVENT_PUBLISHING_POLICY_PATH,
   EVENT_PUBLISHING_POLICY_VERSION,
   alignEventEndWithStart,
+  compileEventSchedule,
   parseEventCapacityInput,
   parseEventPriceInput,
+  splitEventSchedule,
 } from '@workspace/d8-core/event-policy';
 import {
   createAdminEvent,
@@ -28,6 +30,7 @@ import {
   replaceAdminEventProvenance,
 } from './adminEventProvenanceData';
 import { AdminEventProvenanceFields, validateEventProvenanceDraft } from './AdminEventProvenanceEditor';
+import { AdminImportedEventSchedule } from './AdminImportedEventSchedule';
 
 interface Props {
   venues: Venue[];
@@ -93,8 +96,9 @@ export function AdminListingCreate({ venues, onVenueCreated, onEventCreated }: P
     locationKind: 'undisclosed' as EventLocation, venueId: '',
     externalLocationName: '', externalLocationAddress: '', price: '', currency: 'K',
     images: [] as string[],
+    importedSchedule: splitEventSchedule(null, null),
     capacity: '', isFree: false, isFeatured: false, coverImage: '', vibes: '', emoji: '📅',
-  }, 3);
+  }, 4);
   const [eventProvenance, setEventProvenance, clearEventProvenance] = useSessionDraft(
     `${draftPrefix}:event-provenance`,
     emptyEventProvenanceDraft(),
@@ -144,14 +148,17 @@ export function AdminListingCreate({ venues, onVenueCreated, onEventCreated }: P
         if (event.locationKind === 'external' && !event.externalLocationName.trim()) throw new Error('Enter the external location name.');
         const eventPrice = parseEventPriceInput(event.price, event.isFree);
         const eventCapacity = parseEventCapacityInput(event.capacity);
+        const eventSchedule = eventProvenance.isImported
+          ? compileEventSchedule(event.importedSchedule)
+          : { startsAt: event.startsAt, endsAt: event.endsAt || null };
         const requestedPublication = eventProvenance.isImported ? 'draft' : publicationStatus;
         const attachProvenance = hasEventProvenance(eventProvenance);
         id = await createAdminEvent({
           requestKey,
           regionId: event.regionId,
           title: event.title, city: event.city, category: event.category,
-          description: event.description, startsAt: new Date(event.startsAt).toISOString(),
-          endsAt: event.endsAt ? new Date(event.endsAt).toISOString() : undefined,
+          description: event.description, startsAt: new Date(eventSchedule.startsAt).toISOString(),
+          endsAt: eventSchedule.endsAt ? new Date(eventSchedule.endsAt).toISOString() : undefined,
           attribution, publicationStatus: attachProvenance ? 'draft' : requestedPublication, locationKind: event.locationKind,
           venueId: event.venueId, externalLocationName: event.externalLocationName,
           externalLocationAddress: event.externalLocationAddress,
@@ -184,7 +191,7 @@ export function AdminListingCreate({ venues, onVenueCreated, onEventCreated }: P
       } else {
         clearEvent();
         clearEventProvenance();
-        setEvent(current => ({ ...current, title: '', category: '', description: '', startsAt: '', endsAt: '', venueId: '', externalLocationName: '', externalLocationAddress: '', price: '', capacity: '', coverImage: '', images: [], vibes: '' }));
+        setEvent(current => ({ ...current, title: '', category: '', description: '', startsAt: '', endsAt: '', venueId: '', externalLocationName: '', externalLocationAddress: '', price: '', capacity: '', coverImage: '', images: [], vibes: '', importedSchedule: splitEventSchedule(null, null) }));
         setEventProvenance(emptyEventProvenanceDraft());
       }
       clearKind();
@@ -289,8 +296,8 @@ export function AdminListingCreate({ venues, onVenueCreated, onEventCreated }: P
                 <Field label="Physical city / locality"><input required className={inputClass} value={event.city} onChange={e => setEvent(v => ({ ...v, city: e.target.value }))} /></Field>
                 <Field label="Category"><select required className={inputClass} value={event.category} onChange={e => setEvent(v => ({ ...v, category: e.target.value }))}><option value="">Choose category</option>{references.categories.map(item => <option key={item.id} value={item.label}>{item.label}</option>)}</select></Field>
                 <Field label="Event icon"><div className="flex flex-wrap gap-2">{EVENT_EMOJI_OPTIONS.map(icon => <button key={icon} type="button" aria-label={`Use ${icon} as the event icon`} onClick={() => setEvent(value => ({ ...value, emoji: icon }))} className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition ${event.emoji === icon ? 'bg-[#FFF0F1] ring-2 ring-[#FF5A5F]' : 'bg-gray-50 hover:bg-gray-100'}`}>{icon}</button>)}</div></Field>
-                <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value, endsAt: alignEventEndWithStart(v.startsAt, v.endsAt, e.target.value) }))} /></Field>
-                <Field label="Ends"><><input type="datetime-local" min={event.startsAt || undefined} className={inputClass} value={event.endsAt} onChange={e => setEvent(v => ({ ...v, endsAt: e.target.value }))} /><span className="mt-1 block text-[10px] text-gray-400">Defaults to two hours after the start; adjust when needed.</span></></Field>
+                {!eventProvenance.isImported && <Field label="Starts"><input required type="datetime-local" className={inputClass} value={event.startsAt} onChange={e => setEvent(v => ({ ...v, startsAt: e.target.value, endsAt: alignEventEndWithStart(v.startsAt, v.endsAt, e.target.value) }))} /></Field>}
+                {!eventProvenance.isImported && <Field label="Ends"><><input type="datetime-local" min={event.startsAt || undefined} className={inputClass} value={event.endsAt} onChange={e => setEvent(v => ({ ...v, endsAt: e.target.value }))} /><span className="mt-1 block text-[10px] text-gray-400">Defaults to two hours after the start; adjust when needed.</span></></Field>}
               </div>
               <Field label="Description"><textarea className={`${inputClass} min-h-24`} value={event.description} onChange={e => setEvent(v => ({ ...v, description: e.target.value }))} /></Field>
               <Field label="Location"><select className={inputClass} value={event.locationKind} onChange={e => setEvent(v => ({ ...v, locationKind: e.target.value as EventLocation }))}><option value="undisclosed">Undisclosed</option><option value="d8_venue">Existing live D8 venue</option><option value="external">External location</option></select></Field>
@@ -314,9 +321,13 @@ export function AdminListingCreate({ venues, onVenueCreated, onEventCreated }: P
             <AdminEventProvenanceFields
               value={eventProvenance}
               onChange={next => {
+                if (next.isImported && !eventProvenance.isImported) {
+                  setEvent(current => ({ ...current, importedSchedule: splitEventSchedule(current.startsAt, current.endsAt) }));
+                }
                 setEventProvenance(next);
                 if (next.isImported) setPublicationStatus('draft');
               }}
+              importedSchedule={<AdminImportedEventSchedule value={event.importedSchedule} onChange={importedSchedule => setEvent(current => ({ ...current, importedSchedule }))} />}
             />
           </section>
         )}
