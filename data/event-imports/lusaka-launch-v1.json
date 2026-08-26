@@ -9,7 +9,7 @@
     "timezone": "Africa/Lusaka",
     "currency_code": "ZMW"
   },
-  "reviewed_at": "2026-08-26T00:00:00+02:00",
+  "reviewed_at": "2026-08-26T15:37:35+02:00",
   "review_policy": {
     "publication_status": "draft",
     "require_future_start": true,
@@ -52,7 +52,7 @@
           "is_primary": true,
           "show_publicly": true,
           "observed_at": "2026-08-26T00:00:00+02:00",
-          "last_checked_at": "2026-08-26T00:00:00+02:00",
+          "last_checked_at": "2026-08-26T15:37:35+02:00",
           "internal_note": "Source showed 29 Aug 2026 at 14:00, Chalala, host Lowa-Mania, and a K100 ticket plus K5 booking fee. Canonical event price excludes the platform fee."
         }
       ],
@@ -63,7 +63,7 @@
           "url": "https://tickethost.co.zm/events/feier-ice",
           "status": "active",
           "is_primary": true,
-          "last_checked_at": "2026-08-26T00:00:00+02:00"
+          "last_checked_at": "2026-08-26T15:37:35+02:00"
         }
       ]
     },
@@ -101,8 +101,8 @@
           "is_primary": true,
           "show_publicly": true,
           "observed_at": "2026-08-26T00:00:00+02:00",
-          "last_checked_at": "2026-08-26T00:00:00+02:00",
-          "internal_note": "Source showed 12 Sep 2026 at 15:00, Orange Orchard on Great East Road, an 18+ restriction, and Phase 3 general admission at K210 plus K5 booking fee. Canonical event price excludes the platform fee and must be rechecked before publication."
+          "last_checked_at": "2026-08-26T15:37:35+02:00",
+          "internal_note": "Source rechecked 26 Aug 2026: 12 Sep at 15:00, Orange Orchard on Great East Road, 18+, and Phase 3 general admission at K210 plus K5 booking fee. TicketHost displayed a site-wide ticket-issuance delay notice while sales remained active. Canonical event price excludes the platform fee; recheck the notice and price before publication."
         }
       ],
       "action_links": [
@@ -112,7 +112,7 @@
           "url": "https://tickethost.co.zm/events/afro-sunsetssummer-26-festival",
           "status": "active",
           "is_primary": true,
-          "last_checked_at": "2026-08-26T00:00:00+02:00"
+          "last_checked_at": "2026-08-26T15:37:35+02:00"
         }
       ]
     }
