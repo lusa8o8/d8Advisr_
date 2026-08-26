@@ -12,7 +12,7 @@ export function CreateGroupPlan() {
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <div className="bg-card px-6 pt-14 pb-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-border">
+      <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-border">
         <button onClick={() => setLocation('/home')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">
           <ArrowLeft size={20} />
         </button>

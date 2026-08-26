@@ -274,7 +274,7 @@ function BuildAroundMode({
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       {/* Header */}
-      <div className="px-6 pt-14 pb-4 flex items-center gap-3">
+      <div className="px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex items-center gap-3">
         <button
           onClick={() => setLocation(-1 as unknown as string)}
           className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-background transition-colors"

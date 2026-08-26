@@ -16,7 +16,7 @@ export function PlanDetail() {
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <div className="bg-card px-6 pt-14 pb-6 shadow-sm z-10 sticky top-0 border-b border-border">
+      <div className="bg-card px-6 pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm z-10 sticky top-0 border-b border-border">
         <div className="flex justify-between items-center mb-4">
           <button onClick={() => setLocation('/home')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">
             <ArrowLeft size={20} />

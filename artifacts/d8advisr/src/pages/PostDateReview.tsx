@@ -475,7 +475,7 @@ export function PostDateReview() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#F7F7F7]">
-      <div className="shrink-0 px-5 pt-14 pb-4 bg-white border-b border-gray-100 relative">
+      <div className="shrink-0 px-5 pt-10 lg:pt-14 pb-3 lg:pb-4 bg-white border-b border-gray-100 relative">
         <button
           type="button"
           onClick={() => (step > 1 ? setStep(prev => (prev - 1) as 1 | 2 | 3) : setLocation('/plan/1'))}

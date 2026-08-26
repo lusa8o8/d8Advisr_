@@ -685,7 +685,7 @@ export function Settings() {
           </p>
         </div>
       ) : (
-        <div className="bg-white px-5 pt-14 pb-4 sticky top-0 z-10 shadow-sm border-b border-gray-100 flex items-center gap-4">
+        <div className="bg-white px-5 pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-10 shadow-sm border-b border-gray-100 flex items-center gap-4">
           <button
             onClick={() => setLocation('/profile')}
             className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-foreground"

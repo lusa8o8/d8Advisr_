@@ -131,7 +131,7 @@ export function SavedPlans() {
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
 
         {/* ── HEADER ────────────────────────────────────────────────────────── */}
-        <div className="bg-white px-6 pt-14 pb-5 border-b border-gray-100 sticky top-0 z-20 shadow-sm">
+        <div className="bg-white px-6 pt-10 lg:pt-14 pb-4 lg:pb-5 border-b border-gray-100 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center justify-between mb-1">
             <div>
               <h1 className="text-[24px] font-black text-gray-900 leading-tight">My Plans</h1>

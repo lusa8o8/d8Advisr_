@@ -96,7 +96,7 @@ export function BadgesPage() {
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       {/* Header */}
-      <div className="px-6 pt-14 pb-4 bg-white border-b border-border flex items-center gap-4 sticky top-0 z-20">
+      <div className="px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 bg-white border-b border-border flex items-center gap-4 sticky top-0 z-20">
         <button
           onClick={() => setLocation("/profile")}
           className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-foreground hover:bg-card transition-colors"

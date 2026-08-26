@@ -119,7 +119,7 @@ export function VenueSubmit() {
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-28">
 
       {/* Header */}
-      <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 shrink-0 shadow-sm">
+      <div className="bg-white px-5 pt-10 lg:pt-14 pb-4 lg:pb-5 border-b border-gray-100 shrink-0 shadow-sm">
         <button
           onClick={() => step === 'form' ? setStep('choose') : setLocation('/home')}
           className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-4 active:scale-95 transition-transform"

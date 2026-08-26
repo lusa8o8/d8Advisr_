@@ -9,7 +9,7 @@ export function PlanEdit() {
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <div className="bg-card px-6 pt-14 pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
+      <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
         <div className="flex items-center gap-4">
           <button onClick={() => setLocation('/plan/1')} className="text-foreground hover:opacity-70">
             <ArrowLeft size={24} />
