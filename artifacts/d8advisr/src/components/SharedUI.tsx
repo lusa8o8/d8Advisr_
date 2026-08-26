@@ -17,7 +17,7 @@ export function TopBar({ transparent = false }: { transparent?: boolean }) {
   if (isDesktop) return null;
   
   return (
-    <div className={cn("px-6 pt-14 pb-4 flex justify-between items-center sticky top-0 z-20", 
+    <div className={cn("px-6 pt-10 pb-3 flex justify-between items-center sticky top-0 z-20",
       transparent ? "bg-gradient-to-b from-white/90 to-white/0" : "bg-white shadow-sm"
     )}>
       <div className="flex items-baseline cursor-pointer" onClick={() => setLocation('/home')}>
@@ -54,7 +54,7 @@ export function BottomNav({ active }: { active: 'home' | 'plans' | 'profile' }) 
   if (isDesktop) return null;
 
   return (
-    <div className="absolute bottom-0 w-full bg-white border-t border-border pb-8 pt-4 px-8 flex justify-between items-center z-20 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+    <div className="absolute bottom-0 w-full bg-white border-t border-border pb-3 pt-3 px-8 flex justify-between items-center z-20 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
       <button 
         onClick={() => setLocation('/home')}
         className={cn("flex flex-col items-center gap-1.5 transition-colors", active === 'home' ? "text-primary" : "text-muted-foreground hover:text-foreground")}
