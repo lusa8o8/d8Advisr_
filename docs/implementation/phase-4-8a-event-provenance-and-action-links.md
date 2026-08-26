@@ -1,8 +1,10 @@
 # Phase 4.8A — Event Provenance and Action Links
 
 Status: Slice 1 database foundation is delivered to the main project. Slice 2
-admin intake and the reviewed seed manifest are next. No event seed rows have
-been inserted.
+admin intake and reviewed import tooling are implemented and committed. The
+manifest has passed dry-run validation, but no event seed rows have been
+inserted; authenticated browser acceptance and the deliberate draft import are
+the remaining Slice 2 operational checks.
 
 Decision date: 25 August 2026
 
@@ -208,6 +210,43 @@ Suggested commits:
 
 1. `feat(admin): manage event sources and action links`
 2. `chore(data): prepare reviewed Lusaka event drafts`
+
+#### Slice 2 implementation delivery — 26 August 2026
+
+Delivered locally in:
+
+- `6a68cbb feat(admin): manage event sources and action links`; and
+- `96e6942 chore(data): prepare reviewed Lusaka event drafts`.
+
+Admin event creation and event detail now support repeatable evidence sources
+and ticket/registration/official links. Unfinished creation state is retained
+in the existing session-draft boundary. Evidence replacement uses the
+admin-only RPC's stable request key and optimistic event version; imported
+records are first created as drafts, marked as imports through that RPC, and
+cannot be selected for direct publication during intake.
+
+`data/event-imports/lusaka-launch-v1.json` is the first reviewed manifest. It
+contains two future, taxonomy-compatible draft records with stable creation and
+provenance request keys. Six unresolved groups remain explicit holds for
+taxonomy mismatch, conflicting facts, or inadequate event-specific evidence.
+The paired importer is dry-run by default, targets the main project explicitly,
+requires admin authentication for `--apply`, refuses to overwrite independently
+added evidence, and verifies that imported rows remain drafts.
+
+Verified locally:
+
+- Phase 4.8A schema and RLS static checks;
+- admin provenance client contract checks;
+- manifest validation and the no-write default;
+- session lifecycle checks; and
+- complete workspace typecheck.
+
+Not yet performed:
+
+- authenticated admin create/reload/edit browser journey;
+- intentional `--apply --confirm-main` of the two reviewed drafts; or
+- database acceptance with those real rows. Publication remains a separate
+  human review after prices and action availability are rechecked.
 
 ### Slice 3 — Consumer trust surface
 

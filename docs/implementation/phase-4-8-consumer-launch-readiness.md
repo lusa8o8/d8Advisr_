@@ -1,9 +1,9 @@
 # Phase 4.8 — Consumer Launch Readiness
 
-Status: consumer discovery remains the active workstream. Phase 4.8A Slice 1
-event provenance/action-link database foundation is delivered; admin intake,
-reviewed draft import, and consumer presentation remain before the researched
-Lusaka seed batch can go live.
+Status: Phase 4.8A database foundation is on main and Slice 2 admin intake plus
+reviewed import tooling are implemented locally. Two reviewed Lusaka records
+are prepared but have not been inserted. Authenticated admin acceptance and the
+deliberate draft import precede Slice 3 consumer citation/action presentation.
 
 Decision date: 25 August 2026
 

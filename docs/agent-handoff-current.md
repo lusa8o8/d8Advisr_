@@ -1,6 +1,6 @@
 # D8Advisr Current Agent Handoff
 
-Updated: 25 August 2026
+Updated: 26 August 2026
 
 This is the authoritative context-restoration note for a new Codex session.
 It supersedes `docs/agent-handoff-2026-08-19.md`, which is retained only as
@@ -19,6 +19,16 @@ code and browser-state audit, then write a bounded mini plan for the first
 consumer slice. Phases 5 (claims), 6 (membership RLS cutover), and 7 (broad
 repository cleanup) are deliberately deferred. Do not resume them merely
 because older sections below describe their original sequence.
+
+Phase 4.8A event provenance/action links is the immediate prerequisite. Its
+database foundation is already deployed to main through migrations
+`20260826100000` and `20260826103000`. Admin intake and reviewed import tooling
+are implemented in commits `6a68cbb` and `96e6942`; `pnpm run check:phase48a`
+passes. No researched event rows have been imported. Next, run the high-level
+authenticated admin create/reload/edit journey, deliberately apply the two
+reviewed records as drafts if accepted, verify their evidence/action children,
+then begin Slice 3 consumer presentation. Use
+`data/event-imports/README.md`; never put an admin password in an env file.
 
 A bounded admin listing-retirement detour is tracked in
 `docs/implementation/admin-listing-retirement.md`. The owner accepted the plan
