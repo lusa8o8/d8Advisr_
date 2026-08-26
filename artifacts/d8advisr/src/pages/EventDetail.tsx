@@ -113,7 +113,6 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     organizerVerified: isD8Organized || Boolean(row.partner_id),
     highlights: [
       row.category ?? 'Curated experience',
-      locationKind === 'external' ? 'External location' : hasVenueLink ? 'Hosted at a D8 venue' : 'Location pending',
       row.is_free ? 'Free entry' : 'Paid entry',
       row.frequency && row.frequency !== 'one-off' ? 'Recurring event' : 'One-off event',
     ],
