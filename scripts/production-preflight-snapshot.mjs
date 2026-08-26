@@ -22,6 +22,10 @@ const snapshotTables = [
   ['public', 'partner_applications'],
   ['public', 'venues'],
   ['public', 'events'],
+  ['public', 'event_sources'],
+  ['public', 'event_action_links'],
+  ['public', 'event_provenance_audit'],
+  ['public', 'listing_admin_audit_log'],
   ['storage', 'objects'],
 ];
 
@@ -176,6 +180,15 @@ async function createSnapshot(databasePassword, passphrase, outputPath) {
 }
 
 async function selfTest() {
+  for (const requiredTable of [
+    'public.event_sources',
+    'public.event_action_links',
+    'public.event_provenance_audit',
+    'public.listing_admin_audit_log',
+  ]) {
+    assert(snapshotTables.some(([schema, table]) => `${schema}.${table}` === requiredTable),
+      `Production snapshot inventory is missing ${requiredTable}`);
+  }
   const snapshot = {
     projectRef: productionProjectRef,
     capturedAt: 'test',

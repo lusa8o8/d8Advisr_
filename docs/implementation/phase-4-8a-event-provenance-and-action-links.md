@@ -255,12 +255,26 @@ sources and one unverified action on an existing event, reloaded with exactly
 one copy of each, and removed all three successfully. The child rows were
 cleaned up; the immutable audit entries remain by design.
 
-Not yet performed:
+Authenticated imported-event creation and the intentional main-project intake
+are now complete. `Feier & Ice` and `AFRO SUNSETS: SUMMER 26 FESTIVAL` were
+rechecked against their TicketHost pages on 26 August 2026 and imported as
+drafts. Publication remains a separate human review after price, action-link,
+media, and copy acceptance.
 
-- authenticated imported-event creation with the dedicated schedule UI;
-- intentional `--apply --confirm-main` of the two reviewed drafts; or
-- database acceptance with those real rows. Publication remains a separate
-  human review after prices and action availability are rechecked.
+The first import attempt exposed an older shared organization trigger restoring
+the trusted `d8_admin` to `import` origin transition. The importer stopped on
+its postcondition after only the first draft and did not publish or begin the
+second record. Migration
+`20260826120000_fix_trusted_event_origin_transition.sql` gives events a dedicated
+organization-field trigger, retains non-admin ownership protections, and
+reconciles only unpublished drafts whose immutable audit already records an
+import outcome. The idempotent retry then completed both records.
+
+Production verification reports 11 total event rows versus 9 publicly visible
+rows; the two-row difference is the imported draft batch. Anonymous evidence
+and action reads remain at one row each, confirming draft child records remain
+private. Migration parity, linked lint, the Phase 4.8A suite, and the complete
+production read-only access-control smoke pass.
 
 ### Slice 3 — Consumer trust surface
 

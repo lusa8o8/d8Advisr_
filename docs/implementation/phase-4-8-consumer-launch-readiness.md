@@ -5,6 +5,8 @@ citation/action presentation are delivered. Automated and responsive browser
 acceptance passed. The published browser-test import still uses placeholder
 source/action URLs and is not launch inventory. Persisted event pages also use
 server-derived `Listed by` attribution without exposing organization records.
+The first two reverified Lusaka launch records are now private main-project
+drafts awaiting ordinary admin publication review.
 
 Decision date: 25 August 2026
 
