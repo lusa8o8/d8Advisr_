@@ -1,9 +1,9 @@
 # Phase 4.8 — Consumer Launch Readiness
 
-Status: Phase 4.8A database foundation and admin intake are delivered. One
-researched/imported event has completed admin review and publication. Slice 3
-consumer citation/action presentation is implemented locally with automated
-coverage and awaits its high-level browser acceptance.
+Status: Phase 4.8A database foundation, admin intake, and Slice 3 consumer
+citation/action presentation are delivered. Automated and responsive browser
+acceptance passed. The published browser-test import still uses placeholder
+source/action URLs and is not launch inventory.
 
 Decision date: 25 August 2026
 

@@ -296,8 +296,15 @@ receive fabricated provenance.
 Automated coverage includes table-driven active, sold-out, closed, invalid,
 missing-action, multiple-source, ordinary-event, and cancelled-event mapping;
 consumer query-field/static safety checks; workspace typecheck; and the
-consumer production build. High-level desktop/mobile browser acceptance of the
-published imported event remains the final Slice 3 check.
+consumer production build.
+
+High-level browser acceptance passed on 26 August 2026 at 1020×695 and 390×844.
+The published imported event rendered one CTA, provider disclosure, public
+citation, and checked date without horizontal overflow. Both links used safe
+new-tab attributes, the CTA retained a 48px target, keyboard focus was visible,
+and the console remained clear. The tested record still contains deliberate
+`example.com` browser-test source/action data; replace or retire that content
+before treating it as launch inventory. Slice 3 is complete.
 
 ### Slice 4 — Partner parity, deliberately later
 
