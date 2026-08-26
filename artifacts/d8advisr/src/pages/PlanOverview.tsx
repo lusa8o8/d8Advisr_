@@ -4,7 +4,7 @@ import {
   ArrowLeft, Sparkles, MapPin, Clock, ChevronRight,
   Footprints, Car, Share2, BookmarkPlus, RotateCcw, Wallet, Check
 } from 'lucide-react';
-import { cn } from "@/components/SharedUI";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
 
 // ─── Plan data ─────────────────────────────────────────────────────────────────
@@ -164,15 +164,16 @@ export function PlanOverview() {
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-36">
 
         {/* ── HERO ──────────────────────────────────────────────────────────────── */}
-        <div className="relative bg-[#141414] px-6 pt-14 pb-8 overflow-hidden">
+        <div className="relative bg-[#141414] pt-14 pb-8 overflow-hidden">
           {/* Ambient glows */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-[#FF5A5F]/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/15 rounded-full blur-3xl -ml-16 -mb-8 pointer-events-none" />
 
+          <div className={cn(consumerDesktopClass('standard'), "relative px-6")}>
           {/* Back */}
           <button
             onClick={() => setLocation('/home')}
-            className="absolute top-14 left-6 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-95 transition-transform z-10"
+            className="absolute top-0 left-6 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-95 transition-transform z-10"
           >
             <ArrowLeft size={18} />
           </button>
@@ -194,10 +195,11 @@ export function PlanOverview() {
               <span>3 stops</span>
             </div>
           </div>
+          </div>
         </div>
 
         {/* ── PLAN TIMELINE ─────────────────────────────────────────────────────── */}
-        <div className="px-4 -mt-4 relative">
+        <div className={cn(consumerDesktopClass('standard'), "px-4 -mt-4 relative")}>
 
           {stops.map((stop, idx) => (
             <div key={stop.id}>
@@ -294,7 +296,8 @@ export function PlanOverview() {
         </div>
 
         {/* ── COST BREAKDOWN ────────────────────────────────────────────────────── */}
-        <div className="mx-4 mt-2 bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className={cn(consumerDesktopClass('standard'), "px-4 mt-2")}>
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cost Breakdown · Per Person</p>
           </div>
@@ -328,13 +331,15 @@ export function PlanOverview() {
             </div>
             <p className="font-black text-[22px] text-gray-900">{formatPrice(grandTotal)}</p>
           </div>
+          </div>
         </div>
 
         {/* ── STASH CTA ─────────────────────────────────────────────────────────── */}
-        <div
-          className="mx-4 mt-3 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
-          onClick={() => setLocation('/profile/budget')}
-        >
+        <div className={cn(consumerDesktopClass('standard'), "px-4 mt-3")}>
+          <div
+            className="rounded-3xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+            onClick={() => setLocation('/profile/budget')}
+          >
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shrink-0">
@@ -359,10 +364,11 @@ export function PlanOverview() {
               {formatPrice(Math.round(grandTotal * (1 - STASH_PCT / 100)))} more to cover this evening — keep going!
             </p>
           </div>
+          </div>
         </div>
 
         {/* ── SHARE NUDGE ───────────────────────────────────────────────────────── */}
-        <div className="mx-4 mt-3">
+        <div className={cn(consumerDesktopClass('standard'), "px-4 mt-3")}>
           <button
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-gray-200 bg-white text-gray-500 font-semibold text-[13px] active:scale-[0.98] transition-transform hover:border-gray-300 shadow-sm"
           >
@@ -372,8 +378,8 @@ export function PlanOverview() {
       </div>
 
       {/* ── FIXED ACTION BAR ──────────────────────────────────────────────────── */}
-      <div className="px-5 pb-10 pt-4 bg-white border-t border-gray-100 shadow-[0_-10px_24px_rgba(0,0,0,0.05)] shrink-0">
-        <div className="flex gap-3">
+      <div className="pb-10 pt-4 bg-white border-t border-gray-100 shadow-[0_-10px_24px_rgba(0,0,0,0.05)] shrink-0">
+        <div className={cn(consumerDesktopClass('standard'), "px-5 flex gap-3")}>
           {/* Regenerate */}
           <button
             onClick={() => setLocation('/plan/generate')}

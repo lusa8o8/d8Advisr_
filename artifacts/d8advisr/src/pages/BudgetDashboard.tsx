@@ -200,27 +200,30 @@ export function BudgetDashboard() {
   const unlockedCount = FUNDS.filter(f => f.saved >= f.goal).length;
 
   return (
-    <div className={cn("flex-1 min-h-0 flex flex-col relative bg-background", consumerDesktopClass('reading'))}>
+    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       {/* Header */}
-      <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
-        <button onClick={() => setLocation('/profile')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">
-          <ArrowLeft size={20} />
-        </button>
-        <div className="text-center">
-          <h1 className="font-bold text-foreground text-lg leading-tight">Your Stash</h1>
-          <p className="text-[11px] text-muted-foreground font-medium">Saving for the good stuff</p>
+      <div className="bg-card pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 flex justify-between items-center")}>
+          <button onClick={() => setLocation('/profile')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="text-center">
+            <h1 className="font-bold text-foreground text-lg leading-tight">Your Stash</h1>
+            <p className="text-[11px] text-muted-foreground font-medium">Saving for the good stuff</p>
+          </div>
+          <button
+            onClick={() => setShowNew(true)}
+            className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
+          >
+            <Plus size={20} strokeWidth={2.5} />
+          </button>
         </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
-        >
-          <Plus size={20} strokeWidth={2.5} />
-        </button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-10">
+        <div className={cn(consumerDesktopClass('reading'), "w-full")}>
         {/* Total hero strip */}
-        <div className="mx-6 mt-5 mb-6 bg-foreground text-card rounded-3xl p-6 shadow-lg relative overflow-hidden">
+        <div className="mx-6 mt-5 mb-6 bg-[#1F1F22] text-white rounded-3xl p-6 shadow-lg relative overflow-hidden border border-white/10">
           <div className="absolute -top-8 -right-8 w-36 h-36 bg-white/5 rounded-full" />
           <div className="absolute -bottom-10 -left-6 w-28 h-28 bg-white/5 rounded-full" />
           <p className="text-white/60 text-sm font-medium mb-1 relative z-10">Total stashed</p>
@@ -447,6 +450,7 @@ export function BudgetDashboard() {
               </div>
             ))}
           </div>
+        </div>
         </div>
       </div>
 

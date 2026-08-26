@@ -49,9 +49,10 @@ constrained merely to satisfy this policy.
    saved-plans/discovery-style pages. Keep Home's existing `max-w-5xl` shape.
    **Done for the first standard-page slice.**
    The first browser review found that constraining a page root also constrained
-   its background and sticky header. Plans, Notifications, and Profile now keep
-   the page canvas full width and constrain only their header contents and
-   readable body.
+   its background and sticky header. Plans, Notifications, Profile, Plan
+   Overview, Plan Detail, Stash, Badges, and Preferences now keep the page
+   canvas full width and constrain only their header contents and readable
+   body.
    Remaining pages should follow this same inner-surface pattern as they are
    reviewed.
 3. Leave map, admin, media heroes, and onboarding-specific layouts untouched
@@ -59,7 +60,7 @@ constrained merely to satisfy this policy.
 4. Run the consumer containment check, workspace typecheck, and diff hygiene;
    then perform a desktop browser pass at a wide viewport and at the 1024px
    shell breakpoint. **Automated checks and the wide-viewport browser pass are
-   done for Plans, Notifications, and Profile; the 1024px pass and remaining
+   done for the reviewed consumer surfaces; a broader 1024px pass and remaining
    page review are still open.**
 
 ## Acceptance notes

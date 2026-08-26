@@ -14,9 +14,10 @@ export function PlanDetail() {
   const [stashDone, setStashDone] = useState(false);
 
   return (
-    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24", consumerDesktopClass('standard'))}>
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <div className="bg-card px-6 pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm z-10 sticky top-0 border-b border-border">
+      <div className="bg-card pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm z-10 sticky top-0 border-b border-border">
+        <div className={cn(consumerDesktopClass('standard'), "px-6")}>
         <div className="flex justify-between items-center mb-4">
           <button onClick={() => setLocation('/home')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">
             <ArrowLeft size={20} />
@@ -33,9 +34,10 @@ export function PlanDetail() {
         <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
           <span className="flex items-center gap-1.5"><Clock size={16} /> Tonight, 7:00 PM</span>
         </div>
+        </div>
       </div>
 
-      <div className="px-6 py-6 pb-28">
+      <div className={cn(consumerDesktopClass('standard'), "px-6 py-6 pb-28")}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-foreground">Itinerary</h2>
           <button onClick={() => setLocation('/plan/1/edit')} className="text-primary font-semibold text-sm flex items-center gap-1 hover:opacity-80">
@@ -162,7 +164,8 @@ export function PlanDetail() {
       </div>
 
       {/* Action Bottom */}
-      <div className="fixed bottom-0 w-full max-w-[430px] bg-card border-t border-border p-6 flex gap-4 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-6 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+        <div className={cn(consumerDesktopClass('standard'), "flex gap-4")}>
         <button onClick={() => setLocation('/map')} className="w-14 h-14 rounded-xl border-2 border-border flex items-center justify-center text-foreground active:scale-95 transition-transform hover:bg-background">
           <Map size={24} />
         </button>
@@ -172,6 +175,7 @@ export function PlanDetail() {
         >
           Let's Go!
         </button>
+        </div>
       </div>
 
       {/* Fund in Stash Sheet */}

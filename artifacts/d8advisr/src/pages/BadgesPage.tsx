@@ -95,26 +95,29 @@ export function BadgesPage() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className={cn("flex-1 min-h-0 flex flex-col relative bg-background", consumerDesktopClass('reading'))}>
+    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       {/* Header */}
-      <div className="px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 bg-white border-b border-border flex items-center gap-4 sticky top-0 z-20">
-        <button
-          onClick={() => setLocation("/profile")}
-          className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-foreground hover:bg-card transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-foreground leading-tight">Badges</h1>
-          <p className="text-xs text-muted-foreground font-medium">Your achievement collection</p>
-        </div>
-        <div className="ml-auto flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full">
-          <Trophy size={14} className="text-primary" />
-          <span className="text-xs font-bold text-primary">{EARNED.length} earned</span>
+      <div className="pt-10 lg:pt-14 pb-3 lg:pb-4 bg-white border-b border-border sticky top-0 z-20">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 flex items-center gap-4")}>
+          <button
+            onClick={() => setLocation("/profile")}
+            className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-foreground hover:bg-card transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-foreground leading-tight">Badges</h1>
+            <p className="text-xs text-muted-foreground font-medium">Your achievement collection</p>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full">
+            <Trophy size={14} className="text-primary" />
+            <span className="text-xs font-bold text-primary">{EARNED.length} earned</span>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-10">
+        <div className={cn(consumerDesktopClass('reading'), "w-full")}>
         {/* Stats Strip */}
         <div className="mx-6 mt-5 mb-6 bg-card rounded-2xl border border-border shadow-sm grid grid-cols-3 divide-x divide-border">
           <div className="py-4 flex flex-col items-center">
@@ -206,6 +209,7 @@ export function BadgesPage() {
               </div>
             ))}
           </div>
+        </div>
         </div>
       </div>
     </div>

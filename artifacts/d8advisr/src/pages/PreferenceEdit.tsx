@@ -29,17 +29,19 @@ export function PreferenceEdit() {
   };
 
   return (
-    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24", consumerDesktopClass('reading'))}>
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
-        <button onClick={() => setLocation('/profile')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="font-bold text-foreground text-lg">My Preferences</h1>
-        <div className="w-10"></div>
+      <div className="bg-card pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 flex justify-between items-center")}>
+          <button onClick={() => setLocation('/profile')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="font-bold text-foreground text-lg">My Preferences</h1>
+          <div className="w-10"></div>
+        </div>
       </div>
 
-      <div className="px-6 py-8 flex flex-col gap-10">
+      <div className={cn(consumerDesktopClass('reading'), "px-6 py-8 flex flex-col gap-10 w-full")}>
         <p className="text-muted-foreground text-[15px] font-medium leading-relaxed">
           Update your preferences so D8Advisr can generate perfectly tailored plans.
         </p>
@@ -98,13 +100,15 @@ export function PreferenceEdit() {
 
       </div>
 
-      <div className="fixed bottom-0 w-full max-w-[430px] bg-card border-t border-border p-6 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-30">
-        <button 
-          onClick={() => setLocation('/profile')}
-          className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all flex justify-center items-center gap-2"
-        >
-          <Save size={20} /> Save Preferences
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-6 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-30">
+        <div className={cn(consumerDesktopClass('reading'), "px-0")}>
+          <button
+            onClick={() => setLocation('/profile')}
+            className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all flex justify-center items-center gap-2"
+          >
+            <Save size={20} /> Save Preferences
+          </button>
+        </div>
       </div>
     </div>
   );
