@@ -16,6 +16,10 @@ assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Se
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
 
 assert(home.includes('<FAB type="home" />'), 'Discovery feed must retain the mobile Surprise Me FAB');
+assert(!home.includes('Add to Plan'), 'Home feed cards must not expose card-level Add to Plan actions');
+assert(!home.includes('venue.rating'), 'Home feed cards must not expose venue ratings');
+assert(!home.includes('venue.reviews'), 'Home feed cards must not expose venue review counts');
+assert(!home.includes('<Star'), 'Home feed cards must not render rating stars');
 for (const [label, source] of [['Map', map], ['My Plans', plans]]) {
   assert(!source.includes('<FAB'), `${label} must not render the Surprise Me FAB`);
   assert(!source.includes('BottomNav, FAB'), `${label} must not import the Surprise Me FAB`);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from "wouter";
-import { Search, MapPin, Star, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock, Loader2 } from 'lucide-react';
+import { Search, MapPin, Filter, X, Ticket, ShieldCheck, Award, Gem, Lock, Loader2 } from 'lucide-react';
 import { TopBar, BottomNav, FAB, cn } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useVenues, useEvents } from "@/hooks/useVenues";
@@ -75,8 +75,6 @@ export function HomeDiscovery() {
     name: v.name,
     type: v.category,
     tier: (v.tier as Tier) in TIER_STYLES ? v.tier as Tier : 'Verified' as Tier,
-    rating: Number(v.rating ?? 0),
-    reviews: v.review_count,
     distance: v.area ?? v.city,
     price: ({ '$': 'Budget', '$$': 'Moderate', '$$$': 'Premium', '$$$$': 'Luxury' } as Record<string, string>)[v.price_tier ?? ''] ?? 'Price varies',
     desc: v.description ?? '',
@@ -332,9 +330,6 @@ export function HomeDiscovery() {
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
                             {venue.type}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-amber-300 flex items-center gap-1 border border-amber-800/40" style={{ background: 'rgba(120,53,15,0.30)' }}>
-                            <Star size={8} fill="currentColor" /> {venue.rating}
-                          </span>
                         </div>
                         {/* Blurred name */}
                         <p className="text-[13px] font-bold text-white/25 blur-[5px] select-none mb-3 tracking-wide truncate">
@@ -370,13 +365,6 @@ export function HomeDiscovery() {
                         {venue.tier}
                       </div>
 
-                      {/* Rating */}
-                      <div className="absolute top-3.5 right-3.5 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
-                        <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
-                        {venue.rating}
-                        <span className="text-gray-400 font-normal">({venue.reviews})</span>
-                      </div>
-
                       {/* Emoji */}
                       <div className="absolute bottom-3.5 left-3.5 w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl border border-white/30">
                         {venue.icon}
@@ -401,22 +389,7 @@ export function HomeDiscovery() {
                           <MapPin size={12} />{venue.distance}
                         </div>
                       </div>
-                      <p className="text-gray-500 text-[13px] leading-relaxed line-clamp-2 mb-4">{venue.desc}</p>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          const params = new URLSearchParams({
-                            venueId: String(venue.id),
-                            venueName: venue.name,
-                            venueEmoji: venue.icon,
-                            venueCategory: venue.type,
-                          });
-                          setLocation(`/plan/generate?${params.toString()}`);
-                        }}
-                        className="w-full py-3 rounded-xl border-2 border-primary text-primary font-bold text-[13px] hover:bg-primary hover:text-white transition-all"
-                      >
-                        + Add to Plan
-                      </button>
+                      <p className="text-gray-500 text-[13px] leading-relaxed line-clamp-2">{venue.desc}</p>
                     </div>
                   </div>
                 );
@@ -682,9 +655,6 @@ export function HomeDiscovery() {
                       <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-purple-300 border border-purple-700/60" style={{ background: 'rgba(109,40,217,0.18)' }}>
                         {venue.type}
                       </span>
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-amber-300 flex items-center gap-1 border border-amber-800/40" style={{ background: 'rgba(120,53,15,0.30)' }}>
-                        <Star size={9} fill="currentColor" /> {venue.rating} · {venue.reviews} reviews
-                      </span>
                     </div>
 
                     {/* Blurred / redacted venue name */}
@@ -728,12 +698,6 @@ export function HomeDiscovery() {
                       </div>
                     );
                   })()}
-
-                  {/* Rating — top right */}
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-foreground flex items-center gap-1 shadow-sm">
-                    <Star size={12} className="fill-[#FF9500] text-[#FF9500]" />
-                    {venue.rating}
-                  </div>
 
                   {/* Emoji icon — bottom left */}
                   <div className="absolute bottom-3 left-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl border border-white/30">
