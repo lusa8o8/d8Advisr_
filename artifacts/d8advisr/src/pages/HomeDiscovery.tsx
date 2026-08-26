@@ -601,10 +601,10 @@ export function HomeDiscovery() {
         <div className="px-6 mb-2">
           <h2 className="text-[17px] font-bold text-foreground">Venues for You</h2>
         </div>
-        <div className="px-6 flex flex-col gap-5 pb-6">
+        <div className="flex flex-col gap-8 pb-6">
           {venuesLoading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-card animate-pulse rounded-3xl h-64 border border-border" />
+                <div key={i} className="bg-card animate-pulse h-64" />
               ))
             : venuesError ? (
                 <div className="bg-card rounded-3xl border border-dashed border-border p-6 text-center">
@@ -620,7 +620,7 @@ export function HomeDiscovery() {
                 <div
                   key={venue.id}
                   onClick={() => setShowGemGate(true)}
-                  className="rounded-3xl overflow-hidden cursor-pointer ring-1 ring-purple-500/30 shadow-xl shadow-purple-950/20"
+                  className="overflow-hidden cursor-pointer border-y border-purple-500/30"
                   style={{ background: 'linear-gradient(145deg, #2a1560 0%, #140930 100%)' }}
                 >
                   {/* Blurred image hero */}
@@ -678,7 +678,7 @@ export function HomeDiscovery() {
               <div
                 key={venue.id}
                 onClick={() => openVenue(venue.id)}
-                className="bg-card rounded-3xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
+                className="overflow-hidden cursor-pointer"
               >
                 <div className="h-44 relative overflow-hidden">
                   <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
