@@ -20,12 +20,13 @@ export function EventTrustCard(props: {
 
   return (
     <section aria-labelledby="event-details-actions" className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
           <ShieldCheck size={18} aria-hidden="true" />
         </div>
-        <div className="min-w-0 flex-1">
-          <h2 id="event-details-actions" className="font-bold text-gray-900 text-[15px]">Official details</h2>
+        <h2 id="event-details-actions" className="font-bold text-gray-900 text-[15px]">Official details</h2>
+      </div>
+      <div className="mt-3 min-w-0">
 
           {presentation.action.kind === 'active' && (
             <>
@@ -33,7 +34,7 @@ export function EventTrustCard(props: {
                 href={presentation.action.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 w-full min-h-12 px-4 py-3 rounded-xl bg-primary text-white font-bold text-[14px] flex items-center justify-center gap-2 text-center hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="w-full min-h-12 px-4 py-3 rounded-xl bg-primary text-white font-bold text-[14px] flex items-center justify-center gap-2 text-center hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 {presentation.action.label}
                 <ExternalLink size={15} aria-hidden="true" />
@@ -83,7 +84,6 @@ export function EventTrustCard(props: {
               </p>
             </div>
           )}
-        </div>
       </div>
     </section>
   );

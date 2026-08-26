@@ -9,7 +9,7 @@ const data = read('artifacts/d8advisr/src/features/events/eventTrustData.ts');
 for (const required of ['loadPublicEventTrust(eventId)', '<EventTrustCard', "event.listingSource === 'import'"]) {
   assert(detail.includes(required), `EventDetail is missing ${required}`);
 }
-for (const required of ['target="_blank"', 'rel="noopener noreferrer"', 'D8Advisr does not process this transaction', 'Information from', 'Sold out on', 'External ticket or registration details are not available right now']) {
+for (const required of ['target="_blank"', 'rel="noopener noreferrer"', 'D8Advisr does not process this transaction', 'Information from', 'Sold out on', 'External ticket or registration details are not available right now', 'className="mt-3 min-w-0"']) {
   assert(card.includes(required), `trust card is missing ${required}`);
 }
 for (const required of [".from('event_sources')", ".from('event_action_links')", "supabase.rpc('get_public_event_listing_attribution'"]) {

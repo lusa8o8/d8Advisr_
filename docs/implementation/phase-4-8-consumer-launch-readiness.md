@@ -8,6 +8,16 @@ server-derived `Listed by` attribution without exposing organization records.
 The first two reverified Lusaka launch records are now private main-project
 drafts awaiting ordinary admin publication review.
 
+## Bounded presentation fixes - 26 August 2026
+
+The event trust/action card was checked at a mobile viewport after the first
+consumer browser journey. Its ticket action and explanatory copy were indented
+behind the shield icon, unlike the content of neighboring detail cards. The
+card now keeps the icon and heading in a compact header row and renders its
+action/citation body at the card's normal content edge. No neighboring card or
+shared detail layout was changed. The deeper event-plan and demo-data findings
+remain tracked separately in `docs/deferred-consumer-demo-data-and-notifications.md`.
+
 Decision date: 25 August 2026
 
 ## Outcome
