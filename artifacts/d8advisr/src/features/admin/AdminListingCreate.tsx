@@ -20,10 +20,19 @@ import {
   type AdminListingAttribution,
   type AdminPublicationStatus,
 } from './adminListingCreationData';
+import { publishAdminEvent } from './adminListingData';
+import {
+  emptyEventProvenanceDraft,
+  fetchAdminEventVersion,
+  hasEventProvenance,
+  replaceAdminEventProvenance,
+} from './adminEventProvenanceData';
+import { AdminEventProvenanceFields, validateEventProvenanceDraft } from './AdminEventProvenanceEditor';
 
 interface Props {
   venues: Venue[];
   onVenueCreated: (id: string) => Promise<void> | void;
+  onEventCreated: (id: string) => Promise<void> | void;
 }
 
 type ListingKind = 'venue' | 'event';
@@ -60,7 +69,7 @@ export function VibePicker({ value, options, onChange }: {
   })}</div>;
 }
 
-export function AdminListingCreate({ venues, onVenueCreated }: Props) {
+export function AdminListingCreate({ venues, onVenueCreated, onEventCreated }: Props) {
   const { user } = useAuth();
   const draftPrefix = `d8:admin-listing:${user?.id ?? 'anonymous'}`;
   const [kind, setKind, clearKind] = useSessionDraft<ListingKind>(`${draftPrefix}:kind`, 'venue');
@@ -73,6 +82,7 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
   const [eventPolicyAccepted, setEventPolicyAccepted] = useState(false);
   const submissionInFlight = useRef(false);
   const requestKeys = useRef<Record<ListingKind, string | null>>({ venue: null, event: null });
+  const provenanceRequestKey = useRef<string | null>(null);
   const [venue, setVenue, clearVenue] = useSessionDraft(`${draftPrefix}:venue`, {
     name: '', regionId: 'lusaka', city: 'Lusaka', category: '', area: '', address: '', description: '',
     tier: 'Verified' as 'Verified' | 'D8 Approved' | 'Hidden Gem',
@@ -84,7 +94,12 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
     externalLocationName: '', externalLocationAddress: '', price: '', currency: 'K',
     images: [] as string[],
     capacity: '', isFree: false, isFeatured: false, coverImage: '', vibes: '', emoji: '📅',
-  }, 2);
+  }, 3);
+  const [eventProvenance, setEventProvenance, clearEventProvenance] = useSessionDraft(
+    `${draftPrefix}:event-provenance`,
+    emptyEventProvenanceDraft(),
+    1,
+  );
   const { regions } = useRegion();
   const selectedRegionId = kind === 'venue' ? venue.regionId : event.regionId;
   const selectedRegion = regions.find(item => item.id === selectedRegionId);
@@ -124,17 +139,20 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         });
         await onVenueCreated(id);
       } else {
+        validateEventProvenanceDraft(eventProvenance);
         if (event.locationKind === 'd8_venue' && !event.venueId) throw new Error('Choose a live D8 venue.');
         if (event.locationKind === 'external' && !event.externalLocationName.trim()) throw new Error('Enter the external location name.');
         const eventPrice = parseEventPriceInput(event.price, event.isFree);
         const eventCapacity = parseEventCapacityInput(event.capacity);
+        const requestedPublication = eventProvenance.isImported ? 'draft' : publicationStatus;
+        const attachProvenance = hasEventProvenance(eventProvenance);
         id = await createAdminEvent({
           requestKey,
           regionId: event.regionId,
           title: event.title, city: event.city, category: event.category,
           description: event.description, startsAt: new Date(event.startsAt).toISOString(),
           endsAt: event.endsAt ? new Date(event.endsAt).toISOString() : undefined,
-          attribution, publicationStatus, locationKind: event.locationKind,
+          attribution, publicationStatus: attachProvenance ? 'draft' : requestedPublication, locationKind: event.locationKind,
           venueId: event.venueId, externalLocationName: event.externalLocationName,
           externalLocationAddress: event.externalLocationAddress,
           pricePerPerson: eventPrice,
@@ -143,6 +161,21 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
           vibes: tags(event.vibes), emoji: event.emoji,
           policyAcknowledged,
         });
+        if (attachProvenance) {
+          const eventVersion = await fetchAdminEventVersion(id);
+          const nextProvenanceRequestKey = provenanceRequestKey.current ?? crypto.randomUUID();
+          provenanceRequestKey.current = nextProvenanceRequestKey;
+          await replaceAdminEventProvenance(
+            id,
+            eventProvenance,
+            eventVersion.updatedAt,
+            nextProvenanceRequestKey,
+            eventProvenance.isImported,
+          );
+          provenanceRequestKey.current = null;
+          if (requestedPublication === 'live') await publishAdminEvent(id);
+        }
+        await onEventCreated(id);
       }
       requestKeys.current[kind] = null;
       if (kind === 'venue') {
@@ -150,7 +183,9 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
         setVenue(current => ({ ...current, name: '', category: '', area: '', address: '', description: '', priceTier: '', averageCost: '', phone: '', website: '', coverImage: '', images: [], vibes: '' }));
       } else {
         clearEvent();
+        clearEventProvenance();
         setEvent(current => ({ ...current, title: '', category: '', description: '', startsAt: '', endsAt: '', venueId: '', externalLocationName: '', externalLocationAddress: '', price: '', capacity: '', coverImage: '', images: [], vibes: '' }));
+        setEventProvenance(emptyEventProvenanceDraft());
       }
       clearKind();
       clearAttribution();
@@ -212,12 +247,12 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
             {kind === 'venue' ? (
               <Field label="Publication"><div className={`${inputClass} bg-gray-50 text-gray-600`}>Draft - approval required</div></Field>
             ) : (
-              <Field label="Publication"><select className={inputClass} value={publicationStatus} onChange={e => setPublicationStatus(e.target.value as AdminPublicationStatus)}><option value="draft">Save as draft</option><option value="live">Publish now</option></select></Field>
+              <Field label="Publication"><select disabled={eventProvenance.isImported} className={inputClass} value={eventProvenance.isImported ? 'draft' : publicationStatus} onChange={e => setPublicationStatus(e.target.value as AdminPublicationStatus)}><option value="draft">Save as draft</option><option value="live">Publish now</option></select></Field>
             )}
           </div>
           <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
             {attribution === 'unclaimed' ? 'No user or organization owns this listing.' : 'D8Advisr is the operator or organiser.'}
-            {' '}{kind === 'venue' ? 'It stays private until approved in Submissions.' : publicationStatus === 'draft' ? 'It stays private.' : 'It becomes public immediately.'}
+            {' '}{kind === 'venue' ? 'It stays private until approved in Submissions.' : eventProvenance.isImported ? 'Imported events stay private until their evidence is verified and an admin publishes them.' : publicationStatus === 'draft' ? 'It stays private.' : 'It becomes public immediately.'}
           </p>
         </section>
 
@@ -272,6 +307,19 @@ export function AdminListingCreate({ venues, onVenueCreated }: Props) {
             </>
           )}
         </section>
+
+        {kind === 'event' && (
+          <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-4"><h2 className="text-[13px] font-black text-gray-900">Sources and external actions</h2><p className="mt-1 text-[11px] text-gray-500">Add research evidence separately from the link consumers will use for tickets or registration.</p></div>
+            <AdminEventProvenanceFields
+              value={eventProvenance}
+              onChange={next => {
+                setEventProvenance(next);
+                if (next.isImported) setPublicationStatus('draft');
+              }}
+            />
+          </section>
+        )}
 
         {error && <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-[12px] font-semibold text-red-700">{error}</div>}
         {success && <div className="flex items-center justify-between gap-2 rounded-xl border border-green-100 bg-green-50 p-3 text-[12px] font-semibold text-green-700"><span className="flex items-center gap-2"><CheckCircle2 size={16} />{success}</span><button type="button" className="rounded-lg bg-white px-2.5 py-1.5 text-[10px] font-black text-green-700" onClick={() => setSuccess(null)}>Create another</button></div>}

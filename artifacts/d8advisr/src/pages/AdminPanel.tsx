@@ -67,6 +67,7 @@ import { AdminVenueDraftEdit } from '@/features/admin/AdminVenueDraftEdit';
 import { AdminVenueLiveEdit } from '@/features/admin/AdminVenueLiveEdit';
 import { AdminEventDraftEdit } from '@/features/admin/AdminEventDraftEdit';
 import { AdminEventLiveEdit } from '@/features/admin/AdminEventLiveEdit';
+import { AdminEventProvenanceManager } from '@/features/admin/AdminEventProvenanceEditor';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,9 +134,17 @@ function logAdminIssue(message: string, detail?: unknown) {
 }
 
 function adminErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
-  return String(error);
+  const message = error instanceof Error
+    ? error.message
+    : error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+      ? error.message
+      : String(error);
+  const messages: Record<string, string> = {
+    import_event_verified_source_required: 'Verify at least one evidence source before publishing this imported event.',
+    event_changed_after_provenance_loaded: 'This event changed in another session. Reload before saving its sources.',
+    event_listing_origin_is_server_managed: 'Event origin can only be changed through the evidence workflow.',
+  };
+  return messages[message] ?? message;
 }
 
 function retirementErrorMessage(error: unknown) {
@@ -261,14 +270,14 @@ export function AdminPanel() {
   const canEditSelectedEventDraft = Boolean(
     selectedEvent &&
     !selectedEvent.retiredAt &&
-    selectedEvent.source === 'd8_admin' &&
+    ['d8_admin', 'import'].includes(selectedEvent.source ?? '') &&
     selectedEvent.partnerId === null &&
     selectedEvent.eventStatus === 'draft'
   );
   const canEditSelectedEventLive = Boolean(
     selectedEvent &&
     !selectedEvent.retiredAt &&
-    selectedEvent.source === 'd8_admin' &&
+    ['d8_admin', 'import'].includes(selectedEvent.source ?? '') &&
     selectedEvent.partnerId === null &&
     selectedEvent.eventStatus === 'live'
   );
@@ -814,6 +823,10 @@ export function AdminPanel() {
           venues={currentVenues}
           onVenueCreated={async id => {
             await loadAdminVenues();
+            setSelectedId(id);
+          }}
+          onEventCreated={async id => {
+            await loadAdminEvents();
             setSelectedId(id);
           }}
         />
@@ -1616,7 +1629,7 @@ export function AdminPanel() {
                 <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Attribution</p>
                   <p className="text-[15px] font-black text-gray-900 truncate">
-                    {selectedEvent.source === 'd8_admin' ? 'D8 Team' : selectedEvent.partnerId ? 'Partner' : 'Community'}
+                    {selectedEvent.source === 'import' ? 'Researched import' : selectedEvent.source === 'd8_admin' ? 'D8 Team' : selectedEvent.partnerId ? 'Partner' : 'Community'}
                   </p>
                   <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
                     {selectedEvent.source ?? 'Unclaimed'}
@@ -1733,6 +1746,13 @@ export function AdminPanel() {
                   </div>
                 </div>
               )}
+
+              <AdminEventProvenanceManager
+                event={selectedEvent}
+                onSaved={async () => {
+                  await loadAdminEvents();
+                }}
+              />
 
               {/* Metadata Card */}
               <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm text-[12px] text-gray-500 space-y-1.5">
