@@ -562,9 +562,10 @@ self-service link revisions are not.
 Phase 4.8A Slice 1 is delivered to the main project as an additive, empty data
 foundation. Slice 2 admin intake and reviewed dry-run-first import tooling are
 implemented in commits `6a68cbb` and `96e6942`. The two reviewed Lusaka records
-have not been inserted; authenticated admin acceptance and the deliberate
-draft-only import are next, followed by Slice 3 consumer citations and external
-actions.
+entered the human review path and one imported event has now been published.
+Slice 3 consumer citations and external actions are implemented locally with
+automated coverage; high-level browser acceptance is the remaining closure
+check.
 
 ### Phase 5 — Claim submission and approval
 

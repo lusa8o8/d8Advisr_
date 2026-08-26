@@ -1,9 +1,9 @@
 # Phase 4.8 — Consumer Launch Readiness
 
-Status: Phase 4.8A database foundation is on main and Slice 2 admin intake plus
-reviewed import tooling are implemented locally. Two reviewed Lusaka records
-are prepared but have not been inserted. Authenticated admin acceptance and the
-deliberate draft import precede Slice 3 consumer citation/action presentation.
+Status: Phase 4.8A database foundation and admin intake are delivered. One
+researched/imported event has completed admin review and publication. Slice 3
+consumer citation/action presentation is implemented locally with automated
+coverage and awaits its high-level browser acceptance.
 
 Decision date: 25 August 2026
 

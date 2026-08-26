@@ -273,6 +273,32 @@ Not yet performed:
 
 Suggested commit: `feat(consumer): show event sources and external actions`
 
+#### Slice 3 implementation delivery — 26 August 2026
+
+Implemented locally after one researched/imported event completed admin review
+and publication. Persisted consumer event detail now loads the public child
+records through their existing RLS boundary and presents:
+
+- one deterministic primary external action, with provider disclosure before
+  navigation;
+- a restrained verified-source citation and last-checked date;
+- non-navigable sold-out, cancelled, and unavailable states; and
+- safe new-tab navigation with `noopener noreferrer` and visible keyboard
+  focus treatment.
+
+Closed, invalid, unverified, stale, and private evidence remains hidden by
+database policy. When an imported event has no publicly usable action, the UI
+therefore presents a generic unavailable state rather than exposing a dead or
+untrusted URL. A cancelled event may retain its public citation but never
+renders an external booking action. Legacy non-UUID demo routes do not query or
+receive fabricated provenance.
+
+Automated coverage includes table-driven active, sold-out, closed, invalid,
+missing-action, multiple-source, ordinary-event, and cancelled-event mapping;
+consumer query-field/static safety checks; workspace typecheck; and the
+consumer production build. High-level desktop/mobile browser acceptance of the
+published imported event remains the final Slice 3 check.
+
 ### Slice 4 — Partner parity, deliberately later
 
 After the admin/import path works, discover partner operational need. If

@@ -9,6 +9,8 @@ import { useDemandSignals } from '@/hooks/useDemandSignals';
 import { EVENT_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import { useRegion } from '@/hooks/useRegion';
 import { useAuth } from '@workspace/d8-core/auth';
+import { EventTrustCard } from '@/features/events/EventTrustCard';
+import { loadPublicEventTrust, type PublicEventTrust } from '@/features/events/eventTrustData';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
 const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
@@ -41,6 +43,7 @@ interface EventData {
   organizerVerified: boolean;
   highlights: string[];
   eventStatus?: 'live' | 'cancelled';
+  listingSource?: string;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -115,6 +118,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
       row.frequency && row.frequency !== 'one-off' ? 'Recurring event' : 'One-off event',
     ],
     eventStatus: row.event_status === 'cancelled' ? 'cancelled' : 'live',
+    listingSource: String(row.source ?? ''),
   };
 }
 
@@ -288,6 +292,7 @@ export function EventDetail() {
   const [liveEvent, setLiveEvent] = useState<EventData | null>(null);
   const [loadingLiveEvent, setLoadingLiveEvent] = useState(false);
   const [liveEventError, setLiveEventError] = useState<string | null>(null);
+  const [eventTrust, setEventTrust] = useState<PublicEventTrust>({ sources: [], actions: [] });
   const { recordEventAddToPlan, recordEventReminderEnabled, recordVenueView } = useDemandSignals();
 
   const pathParts = window.location.pathname.split('/');
@@ -302,17 +307,21 @@ export function EventDetail() {
         setLiveEvent(null);
         setLiveEventError(null);
         setLoadingLiveEvent(false);
+        setEventTrust({ sources: [], actions: [] });
         return;
       }
 
       setLoadingLiveEvent(true);
       setLiveEventError(null);
-      const { data, error } = await supabase
-        .from('events')
-        .select(`${EVENT_CLIENT_SELECT},venues(id,name,address,area,city,rating,review_count)`)
-        .eq('id', eventId)
-        .in('event_status', ['live', 'cancelled'])
-        .maybeSingle();
+      const [{ data, error }, trust] = await Promise.all([
+        supabase
+          .from('events')
+          .select(`${EVENT_CLIENT_SELECT},venues(id,name,address,area,city,rating,review_count)`)
+          .eq('id', eventId)
+          .in('event_status', ['live', 'cancelled'])
+          .maybeSingle(),
+        loadPublicEventTrust(eventId),
+      ]);
 
       if (!active) return;
       if (error) {
@@ -320,9 +329,11 @@ export function EventDetail() {
         setLiveEventError(error.message);
       } else if (data) {
         setLiveEvent(liveEventToEventData(data as Record<string, any>));
+        setEventTrust(trust);
       } else {
         setLiveEvent(null);
         setLiveEventError('This event is not available.');
+        setEventTrust({ sources: [], actions: [] });
       }
       setLoadingLiveEvent(false);
     }
@@ -500,6 +511,15 @@ export function EventDetail() {
             <span className="font-black text-primary text-[20px]">{displayedPrice}</span>
           </div>
         </div>
+
+        {isPersistedEvent && (
+          <EventTrustCard
+            eventStatus={isCancelled ? 'cancelled' : 'live'}
+            isImported={event.listingSource === 'import'}
+            sources={eventTrust.sources}
+            actions={eventTrust.actions}
+          />
+        )}
 
         {/* Capacity */}
         {hasCapacity ? (
