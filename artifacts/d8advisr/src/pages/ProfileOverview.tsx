@@ -52,23 +52,25 @@ export function ProfileOverview() {
   const showInitials = !showEmoji && !showPhoto;
 
   return (
-    <div className={cn("flex-1 min-h-0 flex flex-col relative bg-background", consumerDesktopClass('reading'))}>
+    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
         {/* Header Banner */}
-        <div className="bg-primary px-6 pt-14 pb-20 relative text-primary-foreground rounded-b-[40px] shadow-md">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-xl font-bold">Profile</h1>
-            <button 
-              onClick={() => setLocation('/settings')}
-              className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-            >
-              <Settings size={20} />
-            </button>
+        <div className="bg-primary pt-14 pb-20 relative text-primary-foreground rounded-b-[40px] shadow-md">
+          <div className={cn(consumerDesktopClass('reading'), "px-6")}>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-xl font-bold">Profile</h1>
+              <button
+                onClick={() => setLocation('/settings')}
+                className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <Settings size={20} />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Profile Card (Overlapping) */}
-        <div className="px-6 -mt-16 mb-8 relative z-10">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 -mt-16 mb-8 relative z-10")}>
           <div className="bg-card rounded-3xl p-6 shadow-lg border border-border flex flex-col items-center">
             {/* Avatar with edit button */}
             <div className="relative -mt-16 mb-4">
@@ -121,7 +123,7 @@ export function ProfileOverview() {
           </div>
         </div>
 
-        <div className="px-6 pb-6">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 pb-6")}>
           {/* Badges */}
           <div className="mb-10">
             <div className="flex justify-between items-center mb-4 px-1">
