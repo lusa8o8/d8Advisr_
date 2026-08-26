@@ -153,6 +153,32 @@ async function assertAnonymousRetirementRpcDenied(url, apiKey, functionName, idK
   console.log(`PASS protected ${functionName}: anonymous HTTP ${response.status}`);
 }
 
+async function assertPublicEventAttributionRpc(url, apiKey) {
+  const eventResponse = await fetch(
+    `${url}/rest/v1/events?select=id,source&source=in.(d8_admin,import)&event_status=in.(live,cancelled)&limit=1`,
+    { headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` } },
+  );
+  const events = await eventResponse.json();
+  assert(eventResponse.status === 200 && Array.isArray(events) && events.length === 1,
+    `public attribution smoke requires one visible D8/import event: ${JSON.stringify(events)}`);
+
+  const response = await fetch(`${url}/rest/v1/rpc/get_public_event_listing_attribution`, {
+    method: 'POST',
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_event_id: events[0].id }),
+  });
+  const body = await response.json();
+  assert(response.status === 200 && Array.isArray(body) && body.length === 1,
+    `public attribution RPC returned HTTP ${response.status}: ${JSON.stringify(body)}`);
+  assert(body[0].attribution_type === 'd8advisr' && body[0].display_name === 'D8Advisr',
+    `public attribution RPC returned unexpected D8 attribution: ${JSON.stringify(body[0])}`);
+  console.log('PASS public event listing attribution: D8Advisr');
+}
+
 const env = await readEnv('artifacts/d8advisr/.env.local');
 const url = env.VITE_SUPABASE_URL?.replace(/\/$/, '');
 const apiKey = env.VITE_SUPABASE_ANON_KEY;
@@ -171,6 +197,7 @@ await assertPublicRead(url, apiKey, 'listing_categories', 1);
 await assertPublicRead(url, apiKey, 'listing_vibes', 1);
 await assertPublicRead(url, apiKey, 'event_sources', 0);
 await assertPublicRead(url, apiKey, 'event_action_links', 0);
+await assertPublicEventAttributionRpc(url, apiKey);
 
 // Mirror the canonical market predicates used by the consumer clients. Display-city
 // spelling and casing are deliberately excluded from the discovery contract.

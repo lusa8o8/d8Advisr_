@@ -306,6 +306,22 @@ and the console remained clear. The tested record still contains deliberate
 `example.com` browser-test source/action data; replace or retire that content
 before treating it as launch inventory. Slice 3 is complete.
 
+#### Listing-attribution follow-up — 26 August 2026
+
+Persisted event detail now uses honest listing attribution rather than calling
+every listing party the event organiser. D8-created and researched/imported
+events render `Listed by D8Advisr`; partner-created events render the associated
+organization name with a D8 Partner label. A narrow security-definer function
+returns only attribution type and display name for an already-public event.
+`partner_organizations` RLS and column grants were not widened, and clients
+cannot submit an attribution display name.
+
+Migration `20260826113000_public_event_listing_attribution.sql` was applied to
+the main project after an encrypted snapshot round-trip. Local/remote migration
+history matches, linked database lint reports no errors, and the production
+anonymous smoke verifies both the D8Advisr result and the existing private/write
+denial boundaries.
+
 ### Slice 4 — Partner parity, deliberately later
 
 After the admin/import path works, discover partner operational need. If

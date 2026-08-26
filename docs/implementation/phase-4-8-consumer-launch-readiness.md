@@ -3,7 +3,8 @@
 Status: Phase 4.8A database foundation, admin intake, and Slice 3 consumer
 citation/action presentation are delivered. Automated and responsive browser
 acceptance passed. The published browser-test import still uses placeholder
-source/action URLs and is not launch inventory.
+source/action URLs and is not launch inventory. Persisted event pages also use
+server-derived `Listed by` attribution without exposing organization records.
 
 Decision date: 25 August 2026
 
