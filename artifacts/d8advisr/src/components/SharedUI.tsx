@@ -37,8 +37,9 @@ export function TopBar({ transparent = false }: { transparent?: boolean }) {
           )}
         </button>
         <button 
-          onClick={() => setLocation('/profile/preferences')}
+          onClick={() => setLocation('/settings')}
           className="text-foreground hover:opacity-70 transition-opacity"
+          aria-label="Settings"
         >
           <Settings size={24} />
         </button>

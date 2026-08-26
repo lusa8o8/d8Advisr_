@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { BottomNav, FAB, cn } from "@/components/SharedUI";
+import { BottomNav, cn } from "@/components/SharedUI";
 import { Calendar, ChevronRight, Star, Users, MapPin, Clock, Plus, Filter } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
 
@@ -282,7 +282,6 @@ export function SavedPlans() {
         </div>
       </div>
 
-      <FAB type="home" />
       <BottomNav active="plans" />
     </div>
   );

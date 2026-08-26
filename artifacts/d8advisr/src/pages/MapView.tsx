@@ -3,7 +3,7 @@ import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { AlertTriangle, Crosshair, Loader2, Search, Star } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { BottomNav, FAB, cn } from '@/components/SharedUI';
+import { BottomNav, cn } from '@/components/SharedUI';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useRegion } from '@/hooks/useRegion';
 import { useVenues } from '@/hooks/useVenues';
@@ -590,7 +590,6 @@ export function MapView() {
         </div>
       )}
 
-      <FAB type="home" />
       <BottomNav active="home" />
     </div>
   );

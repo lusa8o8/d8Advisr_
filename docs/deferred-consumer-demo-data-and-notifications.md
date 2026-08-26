@@ -4,6 +4,24 @@ Status: confirmed during Phase 4 local browser testing
 
 Observed: 2026-08-12
 
+Runtime reconfirmed: 2026-08-26
+
+## Immediate containment delivered
+
+The generator and persistence redesign remain deferred, but three misleading or
+broken presentation paths were corrected without pretending the demo is real:
+
+- Plan Overview now formats every displayed demo amount through the active
+  region's shared `formatPrice` contract instead of hardcoding naira. The demo
+  numbers and legacy multiplier are intentionally unchanged for now.
+- The mobile Surprise Me floating action is scoped to the discovery feed; Map
+  and My Plans no longer render it over their own primary surfaces.
+- The mobile home Settings gear routes to `/settings` rather than opening the
+  separate preference editor.
+
+These corrections do not make plan generation or saving persistent. The
+architecture and acceptance criteria below remain the required later work.
+
 ## Confirmed behavior
 
 ### Saved plans
