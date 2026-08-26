@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { ArrowLeft, Calendar, AlertCircle, MapPin, Check, Ticket, Tag, CheckCheck, Loader2 } from 'lucide-react';
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
-import { cn } from "@/components/SharedUI";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 
 function formatRelativeTime(dateString: string) {
   const diff = Date.now() - new Date(dateString).getTime();
@@ -19,7 +19,7 @@ export function NotificationsCenter() {
   const { notifications, unreadCount, loading, markRead, markAllRead } = useConsumerNotifications();
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
+    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar", consumerDesktopClass('reading'))}>
       {/* Header */}
       <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
         <div className="flex justify-between items-center mb-2">

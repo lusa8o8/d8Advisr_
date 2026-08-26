@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from "wouter";
 import { Settings, Heart, Star, Award, ChevronRight, Camera, X, LogOut } from 'lucide-react';
-import { BottomNav } from "@/components/SharedUI";
+import { BottomNav, cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
 import { useAuth } from "@workspace/d8-core/auth";
@@ -52,7 +52,7 @@ export function ProfileOverview() {
   const showInitials = !showEmoji && !showPhoto;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
+    <div className={cn("flex-1 min-h-0 flex flex-col relative bg-background", consumerDesktopClass('reading'))}>
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
         {/* Header Banner */}
         <div className="bg-primary px-6 pt-14 pb-20 relative text-primary-foreground rounded-b-[40px] shadow-md">

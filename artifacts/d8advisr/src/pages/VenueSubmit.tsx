@@ -4,7 +4,7 @@ import {
   ArrowLeft, Building2, Calendar, ChevronRight, Check,
   Repeat, Send, MapPin, Phone, Globe, Info,
 } from 'lucide-react';
-import { cn } from '@/components/SharedUI';
+import { cn, consumerDesktopClass } from '@/components/SharedUI';
 
 type SubmissionType = 'venue' | 'event' | null;
 type EventFrequency = 'one-off' | 'recurring' | 'annual';
@@ -116,7 +116,7 @@ export function VenueSubmit() {
   }
 
   return (
-    <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-28">
+    <div className={cn("flex-1 min-h-0 bg-[#F7F7F7] flex flex-col overflow-y-auto no-scrollbar pb-28", consumerDesktopClass('reading'))}>
 
       {/* Header */}
       <div className="bg-white px-5 pt-10 lg:pt-14 pb-4 lg:pb-5 border-b border-gray-100 shrink-0 shadow-sm">

@@ -1,12 +1,12 @@
 import { useLocation } from "wouter";
 import { ArrowLeft, Check, Navigation, Phone, Share, AlertCircle } from 'lucide-react';
-import { cn } from "@/components/SharedUI";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 
 export function ExecutionTracker() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24", consumerDesktopClass('reading'))}>
       {/* Header */}
       <div className="bg-card px-6 pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm sticky top-0 z-20 border-b border-border">
         <div className="flex justify-between items-center mb-6">

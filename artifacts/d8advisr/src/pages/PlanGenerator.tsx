@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from "wouter";
-import { TopBar, BottomNav, cn } from "@/components/SharedUI";
+import { TopBar, BottomNav, cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
 
 const MESSAGES = [
@@ -272,7 +272,7 @@ function BuildAroundMode({
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
+    <div className={cn("flex-1 min-h-0 flex flex-col relative bg-background", consumerDesktopClass('reading'))}>
       {/* Header */}
       <div className="px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex items-center gap-3">
         <button

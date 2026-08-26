@@ -1,13 +1,14 @@
 import { useLocation } from "wouter";
 import { ArrowLeft, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 
 export function PlanEdit() {
   const [, setLocation] = useLocation();
   const { formatPrice } = useRegion();
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24", consumerDesktopClass('reading'))}>
       {/* Header */}
       <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
         <div className="flex items-center gap-4">

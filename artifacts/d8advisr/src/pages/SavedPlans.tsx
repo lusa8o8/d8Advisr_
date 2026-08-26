@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { BottomNav, cn } from "@/components/SharedUI";
+import { BottomNav, cn, consumerDesktopClass } from "@/components/SharedUI";
 import { Calendar, ChevronRight, Star, Users, MapPin, Clock, Plus, Filter } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
 
@@ -127,7 +127,7 @@ export function SavedPlans() {
   const upcomingCount = PLANS.filter(p => p.status === 'upcoming').length;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-[#F7F7F7]">
+    <div className={cn("flex-1 min-h-0 flex flex-col bg-[#F7F7F7]", consumerDesktopClass('standard'))}>
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
 
         {/* ── HEADER ────────────────────────────────────────────────────────── */}

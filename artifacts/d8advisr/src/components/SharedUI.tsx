@@ -10,6 +10,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const CONSUMER_DESKTOP_WIDTHS = {
+  reading: "lg:max-w-2xl",
+  standard: "lg:max-w-5xl",
+  wide: "lg:max-w-6xl",
+} as const;
+
+export function consumerDesktopClass(width: keyof typeof CONSUMER_DESKTOP_WIDTHS) {
+  return cn("w-full lg:mx-auto", CONSUMER_DESKTOP_WIDTHS[width]);
+}
+
 export function TopBar({ transparent = false }: { transparent?: boolean }) {
   const [, setLocation] = useLocation();
   const { unreadCount } = useConsumerNotifications();

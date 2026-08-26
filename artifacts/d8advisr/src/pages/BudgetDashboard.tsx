@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Flame, Users, Heart, Sparkles, ArrowUpRight, ArrowDownLeft, CalendarDays, Check } from 'lucide-react';
-import { cn } from "@/components/SharedUI";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
 
 type FundType = 'experience' | 'group' | 'anniversary' | 'milestone';
@@ -200,7 +200,7 @@ export function BudgetDashboard() {
   const unlockedCount = FUNDS.filter(f => f.saved >= f.goal).length;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col relative bg-background">
+    <div className={cn("flex-1 min-h-0 flex flex-col relative bg-background", consumerDesktopClass('reading'))}>
       {/* Header */}
       <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
         <button onClick={() => setLocation('/profile')} className="w-10 h-10 bg-background rounded-full flex items-center justify-center text-foreground hover:bg-gray-200 transition-colors">

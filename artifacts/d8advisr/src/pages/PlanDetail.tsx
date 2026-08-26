@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Map, Clock, Share2, Edit3, Wallet, X, Check } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
-import { cn } from "@/components/SharedUI";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 
 const WEEKLY_PRESETS = [10, 20, 30, 50];
 
@@ -14,7 +14,7 @@ export function PlanDetail() {
   const [stashDone, setStashDone] = useState(false);
 
   return (
-    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
+    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24", consumerDesktopClass('standard'))}>
       {/* Header */}
       <div className="bg-card px-6 pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm z-10 sticky top-0 border-b border-border">
         <div className="flex justify-between items-center mb-4">
