@@ -291,7 +291,7 @@ export function EventDetail() {
   const [liveEvent, setLiveEvent] = useState<EventData | null>(null);
   const [loadingLiveEvent, setLoadingLiveEvent] = useState(false);
   const [liveEventError, setLiveEventError] = useState<string | null>(null);
-  const [eventTrust, setEventTrust] = useState<PublicEventTrust>({ sources: [], actions: [] });
+  const [eventTrust, setEventTrust] = useState<PublicEventTrust>({ sources: [], actions: [], attribution: null });
   const { recordEventAddToPlan, recordEventReminderEnabled, recordVenueView } = useDemandSignals();
 
   const pathParts = window.location.pathname.split('/');
@@ -306,7 +306,7 @@ export function EventDetail() {
         setLiveEvent(null);
         setLiveEventError(null);
         setLoadingLiveEvent(false);
-        setEventTrust({ sources: [], actions: [] });
+        setEventTrust({ sources: [], actions: [], attribution: null });
         return;
       }
 
@@ -332,7 +332,7 @@ export function EventDetail() {
       } else {
         setLiveEvent(null);
         setLiveEventError('This event is not available.');
-        setEventTrust({ sources: [], actions: [] });
+        setEventTrust({ sources: [], actions: [], attribution: null });
       }
       setLoadingLiveEvent(false);
     }
@@ -403,6 +403,10 @@ export function EventDetail() {
     ? 'Free entry'
     : event.priceAmount != null ? formatPrice(event.priceAmount) : event.price;
   const hasVenueLink = Boolean(event.venueId && event.venueIsLink !== false);
+  const persistedListingName = eventTrust.attribution?.displayName
+    ?? (event.listingSource === 'd8_admin' || event.listingSource === 'import'
+      ? 'D8Advisr'
+      : event.listingSource === 'partner' ? 'a D8 partner' : 'D8Advisr');
 
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col relative overflow-y-auto no-scrollbar pb-28">
@@ -571,13 +575,27 @@ export function EventDetail() {
             {event.emoji}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <p className="font-bold text-gray-900 text-[14px]">{event.organizer}</p>
-              {event.organizerVerified && (
-                <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full border border-blue-200">✓ D8 Verified</span>
-              )}
-            </div>
-            <p className="text-[12px] text-gray-400 font-medium mt-0.5">Event organiser</p>
+            {isPersistedEvent ? (
+              <>
+                <p className="text-[11px] text-gray-400 font-medium">Listed by</p>
+                <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <p className="font-bold text-gray-900 text-[14px]">{persistedListingName}</p>
+                  {eventTrust.attribution?.attributionType === 'partner' && (
+                    <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full border border-blue-200">D8 Partner</span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-bold text-gray-900 text-[14px]">{event.organizer}</p>
+                  {event.organizerVerified && (
+                    <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full border border-blue-200">✓ D8 Verified</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-gray-400 font-medium mt-0.5">Event organiser</p>
+              </>
+            )}
           </div>
         </div>
 
