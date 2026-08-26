@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "manifest_id": "lusaka-launch-v1",
+  "target_project_ref": "evfftzhrucwwfnertiup",
+  "market": {
+    "region_id": "lusaka",
+    "city": "Lusaka",
+    "country_code": "ZM",
+    "timezone": "Africa/Lusaka",
+    "currency_code": "ZMW"
+  },
+  "reviewed_at": "2026-08-26T00:00:00+02:00",
+  "review_policy": {
+    "publication_status": "draft",
+    "require_future_start": true,
+    "require_verified_primary_source": true,
+    "require_active_primary_action": true,
+    "do_not_infer_missing_facts": true
+  },
+  "drafts": [
+    {
+      "record_id": "feier-and-ice-2026-08-29",
+      "disposition": "draft_ready",
+      "request_keys": {
+        "event": "77ad3a36-f38d-4f9c-a5db-e03ddc73bd14",
+        "provenance": "bf59daff-64e0-4570-bcc3-7ff5cbb2181f"
+      },
+      "event": {
+        "title": "Feier & Ice",
+        "category": "Social & Mixer",
+        "description": "A relaxed social gathering hosted by Lowa-Mania in Chalala.",
+        "starts_at": "2026-08-29T14:00:00+02:00",
+        "ends_at": null,
+        "event_location_kind": "external",
+        "external_location_name": "Chalala",
+        "external_location_address": null,
+        "price_pp": 100,
+        "currency": "ZMW",
+        "capacity": 0,
+        "is_free": false,
+        "is_featured": false,
+        "emoji": "🎉",
+        "vibes": []
+      },
+      "sources": [
+        {
+          "source_type": "ticketing",
+          "publisher_name": "TicketHost Zambia",
+          "source_title": "Feier & Ice",
+          "url": "https://tickethost.co.zm/events/feier-ice",
+          "verification_status": "verified",
+          "is_primary": true,
+          "show_publicly": true,
+          "observed_at": "2026-08-26T00:00:00+02:00",
+          "last_checked_at": "2026-08-26T00:00:00+02:00",
+          "internal_note": "Source showed 29 Aug 2026 at 14:00, Chalala, host Lowa-Mania, and a K100 ticket plus K5 booking fee. Canonical event price excludes the platform fee."
+        }
+      ],
+      "action_links": [
+        {
+          "link_type": "tickets",
+          "provider_name": "TicketHost Zambia",
+          "url": "https://tickethost.co.zm/events/feier-ice",
+          "status": "active",
+          "is_primary": true,
+          "last_checked_at": "2026-08-26T00:00:00+02:00"
+        }
+      ]
+    },
+    {
+      "record_id": "afro-sunsets-summer-26-2026-09-12",
+      "disposition": "draft_ready",
+      "request_keys": {
+        "event": "ec496f19-8a92-4ccf-b6dd-99b20a741c8d",
+        "provenance": "0f8db9ce-9ad7-49ba-a53a-e7aa3a645148"
+      },
+      "event": {
+        "title": "AFRO SUNSETS: SUMMER 26 FESTIVAL",
+        "category": "Live Music",
+        "description": "An outdoor music and lifestyle festival by AFRO SUNSETS EVENTS, with food, art, games and multiple music genres.",
+        "starts_at": "2026-09-12T15:00:00+02:00",
+        "ends_at": null,
+        "event_location_kind": "external",
+        "external_location_name": "Orange Orchard",
+        "external_location_address": "Great East Road, Lusaka",
+        "price_pp": 210,
+        "currency": "ZMW",
+        "capacity": 0,
+        "is_free": false,
+        "is_featured": false,
+        "emoji": "🎶",
+        "vibes": []
+      },
+      "sources": [
+        {
+          "source_type": "ticketing",
+          "publisher_name": "TicketHost Zambia",
+          "source_title": "AFRO SUNSETS: SUMMER 26 FESTIVAL",
+          "url": "https://tickethost.co.zm/events/afro-sunsetssummer-26-festival",
+          "verification_status": "verified",
+          "is_primary": true,
+          "show_publicly": true,
+          "observed_at": "2026-08-26T00:00:00+02:00",
+          "last_checked_at": "2026-08-26T00:00:00+02:00",
+          "internal_note": "Source showed 12 Sep 2026 at 15:00, Orange Orchard on Great East Road, an 18+ restriction, and Phase 3 general admission at K210 plus K5 booking fee. Canonical event price excludes the platform fee and must be rechecked before publication."
+        }
+      ],
+      "action_links": [
+        {
+          "link_type": "tickets",
+          "provider_name": "TicketHost Zambia",
+          "url": "https://tickethost.co.zm/events/afro-sunsetssummer-26-festival",
+          "status": "active",
+          "is_primary": true,
+          "last_checked_at": "2026-08-26T00:00:00+02:00"
+        }
+      ]
+    }
+  ],
+  "holds": [
+    {
+      "record_id": "africa-tech-xpo-2026",
+      "reason_code": "taxonomy_hold",
+      "reason": "Verified event, but the current consumer taxonomy has no honest conference or technology-expo category.",
+      "source_url": "https://tickethost.co.zm/events/africa-tech-xpo-2026"
+    },
+    {
+      "record_id": "power-and-elec-zambia-2026",
+      "reason_code": "taxonomy_hold",
+      "reason": "Verified event, but the current consumer taxonomy has no honest trade-exhibition category.",
+      "source_url": "https://www.powereleczambia.com/"
+    },
+    {
+      "record_id": "eafrica-expo-and-conference-2026",
+      "reason_code": "taxonomy_hold",
+      "reason": "The official event exists, but the current consumer taxonomy has no honest business-conference category.",
+      "source_url": "https://eafricaexpo.com/"
+    },
+    {
+      "record_id": "auhf-42nd-conference-2026",
+      "reason_code": "taxonomy_hold",
+      "reason": "The official event exists, but the current consumer taxonomy has no honest professional-conference category.",
+      "source_url": "https://www.auhf.co.za/42nd-conference/"
+    },
+    {
+      "record_id": "dalp-study-abroad-expo-2026",
+      "reason_code": "fact_conflict",
+      "reason": "The supplied research contained conflicting date and venue details; recheck an organizer-owned source before intake.",
+      "source_url": null
+    },
+    {
+      "record_id": "remaining-supplied-lusaka-calendar",
+      "reason_code": "source_hold",
+      "reason": "Names found only in aggregate search results, social snippets, generic conference alerts, past dates, or without a stable event-specific source remain outside the import set.",
+      "source_url": null
+    }
+  ]
+}
