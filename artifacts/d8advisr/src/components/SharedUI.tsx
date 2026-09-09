@@ -20,6 +20,9 @@ export function consumerDesktopClass(width: keyof typeof CONSUMER_DESKTOP_WIDTHS
   return cn("w-full lg:mx-auto", CONSUMER_DESKTOP_WIDTHS[width]);
 }
 
+// Mobile drawers stay edge-to-edge; desktop drawers share a readable modal width.
+export const consumerSheetWidthClass = "w-full lg:max-w-2xl lg:mx-auto lg:mb-6";
+
 export function TopBar({ transparent = false }: { transparent?: boolean }) {
   const [, setLocation] = useLocation();
   const { unreadCount } = useConsumerNotifications();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Flame, Users, Heart, Sparkles, ArrowUpRight, ArrowDownLeft, CalendarDays, Check } from 'lucide-react';
-import { cn, consumerDesktopClass } from "@/components/SharedUI";
+import { cn, consumerDesktopClass, consumerSheetWidthClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
 
 type FundType = 'experience' | 'group' | 'anniversary' | 'milestone';
@@ -105,9 +105,9 @@ function cardTheme(pct: number, type: FundType) {
   };
   // cold start
   return {
-    bg: "bg-gradient-to-br from-gray-200 to-gray-100",
-    bar: "bg-gray-400",
-    barTrack: "bg-gray-300",
+    bg: "bg-card",
+    bar: "bg-muted-foreground/60",
+    barTrack: "bg-muted",
     glow: "",
     text: "text-foreground",
     sub: "text-muted-foreground",
@@ -458,7 +458,7 @@ export function BudgetDashboard() {
       {showNew && (
         <div className="absolute inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => closeNewSheet(setShowNew, setNewType, setPlanPicker, setPickedPlan)} />
-          <div className="relative bg-card rounded-t-3xl px-6 pt-5 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
+          <div className={cn(consumerSheetWidthClass, "relative bg-card rounded-t-3xl lg:rounded-3xl px-6 pt-5 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300 max-h-[90vh] overflow-y-auto no-scrollbar")}>
 
             {/* Sheet header */}
             <div className="flex items-center justify-between mb-1">

@@ -7,7 +7,7 @@ import {
   Lock, Palette, LogOut, Trash2,
   Eye, Sun, Moon, Monitor, CreditCard, Store,
 } from 'lucide-react';
-import { TopBar, BottomNav, cn } from "@/components/SharedUI";
+import { TopBar, BottomNav, cn, consumerSheetWidthClass } from "@/components/SharedUI";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { applyTheme, type ThemeValue } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
@@ -133,12 +133,12 @@ function EditSheet({
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+      <div className={cn(consumerSheetWidthClass, "relative bg-card rounded-t-3xl lg:rounded-3xl px-6 pt-6 pb-10 shadow-2xl animate-in slide-in-from-bottom-full duration-300")}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-[18px] font-bold text-foreground">{title}</h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+            className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center"
           >
             <X size={16} className="text-foreground" />
           </button>
@@ -149,7 +149,7 @@ function EditSheet({
           value={draft}
           onChange={e => setDraft(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-medium mb-5"
+          className="w-full px-4 py-3.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-medium mb-5"
         />
         <button
           onClick={() => { onSave(draft); onClose(); }}
@@ -600,8 +600,8 @@ export function Settings() {
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-semibold text-[13px] border transition-all',
                   theme === t.id
-                    ? 'bg-foreground text-white border-foreground shadow-sm'
-                    : 'bg-gray-100 text-gray-600 border-gray-100 hover:border-gray-300',
+                    ? 'bg-foreground text-background border-foreground shadow-sm'
+                    : 'bg-background text-muted-foreground border-border hover:border-muted-foreground/40',
                 )}
               >
                 {t.icon} {t.label}
@@ -622,8 +622,8 @@ export function Settings() {
                 className={cn(
                   'flex-1 py-2.5 rounded-xl font-bold text-[13px] border transition-all uppercase',
                   distUnit === u
-                    ? 'bg-foreground text-white border-foreground'
-                    : 'bg-gray-100 text-gray-600 border-gray-100',
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border',
                 )}
               >
                 {u}

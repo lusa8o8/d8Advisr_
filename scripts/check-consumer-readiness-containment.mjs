@@ -14,6 +14,8 @@ const profile = read('artifacts/d8advisr/src/pages/ProfileOverview.tsx');
 const generator = read('artifacts/d8advisr/src/pages/PlanGenerator.tsx');
 const desktopShell = read('artifacts/d8advisr/src/components/DesktopShell.tsx');
 const notifications = read('artifacts/d8advisr/src/pages/NotificationsCenter.tsx');
+const budget = read('artifacts/d8advisr/src/pages/BudgetDashboard.tsx');
+const settings = read('artifacts/d8advisr/src/pages/Settings.tsx');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -49,5 +51,10 @@ assert(!generator.includes('FullFormMode'), 'The legacy full plan form must rema
 assert(!generator.includes('Build Your Plan'), 'The legacy plan-builder heading must remain removed');
 assert(notifications.includes('flex flex-col px-4 lg:px-10 pb-10'), 'Notifications must retain the reading-width inner inset');
 assert(notifications.includes('overflow-hidden rounded-3xl border border-border bg-card shadow-sm'), 'Notifications must retain a rounded grouped card surface');
+assert(sharedUi.includes('consumerSheetWidthClass'), 'Consumer drawers must share the bounded desktop width contract');
+assert(budget.includes('bg: "bg-card"'), 'Cold Stash cards must retain a semantic theme surface');
+assert(budget.includes('consumerSheetWidthClass'), 'The new-Stash drawer must use the shared desktop width');
+assert(settings.includes("bg-foreground text-background border-foreground"), 'Selected Settings controls must retain semantic contrast');
+assert(settings.includes('consumerSheetWidthClass'), 'Personal Info drawers must use the shared desktop width');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');
