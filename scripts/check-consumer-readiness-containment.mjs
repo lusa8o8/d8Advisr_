@@ -22,6 +22,7 @@ const preferenceContract = read('artifacts/d8advisr/src/lib/consumerPreferences.
 const app = read('artifacts/d8advisr/src/App.tsx');
 const planDetail = read('artifacts/d8advisr/src/pages/PlanDetail.tsx');
 const planEdit = read('artifacts/d8advisr/src/pages/PlanEdit.tsx');
+const planNavigation = read('artifacts/d8advisr/src/lib/planNavigation.ts');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -50,9 +51,14 @@ assert(profile.includes('await signOut();'), 'Profile logout must revoke the loc
 assert(profile.includes('onClick={() => void handleSignOut()}'), 'Profile logout button must call its sign-out handler');
 assert(!profile.includes("onClick={() => setLocation('/')"), 'Profile logout must not only navigate without signing out');
 
-assert(sharedUi.includes("setLocation('/plan/generate')"), 'Mobile Surprise Me must route to the plan builder');
-assert(desktopShell.includes("setLocation('/plan/generate')"), 'Desktop Surprise Me must route to the plan builder');
+assert(sharedUi.includes("createPlanGeneratorPath('/home')"), 'Mobile Surprise Me must preserve Home as its return destination');
+assert(desktopShell.includes('createPlanGeneratorPath(location)'), 'Desktop Surprise Me must preserve its current-page return destination');
 assert(generator.includes('<PlanBuilderMode'), 'Plan generation must render the current compact builder');
+assert(generator.includes('getPlanGeneratorReturnPath(window.location.search)'), 'Plan generation must resolve its explicit return destination');
+assert(generator.includes('onClick={onBack}'), 'Plan builder back navigation must use the resolved return destination');
+assert(!generator.includes('setLocation(-1 as unknown as string)'), 'Plan builder must not cast a history delta into a route string');
+assert(plans.includes("createPlanGeneratorPath('/plans')"), 'Plan a new evening must return to My Plans');
+assert(planNavigation.includes("DEFAULT_PLAN_RETURN_PATH = '/plans'"), 'Direct plan-builder entry must have a safe My Plans fallback');
 assert(!generator.includes('FullFormMode'), 'The legacy full plan form must remain removed');
 assert(!generator.includes('Build Your Plan'), 'The legacy plan-builder heading must remain removed');
 assert(notifications.includes('flex flex-col px-4 lg:px-10 pb-10'), 'Notifications must retain the reading-width inner inset');
@@ -83,6 +89,8 @@ assert(planDetail.includes('Auto-save /wk ({activeRegion.currency_symbol})'), 'C
 assert(planDetail.includes('Math.ceil(stashGoalAmount / weeklyAmount)'), 'Plan funding drawer must estimate time from the editable amounts');
 assert(!planDetail.includes("Let's Go!"), 'Saved-plan detail must not imply an immediate execution mode');
 assert(!planDetail.includes("setLocation('/tracker')"), 'Saved-plan detail must not route to the removed execution mode');
+assert(planDetail.includes('View plan on map'), 'Saved-plan detail must retain a standalone Map action');
+assert(planDetail.includes("onClick={() => setLocation('/map')}"), 'Saved-plan Map action must route to Map');
 assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not remain mounted');
 assert(!app.includes('path="/tracker"'), 'The legacy /tracker route must remain removed');
 assert(planEdit.includes("consumerDesktopClass('reading'), \"px-6 flex items-center gap-4\""), 'Plan editor action bar must share the page reading width');

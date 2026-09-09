@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ArrowLeft, Clock, Share2, Edit3, Wallet, X, Check } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, Edit3, Wallet, X, Check, Map } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
 import { cn, consumerDesktopClass, consumerSheetWidthClass } from "@/components/SharedUI";
 
 const WEEKLY_PRESETS = [10, 20, 30, 50];
-const PLAN_ESTIMATE = 115.30;
+const PLAN_TIP_ESTIMATE = 16;
+const PLAN_ESTIMATE = 116;
+
+function wholeAmountInput(value: string) {
+  return value.replace(/\D/g, '');
+}
 
 export function PlanDetail() {
   const [, setLocation] = useLocation();
   const { formatPrice, activeRegion } = useRegion();
   const [showStash, setShowStash] = useState(false);
-  const [stashGoal, setStashGoal] = useState(PLAN_ESTIMATE.toFixed(2));
+  const [stashGoal, setStashGoal] = useState(String(PLAN_ESTIMATE));
   const [autoSave, setAutoSave] = useState<number | 'custom'>(20);
   const [customAutoSave, setCustomAutoSave] = useState('');
   const [stashDone, setStashDone] = useState(false);
@@ -128,7 +133,7 @@ export function PlanDetail() {
           </div>
           <div className="flex justify-between text-[15px] mb-5 text-gray-400 font-medium">
             <span>Est. Tip (18%)</span>
-            <span>{formatPrice(15.30)}</span>
+            <span>{formatPrice(PLAN_TIP_ESTIMATE)}</span>
           </div>
           
           <div className="border-t border-border pt-4 mb-6">
@@ -176,6 +181,17 @@ export function PlanDetail() {
             </button>
           )}
         </div>
+
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setLocation('/map')}
+            className="w-full max-w-xs flex items-center justify-center gap-2.5 rounded-2xl border-2 border-border bg-card px-5 py-3.5 text-[14px] font-bold text-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary active:scale-[0.98]"
+          >
+            <Map size={19} />
+            View plan on map
+          </button>
+        </div>
       </div>
 
       {/* Fund in Stash Sheet */}
@@ -213,12 +229,11 @@ export function PlanDetail() {
               </label>
               <input
                 id="stash-goal"
-                type="number"
-                inputMode="decimal"
-                min="0.01"
-                step="0.01"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={stashGoal}
-                onChange={(event) => setStashGoal(event.target.value)}
+                onChange={(event) => setStashGoal(wholeAmountInput(event.target.value))}
                 className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
               />
               <p className="text-[11px] text-muted-foreground mt-1.5">Prefilled from this plan's current estimate.</p>
@@ -270,12 +285,11 @@ export function PlanDetail() {
                   </label>
                   <input
                     id="custom-auto-save"
-                    type="number"
-                    inputMode="decimal"
-                    min="0.01"
-                    step="0.01"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={customAutoSave}
-                    onChange={(event) => setCustomAutoSave(event.target.value)}
+                    onChange={(event) => setCustomAutoSave(wholeAmountInput(event.target.value))}
                     placeholder="Enter your weekly amount"
                     className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
                   />

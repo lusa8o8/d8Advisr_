@@ -12,6 +12,7 @@ import { VENUE_CLIENT_SELECT, supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/supabase";
 import { useRegion } from "@/hooks/useRegion";
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+import { createPlanGeneratorPath } from '@/lib/planNavigation';
 
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
 const GMAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID?.trim();
@@ -877,7 +878,7 @@ export function VenueDetails() {
                 <button
                   onClick={() => {
                     void recordVenueAddToPlan(venueId);
-                    setLocation(`/plan/generate?${planParams().toString()}`);
+                    setLocation(createPlanGeneratorPath(`/venue/${venueId}`, planParams()));
                   }}
                   className="text-primary text-[13px] font-bold hover:underline"
                 >
@@ -942,7 +943,7 @@ export function VenueDetails() {
         <button 
           onClick={() => {
             void recordVenueAddToPlan(venueId);
-            setLocation(`/plan/generate?${planParams().toString()}`);
+            setLocation(createPlanGeneratorPath(`/venue/${venueId}`, planParams()));
           }}
           className="flex-1 bg-primary text-primary-foreground rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90"
         >

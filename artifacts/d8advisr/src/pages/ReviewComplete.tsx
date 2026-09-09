@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { Sparkles, Star } from 'lucide-react';
+import { createPlanGeneratorPath } from '@/lib/planNavigation';
 
 export function ReviewComplete() {
   const [, setLocation] = useLocation();
@@ -57,7 +58,7 @@ export function ReviewComplete() {
       {/* Actions */}
       <div className="shrink-0 px-6 pb-14 pt-6 flex flex-col gap-3 relative z-10">
         <button
-          onClick={() => setLocation('/plan/generate')}
+          onClick={() => setLocation(createPlanGeneratorPath('/review/complete'))}
           className="w-full bg-[#FF5A5F] text-white py-4 rounded-2xl font-bold text-[16px] shadow-[0_8px_24px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all"
         >
           Plan another evening ✨

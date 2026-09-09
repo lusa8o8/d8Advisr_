@@ -34,6 +34,9 @@ tables are prototypes and are not approved for processing real money.
   debit mandate.
 - Product copy must distinguish `Goal`, `Available`, `Pending`, `Withdrawn` and
   `Failed`. It must not describe pending funds as saved or available.
+- User-entered Stash goals and contribution amounts use whole major currency
+  units. A fractional planning estimate is rounded upward before it prefills a
+  goal; for example, ZMW 155.30 becomes ZMW 156.
 - D8Advisr should collect only the operational data needed to move, reconcile
   and support money. Broader behavioural analytics are deferred until the MVP
   stabilises.
@@ -82,9 +85,12 @@ The financial source of truth must be an append-only, balanced ledger. A mutable
 balances are derived from ledger postings or from a rebuildable, transactionally
 maintained balance projection.
 
-All monetary amounts are stored as integers in the currency's minor unit with an
-explicit ISO currency code. Lenco currently accepts major-unit decimal amounts;
-conversion happens only at the provider-adapter boundary.
+All authoritative monetary amounts, including provider fees and settlements,
+are stored as integers in the currency's minor unit with an explicit ISO
+currency code. Whole-unit product inputs are a user-facing rule, not permission
+to discard minor-unit precision from financial records. Lenco currently accepts
+major-unit decimal amounts; conversion happens only at the provider-adapter
+boundary.
 
 At minimum, the future model must distinguish:
 

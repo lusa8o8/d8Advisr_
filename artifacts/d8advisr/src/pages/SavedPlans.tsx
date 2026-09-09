@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { BottomNav, cn, consumerDesktopClass } from "@/components/SharedUI";
 import { Calendar, ChevronRight, Star, Users, MapPin, Clock, Plus, Filter } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
+import { createPlanGeneratorPath } from "@/lib/planNavigation";
 
 // ─── Mock saved plans ─────────────────────────────────────────────────────────
 
@@ -275,7 +276,7 @@ export function SavedPlans() {
         {/* ── NEW PLAN PROMPT ───────────────────────────────────────────────── */}
         <div className={cn(consumerDesktopClass('standard'), "px-4 mt-4")}>
           <button
-            onClick={() => setLocation('/plan/generate')}
+            onClick={() => setLocation(createPlanGeneratorPath('/plans'))}
             className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl border-2 border-dashed border-gray-300 text-gray-500 font-semibold text-[14px] active:scale-[0.98] transition-transform hover:border-[#FF5A5F]/50 hover:text-[#FF5A5F] group"
           >
             <Plus size={18} className="group-hover:text-[#FF5A5F] transition-colors" />

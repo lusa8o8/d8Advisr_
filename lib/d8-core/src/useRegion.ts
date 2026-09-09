@@ -11,6 +11,10 @@ export type RegionArea = Database['public']['Tables']['region_areas']['Row'];
 export type ListingCategory = Database['public']['Tables']['listing_categories']['Row'];
 export type ListingVibe = Database['public']['Tables']['listing_vibes']['Row'];
 
+export function roundUpCurrencyUnit(amount: number) {
+  return amount >= 0 ? Math.ceil(amount) : Math.floor(amount);
+}
+
 export function useRegion() {
   const { profile } = useProfile();
 
@@ -69,10 +73,11 @@ export function useRegion() {
     if (amount === null || amount === undefined) return '';
 
     const code = currencyCode || activeRegion.currency_code;
+    const displayAmount = roundUpCurrencyUnit(amount);
 
     // For Zambian Kwacha (ZMW) we want a simple 'K' formatting since standard Intl can be weird
     if (code === 'ZMW') {
-      return `K ${amount.toLocaleString('en-ZM')}`;
+      return `K ${displayAmount.toLocaleString('en-ZM', { maximumFractionDigits: 0 })}`;
     }
 
     try {
@@ -80,10 +85,10 @@ export function useRegion() {
         style: 'currency',
         currency: code,
         maximumFractionDigits: 0 // Most of our prices are whole numbers
-      }).format(amount);
+      }).format(displayAmount);
     } catch {
       // Fallback if the currency code isn't supported by the browser
-      return `${code} ${amount.toLocaleString()}`;
+      return `${code} ${displayAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
   };
 

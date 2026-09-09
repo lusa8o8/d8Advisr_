@@ -11,6 +11,7 @@ import { useRegion } from '@/hooks/useRegion';
 import { useAuth } from '@workspace/d8-core/auth';
 import { EventTrustCard } from '@/features/events/EventTrustCard';
 import { loadPublicEventTrust, type PublicEventTrust } from '@/features/events/eventTrustData';
+import { createPlanGeneratorPath } from '@/lib/planNavigation';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
 const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
@@ -684,7 +685,7 @@ export function EventDetail() {
                 p_active: true,
               });
             }
-            setLocation(planParams ? `/plan/generate?${planParams.toString()}` : '/plan/generate');
+            setLocation(createPlanGeneratorPath(`/event/${eventId}`, planParams ?? undefined));
           }}
           className="flex-1 bg-primary text-white rounded-xl font-bold text-[16px] py-4 shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
         >

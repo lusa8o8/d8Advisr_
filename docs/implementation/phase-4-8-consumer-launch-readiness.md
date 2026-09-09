@@ -125,3 +125,14 @@ the detail now returns to My Plans instead of beginning an execution session.
 This closes the front-end lifecycle as review -> save -> revisit/edit without
 pretending that D8Advisr executes the outing. A future event-day companion is a
 separate product and system-design decision, not an extension of the demo.
+
+The plan-builder route now receives an explicit, validated consumer return
+destination. Home and mobile Surprise Me return to Home; desktop Surprise Me
+returns to whichever consumer page launched it, including Map; My Plans returns
+to My Plans; and venue/event build-around journeys return to their originating
+detail page. Direct or invalid entry falls back to My Plans rather than casting
+a browser history delta into a route string.
+
+Removing the simulated execution flow does not remove the useful Map shortcut.
+Saved-plan detail retains a centered **View plan on map** action that opens the
+existing Map without implying live navigation, tracking or itinerary execution.

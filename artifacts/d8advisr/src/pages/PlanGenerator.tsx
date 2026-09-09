@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from "wouter";
 import { cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
+import { getPlanGeneratorReturnPath } from "@/lib/planNavigation";
 
 const MESSAGES = [
   "Reading your vibe...",
@@ -239,6 +240,7 @@ function PlanBuilderMode({
   venueEmoji,
   venueCategory,
   anchorCostAmount,
+  onBack,
   onGenerate,
 }: {
   anchorType: 'venue' | 'event' | null;
@@ -247,10 +249,10 @@ function PlanBuilderMode({
   venueEmoji: string;
   venueCategory: string;
   anchorCostAmount: number | null;
+  onBack: () => void;
   onGenerate: () => void;
 }) {
   const { formatPrice } = useRegion();
-  const [, setLocation] = useLocation();
   const [when, setWhen] = useState('Tonight');
   const [who, setWho] = useState('couple');
   const [budgetIdx, setBudgetIdx] = useState(2);
@@ -281,7 +283,8 @@ function PlanBuilderMode({
       {/* Header */}
       <div className="px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex items-center gap-3">
         <button
-          onClick={() => setLocation(-1 as unknown as string)}
+          onClick={onBack}
+          aria-label="Back to previous page"
           className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-background transition-colors"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -435,6 +438,10 @@ export function PlanGenerator() {
   const anchorCostAmount = parsedAnchorCostAmount !== null && Number.isFinite(parsedAnchorCostAmount)
     ? parsedAnchorCostAmount
     : null;
+  const returnTo = getPlanGeneratorReturnPath(window.location.search);
+  const handleBack = useCallback(() => {
+    setLocation(returnTo);
+  }, [returnTo, setLocation]);
   const handleGenerate = useCallback(() => {
     setGenerating(true);
   }, []);
@@ -452,6 +459,7 @@ export function PlanGenerator() {
         venueEmoji={venueEmoji}
         venueCategory={venueCategory}
         anchorCostAmount={anchorCostAmount}
+        onBack={handleBack}
         onGenerate={handleGenerate}
       />
 

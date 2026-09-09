@@ -5,6 +5,7 @@ import { twMerge } from "tailwind-merge";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
+import { createPlanGeneratorPath } from "@/lib/planNavigation";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -103,7 +104,7 @@ export function FAB({ type }: { type: 'home' | 'plans' }) {
   if (type === 'home') {
     return (
       <button 
-        onClick={() => setLocation('/plan/generate')}
+        onClick={() => setLocation(createPlanGeneratorPath('/home'))}
         className="absolute bottom-28 right-6 bg-primary text-primary-foreground px-5 py-4 rounded-full font-bold shadow-[0_8px_25px_-6px_rgba(255,90,95,0.6)] flex items-center gap-2 active:scale-95 transition-transform z-30"
       >
         <span className="text-xl">✨</span> Surprise Me

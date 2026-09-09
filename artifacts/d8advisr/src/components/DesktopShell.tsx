@@ -7,6 +7,7 @@ import { cn } from '@/components/SharedUI';
 import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useConsumerNotifications } from '@/hooks/useConsumerNotifications';
+import { createPlanGeneratorPath } from '@/lib/planNavigation';
 
 const NAV = [
   { label: 'Discover',   icon: Home,     path: '/home' },
@@ -58,7 +59,7 @@ function Sidebar() {
       {/* Surprise Me CTA */}
       <div className="px-4 mb-6">
         <button
-          onClick={() => setLocation('/plan/generate')}
+          onClick={() => setLocation(createPlanGeneratorPath(location))}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-[14px] active:scale-[0.97] transition-all"
           style={{
             background: 'linear-gradient(135deg, #FF5A5F 0%, #FF3D6B 100%)',

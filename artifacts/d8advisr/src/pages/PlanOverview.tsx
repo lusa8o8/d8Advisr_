@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
+import { createPlanGeneratorPath } from "@/lib/planNavigation";
 
 // ─── Plan data ─────────────────────────────────────────────────────────────────
 
@@ -382,7 +383,7 @@ export function PlanOverview() {
         <div className={cn(consumerDesktopClass('standard'), "px-5 flex gap-3")}>
           {/* Regenerate */}
           <button
-            onClick={() => setLocation('/plan/generate')}
+            onClick={() => setLocation(createPlanGeneratorPath('/plan/overview'))}
             className="w-14 h-14 rounded-2xl border-2 border-gray-200 flex items-center justify-center text-gray-500 active:scale-95 transition-transform shrink-0 hover:border-gray-300"
           >
             <RotateCcw size={20} />
