@@ -85,14 +85,16 @@ export function PlanEdit() {
 
       </div>
 
-      <div className="fixed bottom-0 w-full max-w-[430px] bg-card border-t border-border p-6 flex items-center gap-4 z-20">
-        <button onClick={() => setLocation('/plan/1')} className="font-bold text-muted-foreground hover:text-foreground px-4">Cancel</button>
-        <button 
-          onClick={() => setLocation('/plan/1')}
-          className="flex-1 bg-primary text-primary-foreground py-4 rounded-xl font-bold text-[17px] shadow-md active:scale-95 transition-all"
-        >
-          Save Changes
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border py-6 z-20">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 flex items-center gap-4")}>
+          <button onClick={() => setLocation('/plan/1')} className="font-bold text-muted-foreground hover:text-foreground px-4">Cancel</button>
+          <button
+            onClick={() => setLocation('/plan/1')}
+            className="flex-1 bg-primary text-primary-foreground py-4 rounded-xl font-bold text-[17px] shadow-md active:scale-95 transition-all"
+          >
+            Save Changes
+          </button>
+        </div>
       </div>
     </div>
   );

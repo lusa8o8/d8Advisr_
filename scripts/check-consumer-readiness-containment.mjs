@@ -21,6 +21,7 @@ const preferenceEditor = read('artifacts/d8advisr/src/pages/PreferenceEdit.tsx')
 const preferenceContract = read('artifacts/d8advisr/src/lib/consumerPreferences.ts');
 const app = read('artifacts/d8advisr/src/App.tsx');
 const planDetail = read('artifacts/d8advisr/src/pages/PlanDetail.tsx');
+const planEdit = read('artifacts/d8advisr/src/pages/PlanEdit.tsx');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -77,5 +78,7 @@ assert(!planDetail.includes("Let's Go!"), 'Saved-plan detail must not imply an i
 assert(!planDetail.includes("setLocation('/tracker')"), 'Saved-plan detail must not route to the removed execution mode');
 assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not remain mounted');
 assert(!app.includes('path="/tracker"'), 'The legacy /tracker route must remain removed');
+assert(planEdit.includes("consumerDesktopClass('reading'), \"px-6 flex items-center gap-4\""), 'Plan editor action bar must share the page reading width');
+assert(!planEdit.includes('max-w-[430px]'), 'Plan editor action bar must not retain the legacy mobile-only width cap');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');
