@@ -6,6 +6,7 @@ import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
 import { createPlanGeneratorPath } from "@/lib/planNavigation";
+import { createSettingsPath } from '@/lib/settingsNavigation';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,7 +26,7 @@ export function consumerDesktopClass(width: keyof typeof CONSUMER_DESKTOP_WIDTHS
 export const consumerSheetWidthClass = "w-full lg:max-w-2xl lg:mx-auto lg:mb-6";
 
 export function TopBar({ transparent = false }: { transparent?: boolean }) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { unreadCount } = useConsumerNotifications();
   const isDesktop = useIsDesktop();
   if (isDesktop) return null;
@@ -51,7 +52,7 @@ export function TopBar({ transparent = false }: { transparent?: boolean }) {
           )}
         </button>
         <button 
-          onClick={() => setLocation('/settings')}
+          onClick={() => setLocation(createSettingsPath(location))}
           className="text-foreground hover:opacity-70 transition-opacity"
           aria-label="Settings"
         >

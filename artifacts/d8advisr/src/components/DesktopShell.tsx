@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useConsumerNotifications } from '@/hooks/useConsumerNotifications';
 import { createPlanGeneratorPath } from '@/lib/planNavigation';
+import { createSettingsPath } from '@/lib/settingsNavigation';
 
 const NAV = [
   { label: 'Discover',   icon: Home,     path: '/home' },
@@ -144,7 +145,7 @@ function Sidebar() {
           </div>
         </button>
         <button
-          onClick={() => setLocation('/settings')}
+          onClick={() => setLocation(createSettingsPath(location))}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl w-full text-left hover:bg-white/5 transition-colors"
           style={{ color: 'rgba(255,255,255,0.4)' }}
         >

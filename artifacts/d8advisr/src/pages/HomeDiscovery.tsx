@@ -8,6 +8,7 @@ import { useDemandSignals } from "@/hooks/useDemandSignals";
 import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
 import { useGreeting } from "@/hooks/useGreeting";
+import { createSettingsPath } from '@/lib/settingsNavigation';
 
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 
@@ -470,7 +471,7 @@ export function HomeDiscovery() {
                 ))}
               </div>
               <button
-                onClick={() => { setShowGemGate(false); setLocation('/settings'); }}
+                onClick={() => { setShowGemGate(false); setLocation(createSettingsPath('/home')); }}
                 className="w-full py-4 rounded-xl bg-purple-600 text-white font-bold text-[15px] shadow-lg shadow-purple-600/30 mb-3"
               >
                 Link Stash & Unlock 💎
@@ -763,7 +764,7 @@ export function HomeDiscovery() {
               ))}
             </div>
             <button
-              onClick={() => { setShowGemGate(false); setLocation('/settings'); }}
+              onClick={() => { setShowGemGate(false); setLocation(createSettingsPath('/home')); }}
               className="w-full py-4 rounded-2xl bg-purple-600 text-white font-bold text-[16px] shadow-lg shadow-purple-600/30 mb-3"
             >
               Link Stash & Unlock 💎

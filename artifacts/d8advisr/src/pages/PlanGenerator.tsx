@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from "wouter";
-import { cn, consumerDesktopClass } from "@/components/SharedUI";
+import { CalendarDays } from 'lucide-react';
+import { cn, consumerDesktopClass, consumerSheetWidthClass } from "@/components/SharedUI";
+import { Calendar } from '@/components/ui/calendar';
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useRegion } from "@/hooks/useRegion";
 import { getPlanGeneratorReturnPath } from "@/lib/planNavigation";
 
@@ -224,14 +227,25 @@ function PlanningAnimation({ onDone }: { onDone: () => void }) {
 
 // ─── Modern plan builder ──────────────────────────────────────────────────────
 
-const WHEN_OPTIONS = ['Tonight', 'Tomorrow', 'This Weekend'];
+const WHEN_OPTIONS = ['Tonight', 'Tomorrow', 'This Weekend'] as const;
 const WHO_OPTIONS = [
-  { label: 'Just Us', emoji: '💑', value: 'couple' },
-  { label: 'Solo', emoji: '🧍', value: 'solo' },
-  { label: 'Small Group', emoji: '👥', value: 'small' },
-  { label: 'Group 5+', emoji: '🎉', value: 'large' },
-];
+  { label: 'Just Us', detail: '2 people', emoji: '💑', value: 'couple', partySize: 2 },
+  { label: 'Solo', detail: '1 person', emoji: '🧍', value: 'solo', partySize: 1 },
+  { label: 'Small Group', detail: '3 people', emoji: '👥', value: 'small', partySize: 3 },
+  { label: 'Custom', detail: 'Choose 3+', emoji: '✨', value: 'custom', partySize: null },
+] as const;
 const BUDGET_STEPS = [25, 50, 75, 100, 150, 200, 300];
+
+function formatSelectedDate(date: Date) {
+  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function toLocalDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function PlanBuilderMode({
   anchorType,
@@ -255,8 +269,17 @@ function PlanBuilderMode({
   const { formatPrice } = useRegion();
   const [when, setWhen] = useState('Tonight');
   const [who, setWho] = useState('couple');
+  const [customPartySize, setCustomPartySize] = useState('4');
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [showCalendar, setShowCalendar] = useState(false);
   const [budgetIdx, setBudgetIdx] = useState(2);
   const hasAnchor = Boolean(anchorType && venueName);
+  const selectedWho = WHO_OPTIONS.find(option => option.value === who) ?? WHO_OPTIONS[0];
+  const partySize = who === 'custom'
+    ? Math.max(3, Number.parseInt(customPartySize, 10) || 3)
+    : selectedWho.partySize;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const handleGenerate = () => {
     if (hasAnchor) {
@@ -268,8 +291,10 @@ function PlanBuilderMode({
         venueEmoji,
         venueCategory,
         costAmount: anchorCostAmount,
-        when,
+        when: when === 'custom' && selectedDate ? formatSelectedDate(selectedDate) : when,
+        planDate: when === 'custom' && selectedDate ? toLocalDateValue(selectedDate) : null,
         who,
+        partySize,
         budgetPerPerson: BUDGET_STEPS[budgetIdx],
       }));
     } else {
@@ -333,13 +358,13 @@ function PlanBuilderMode({
             {/* When? */}
             <div>
               <h3 className="font-bold text-foreground mb-3 text-[15px]">When?</h3>
-              <div className="flex gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
                 {WHEN_OPTIONS.map(opt => (
                   <button
                     key={opt}
                     onClick={() => setWhen(opt)}
                     className={cn(
-                      "flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95",
+                      "py-3 rounded-xl text-sm font-bold transition-all active:scale-95",
                       when === opt
                         ? "bg-foreground text-card shadow-md"
                         : "bg-card border border-border text-foreground hover:border-gray-300"
@@ -348,6 +373,19 @@ function PlanBuilderMode({
                     {opt}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setShowCalendar(true)}
+                  className={cn(
+                    'flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all active:scale-95',
+                    when === 'custom'
+                      ? 'bg-foreground text-card shadow-md'
+                      : 'bg-card border border-border text-foreground hover:border-gray-300',
+                  )}
+                >
+                  <CalendarDays size={16} />
+                  {when === 'custom' && selectedDate ? formatSelectedDate(selectedDate) : 'Pick a date'}
+                </button>
               </div>
             </div>
 
@@ -367,10 +405,29 @@ function PlanBuilderMode({
                     )}
                   >
                     <span className="text-xl">{opt.emoji}</span>
-                    {opt.label}
+                    <span>{opt.label}</span>
+                    <span className={cn('text-[11px] font-medium', who === opt.value ? 'text-primary-foreground/75' : 'text-muted-foreground')}>
+                      {opt.detail}
+                    </span>
                   </button>
                 ))}
               </div>
+              {who === 'custom' ? (
+                <label className="mt-3 block rounded-2xl border border-primary/25 bg-primary/5 p-4">
+                  <span className="mb-2 block text-[12px] font-bold text-foreground">Exact number of people</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={3}
+                    step={1}
+                    value={customPartySize}
+                    onChange={event => setCustomPartySize(event.target.value.replace(/[^0-9]/g, ''))}
+                    onBlur={() => setCustomPartySize(String(Math.max(3, Number.parseInt(customPartySize, 10) || 3)))}
+                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center text-[18px] font-black text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  <span className="mt-2 block text-[11px] text-muted-foreground">Enter 3 or more people.</span>
+                </label>
+              ) : null}
             </div>
 
             {/* Budget per person */}
@@ -412,6 +469,38 @@ function PlanBuilderMode({
           </p>
         )}
       </div>
+
+      <Drawer open={showCalendar} onOpenChange={setShowCalendar}>
+        <DrawerContent className={cn(consumerSheetWidthClass, 'rounded-t-3xl border-border bg-card px-2 pb-[max(1rem,env(safe-area-inset-bottom))] lg:rounded-3xl')}>
+          <DrawerHeader className="px-5 pb-2 text-left">
+            <DrawerTitle className="text-[19px] font-black text-foreground">Pick a date</DrawerTitle>
+            <DrawerDescription>Choose when you want this plan to happen.</DrawerDescription>
+          </DrawerHeader>
+          <div className="flex justify-center px-2">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={{ before: today }}
+              className="w-full rounded-2xl border border-border bg-background p-4 [--cell-size:2.55rem]"
+            />
+          </div>
+          <DrawerFooter className="px-4 pb-4 pt-3">
+            <button
+              type="button"
+              disabled={!selectedDate}
+              onClick={() => {
+                if (!selectedDate) return;
+                setWhen('custom');
+                setShowCalendar(false);
+              }}
+              className="w-full rounded-xl bg-primary py-4 text-[15px] font-bold text-primary-foreground shadow-lg shadow-primary/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {selectedDate ? `Use ${formatSelectedDate(selectedDate)}` : 'Choose a date'}
+            </button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

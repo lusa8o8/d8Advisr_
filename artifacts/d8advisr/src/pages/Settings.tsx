@@ -15,6 +15,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
 import { supabase } from "@/lib/supabase";
 import { getPartnerOrigin } from "@/lib/clientOrigins";
+import { getSettingsReturnPath } from '@/lib/settingsNavigation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface PaymentMethod {
@@ -165,6 +166,7 @@ function EditSheet({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function Settings() {
   const [, setLocation] = useLocation();
+  const returnTo = getSettingsReturnPath(window.location.search);
   const isDesktop = useIsDesktop();
   const { user, signOut } = useAuth();
   const { profile, refetch } = useProfile();
@@ -687,7 +689,8 @@ export function Settings() {
       ) : (
         <div className="bg-white px-5 pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-10 shadow-sm border-b border-gray-100 flex items-center gap-4">
           <button
-            onClick={() => setLocation('/profile')}
+            onClick={() => setLocation(returnTo)}
+            aria-label="Back to previous page"
             className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-foreground"
           >
             <ArrowLeft size={20} />

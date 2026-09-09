@@ -5,6 +5,7 @@ import { BottomNav, cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
 import { useAuth } from "@workspace/d8-core/auth";
+import { createSettingsPath } from '@/lib/settingsNavigation';
 
 const AVATARS = [
   { id: "romantic",    emoji: "🥰", label: "Romantic"     },
@@ -60,7 +61,7 @@ export function ProfileOverview() {
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-xl font-bold">Profile</h1>
               <button
-                onClick={() => setLocation('/settings')}
+                onClick={() => setLocation(createSettingsPath('/profile'))}
                 className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
               >
                 <Settings size={20} />

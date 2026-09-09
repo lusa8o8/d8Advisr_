@@ -23,9 +23,13 @@ const app = read('artifacts/d8advisr/src/App.tsx');
 const planDetail = read('artifacts/d8advisr/src/pages/PlanDetail.tsx');
 const planEdit = read('artifacts/d8advisr/src/pages/PlanEdit.tsx');
 const planNavigation = read('artifacts/d8advisr/src/lib/planNavigation.ts');
+const settingsNavigation = read('artifacts/d8advisr/src/lib/settingsNavigation.ts');
 
-assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
+assert(sharedUi.includes('setLocation(createSettingsPath(location))'), 'Mobile Settings action must preserve its current-page return destination');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
+assert(settings.includes('getSettingsReturnPath(window.location.search)'), 'Settings must resolve its contextual return destination');
+assert(settings.includes('onClick={() => setLocation(returnTo)}'), 'Settings back navigation must use the resolved return destination');
+assert(settingsNavigation.includes("DEFAULT_SETTINGS_RETURN_PATH = '/profile'"), 'Direct Settings entry must retain the safe Profile fallback');
 
 assert(home.includes('<FAB type="home" />'), 'Discovery feed must retain the mobile Surprise Me FAB');
 assert(!home.includes('Add to Plan'), 'Home feed cards must not expose card-level Add to Plan actions');
@@ -56,6 +60,9 @@ assert(desktopShell.includes('createPlanGeneratorPath(location)'), 'Desktop Surp
 assert(generator.includes('<PlanBuilderMode'), 'Plan generation must render the current compact builder');
 assert(generator.includes('getPlanGeneratorReturnPath(window.location.search)'), 'Plan generation must resolve its explicit return destination');
 assert(generator.includes('onClick={onBack}'), 'Plan builder back navigation must use the resolved return destination');
+assert(generator.includes("{ label: 'Small Group', detail: '3 people'"), 'Plan builder must define the Small Group preset explicitly');
+assert(generator.includes("{ label: 'Custom', detail: 'Choose 3+'"), 'Plan builder must offer an exact custom headcount');
+assert(generator.includes("mode=\"single\""), 'Plan builder must provide the branded single-date calendar');
 assert(!generator.includes('setLocation(-1 as unknown as string)'), 'Plan builder must not cast a history delta into a route string');
 assert(plans.includes("createPlanGeneratorPath('/plans')"), 'Plan a new evening must return to My Plans');
 assert(planNavigation.includes("DEFAULT_PLAN_RETURN_PATH = '/plans'"), 'Direct plan-builder entry must have a safe My Plans fallback');
