@@ -16,7 +16,7 @@ export function PlanDetail() {
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
       {/* Header */}
-      <div className="bg-card pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm z-10 sticky top-0 border-b border-border">
+      <div className="bg-card pt-10 lg:pt-14 pb-5 lg:pb-6 shadow-sm z-20 sticky top-0 border-b border-border">
         <div className={cn(consumerDesktopClass('standard'), "px-6")}>
         <div className="flex justify-between items-center mb-4">
           <button

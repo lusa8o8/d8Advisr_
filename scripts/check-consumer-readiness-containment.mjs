@@ -72,6 +72,7 @@ assert(!preferenceEditor.includes('Vegetarian / Vegan'), 'The unimplemented diet
 assert(!preferenceEditor.includes('supabase'), 'The front-end preference editor must not introduce server persistence yet');
 assert(overview.includes("setLocation('/plan/1')"), 'Saving the demo overview must still finish on the canonical saved-plan detail');
 assert(planDetail.includes("setLocation('/plans')"), 'Saved-plan detail must return to My Plans');
+assert(planDetail.includes('shadow-sm z-20 sticky top-0'), 'Saved-plan header must stay above positioned itinerary rows');
 assert(!planDetail.includes("Let's Go!"), 'Saved-plan detail must not imply an immediate execution mode');
 assert(!planDetail.includes("setLocation('/tracker')"), 'Saved-plan detail must not route to the removed execution mode');
 assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not remain mounted');
