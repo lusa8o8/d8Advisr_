@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Clock, Share2, Edit3, Wallet, X, Check } from 'lucide-react';
 import { useRegion } from "@/hooks/useRegion";
-import { cn, consumerDesktopClass } from "@/components/SharedUI";
+import { cn, consumerDesktopClass, consumerSheetWidthClass } from "@/components/SharedUI";
 
 const WEEKLY_PRESETS = [10, 20, 30, 50];
 
@@ -169,9 +169,9 @@ export function PlanDetail() {
 
       {/* Fund in Stash Sheet */}
       {showStash && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end max-w-[430px] mx-auto">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowStash(false)} />
-          <div className="relative bg-card rounded-t-3xl px-6 pt-5 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300">
+          <div className={cn(consumerSheetWidthClass, "relative bg-card rounded-t-3xl lg:rounded-3xl px-6 pt-5 pb-12 shadow-2xl animate-in slide-in-from-bottom-full duration-300 max-h-[90vh] overflow-y-auto no-scrollbar")}>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-1">

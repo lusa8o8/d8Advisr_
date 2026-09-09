@@ -74,6 +74,9 @@ assert(!preferenceEditor.includes('supabase'), 'The front-end preference editor 
 assert(overview.includes("setLocation('/plan/1')"), 'Saving the demo overview must still finish on the canonical saved-plan detail');
 assert(planDetail.includes("setLocation('/plans')"), 'Saved-plan detail must return to My Plans');
 assert(planDetail.includes('shadow-sm z-20 sticky top-0'), 'Saved-plan header must stay above positioned itinerary rows');
+assert(planDetail.includes('consumerSheetWidthClass'), 'Plan funding drawer must use the shared consumer drawer width');
+assert(planDetail.includes('lg:rounded-3xl'), 'Plan funding drawer must retain the shared desktop framing');
+assert(!planDetail.includes('max-w-[430px] mx-auto'), 'Plan funding drawer must not retain the legacy mobile-only width cap');
 assert(!planDetail.includes("Let's Go!"), 'Saved-plan detail must not imply an immediate execution mode');
 assert(!planDetail.includes("setLocation('/tracker')"), 'Saved-plan detail must not route to the removed execution mode');
 assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not remain mounted');
