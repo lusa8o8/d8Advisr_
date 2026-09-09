@@ -18,9 +18,38 @@ broken presentation paths were corrected without pretending the demo is real:
   and My Plans no longer render it over their own primary surfaces.
 - The mobile home Settings gear routes to `/settings` rather than opening the
   separate preference editor.
+- The generated-plan and saved-plan journeys now converge on one reviewable
+  saved-plan detail. Saving the demo overview still redirects to `/plan/1`, and
+  opening a plan from My Plans opens that same detail, but the misleading
+  `Let's Go!` action and simulated `/tracker` execution mode have been removed.
+  The detail returns to My Plans and retains only planning-oriented controls.
 
 These corrections do not make plan generation or saving persistent. The
 architecture and acceptance criteria below remain the required later work.
+
+## MVP plan lifecycle decision
+
+The consumer journey is a planning loop, not a live execution product:
+
+```text
+Discover or Surprise Me
+  -> build a plan
+  -> review the generated itinerary
+  -> save
+  -> saved-plan detail
+  -> My Plans
+```
+
+Reopening an existing plan returns to the same saved-plan detail. Consumers can
+review the itinerary, edit it, share it once that action is implemented, and
+optionally connect it to a Stash. D8Advisr does not claim to start navigation,
+track progress between stops, share a live journey, provide live help, or mark
+stops complete at MVP stage.
+
+An event-day companion may be reconsidered only after real plan persistence,
+time/location contracts, deep links or navigation handoff, privacy and safety
+requirements, and measured consumer demand exist. It must not be inferred from
+the current demo plan UI.
 
 ## Confirmed behavior
 

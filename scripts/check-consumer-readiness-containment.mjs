@@ -19,6 +19,8 @@ const settings = read('artifacts/d8advisr/src/pages/Settings.tsx');
 const onboarding = read('artifacts/d8advisr/src/pages/InitialPreferences.tsx');
 const preferenceEditor = read('artifacts/d8advisr/src/pages/PreferenceEdit.tsx');
 const preferenceContract = read('artifacts/d8advisr/src/lib/consumerPreferences.ts');
+const app = read('artifacts/d8advisr/src/App.tsx');
+const planDetail = read('artifacts/d8advisr/src/pages/PlanDetail.tsx');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -68,5 +70,11 @@ assert(preferenceContract.includes('Romantic Dates'), 'The shared preference con
 assert(!preferenceEditor.includes('Favorite Cuisine'), 'The legacy cuisine preference section must remain removed');
 assert(!preferenceEditor.includes('Vegetarian / Vegan'), 'The unimplemented dietary preference must remain removed');
 assert(!preferenceEditor.includes('supabase'), 'The front-end preference editor must not introduce server persistence yet');
+assert(overview.includes("setLocation('/plan/1')"), 'Saving the demo overview must still finish on the canonical saved-plan detail');
+assert(planDetail.includes("setLocation('/plans')"), 'Saved-plan detail must return to My Plans');
+assert(!planDetail.includes("Let's Go!"), 'Saved-plan detail must not imply an immediate execution mode');
+assert(!planDetail.includes("setLocation('/tracker')"), 'Saved-plan detail must not route to the removed execution mode');
+assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not remain mounted');
+assert(!app.includes('path="/tracker"'), 'The legacy /tracker route must remain removed');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');

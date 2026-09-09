@@ -28,7 +28,6 @@ import { PlanGenerator } from "@/pages/PlanGenerator";
 import { PlanOverview } from "@/pages/PlanOverview";
 import { PlanDetail } from "@/pages/PlanDetail";
 import { PlanEdit } from "@/pages/PlanEdit";
-import { ExecutionTracker } from "@/pages/ExecutionTracker";
 import { ProfileOverview } from "@/pages/ProfileOverview";
 import { BadgesPage } from "@/pages/BadgesPage";
 import { PreferenceEdit } from "@/pages/PreferenceEdit";
@@ -346,7 +345,6 @@ function Router() {
       <Route path="/plan/:id/edit"><ConsumerGuard><PlanEdit /></ConsumerGuard></Route>
       <Route path="/plan/:id"><ConsumerGuard><PlanDetail /></ConsumerGuard></Route>
 
-      <Route path="/tracker"><ConsumerGuard><ExecutionTracker /></ConsumerGuard></Route>
       <Route path="/plans"><ConsumerGuard><SavedPlans /></ConsumerGuard></Route>
 
       <Route path="/profile/badges"><ConsumerGuard><BadgesPage /></ConsumerGuard></Route>

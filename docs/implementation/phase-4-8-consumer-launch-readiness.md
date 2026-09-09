@@ -112,3 +112,16 @@ when/who/budget builder, while venue- and event-origin links open that same
 builder with a confirmed anchor card. The legacy full-form branch was removed
 instead of being retained behind the same route. Plan selection, generation,
 and persistence remain explicitly deferred demo behavior.
+
+## Saved-plan lifecycle containment — 9 September 2026
+
+Generated and existing plans now converge on the same saved-plan detail. The
+legacy `Let's Go!` route launched a simulated live tracker with navigation,
+live-sharing, help, and completion behavior that the MVP cannot truthfully
+support. That action, the `/tracker` route, and its page were removed. Saving a
+generated demo plan still opens `/plan/1` until persistence is implemented;
+the detail now returns to My Plans instead of beginning an execution session.
+
+This closes the front-end lifecycle as review -> save -> revisit/edit without
+pretending that D8Advisr executes the outing. A future event-day companion is a
+separate product and system-design decision, not an extension of the demo.
