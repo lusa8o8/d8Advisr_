@@ -77,6 +77,10 @@ assert(planDetail.includes('shadow-sm z-20 sticky top-0'), 'Saved-plan header mu
 assert(planDetail.includes('consumerSheetWidthClass'), 'Plan funding drawer must use the shared consumer drawer width');
 assert(planDetail.includes('lg:rounded-3xl'), 'Plan funding drawer must retain the shared desktop framing');
 assert(!planDetail.includes('max-w-[430px] mx-auto'), 'Plan funding drawer must not retain the legacy mobile-only width cap');
+assert(planDetail.includes('Goal ({activeRegion.currency_symbol})'), 'Plan funding drawer goal must use the active-region currency');
+assert(planDetail.includes("setAutoSave('custom')"), 'Plan funding drawer must allow a custom weekly commitment');
+assert(planDetail.includes('Auto-save /wk ({activeRegion.currency_symbol})'), 'Custom weekly commitment must use the active-region currency');
+assert(planDetail.includes('Math.ceil(stashGoalAmount / weeklyAmount)'), 'Plan funding drawer must estimate time from the editable amounts');
 assert(!planDetail.includes("Let's Go!"), 'Saved-plan detail must not imply an immediate execution mode');
 assert(!planDetail.includes("setLocation('/tracker')"), 'Saved-plan detail must not route to the removed execution mode');
 assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not remain mounted');

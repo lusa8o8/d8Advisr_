@@ -5,13 +5,24 @@ import { useRegion } from "@/hooks/useRegion";
 import { cn, consumerDesktopClass, consumerSheetWidthClass } from "@/components/SharedUI";
 
 const WEEKLY_PRESETS = [10, 20, 30, 50];
+const PLAN_ESTIMATE = 115.30;
 
 export function PlanDetail() {
   const [, setLocation] = useLocation();
-  const { formatPrice } = useRegion();
+  const { formatPrice, activeRegion } = useRegion();
   const [showStash, setShowStash] = useState(false);
-  const [autoSave, setAutoSave] = useState(20);
+  const [stashGoal, setStashGoal] = useState(PLAN_ESTIMATE.toFixed(2));
+  const [autoSave, setAutoSave] = useState<number | 'custom'>(20);
+  const [customAutoSave, setCustomAutoSave] = useState('');
   const [stashDone, setStashDone] = useState(false);
+
+  const stashGoalAmount = Number(stashGoal);
+  const weeklyAmount = autoSave === 'custom' ? Number(customAutoSave) : autoSave;
+  const canStartSaving = Number.isFinite(stashGoalAmount)
+    && stashGoalAmount > 0
+    && Number.isFinite(weeklyAmount)
+    && weeklyAmount > 0;
+  const estimatedWeeks = canStartSaving ? Math.ceil(stashGoalAmount / weeklyAmount) : null;
 
   return (
     <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar">
@@ -123,7 +134,7 @@ export function PlanDetail() {
           <div className="border-t border-border pt-4 mb-6">
             <div className="flex justify-between items-center">
               <span className="font-bold text-foreground text-[17px]">Total Estimate</span>
-              <span className="font-bold text-2xl text-foreground">{formatPrice(115.30)}</span>
+              <span className="font-bold text-2xl text-foreground">{formatPrice(PLAN_ESTIMATE)}</span>
             </div>
           </div>
 
@@ -146,7 +157,7 @@ export function PlanDetail() {
               </div>
               <div>
                 <p className="font-bold text-[#00C851] text-[14px] leading-tight">Stash fund created!</p>
-                <p className="text-[12px] text-[#00C851]/70 font-medium mt-0.5">Saving {formatPrice(autoSave)}/wk for Date Night Downtown</p>
+                <p className="text-[12px] text-[#00C851]/70 font-medium mt-0.5">Saving {formatPrice(weeklyAmount)}/wk for Date Night Downtown</p>
               </div>
             </div>
           ) : (
@@ -190,9 +201,27 @@ export function PlanDetail() {
                 <p className="text-[12px] text-muted-foreground font-medium mt-0.5">3 stops · Tonight, 7:00 PM</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-bold text-foreground text-[17px]">{formatPrice(115.30)}</p>
+                <p className="font-bold text-foreground text-[17px]">{formatPrice(PLAN_ESTIMATE)}</p>
                 <p className="text-[11px] text-muted-foreground font-medium">total</p>
               </div>
+            </div>
+
+            {/* Savings goal */}
+            <div className="mb-5">
+              <label htmlFor="stash-goal" className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                Goal ({activeRegion.currency_symbol})
+              </label>
+              <input
+                id="stash-goal"
+                type="number"
+                inputMode="decimal"
+                min="0.01"
+                step="0.01"
+                value={stashGoal}
+                onChange={(event) => setStashGoal(event.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1.5">Prefilled from this plan's current estimate.</p>
             </div>
 
             {/* Weekly save amount picker */}
@@ -202,7 +231,9 @@ export function PlanDetail() {
                 {WEEKLY_PRESETS.map(amt => (
                   <button
                     key={amt}
+                    type="button"
                     onClick={() => setAutoSave(amt)}
+                    aria-pressed={autoSave === amt}
                     className={cn(
                       'py-3 rounded-xl font-bold text-[15px] border-2 transition-all active:scale-95',
                       autoSave === amt
@@ -214,11 +245,49 @@ export function PlanDetail() {
                   </button>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={() => setAutoSave('custom')}
+                aria-pressed={autoSave === 'custom'}
+                className={cn(
+                  'w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 text-left transition-all active:scale-[0.99] mb-3',
+                  autoSave === 'custom'
+                    ? 'bg-primary/10 text-primary border-primary'
+                    : 'bg-background text-foreground border-border hover:border-primary/50'
+                )}
+              >
+                <span className="font-bold text-[14px]">Custom weekly commitment</span>
+                <span className="text-[12px] font-semibold">
+                  {autoSave === 'custom' && Number(customAutoSave) > 0
+                    ? formatPrice(Number(customAutoSave))
+                    : 'Enter amount'}
+                </span>
+              </button>
+              {autoSave === 'custom' && (
+                <div className="mb-4">
+                  <label htmlFor="custom-auto-save" className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                    Auto-save /wk ({activeRegion.currency_symbol})
+                  </label>
+                  <input
+                    id="custom-auto-save"
+                    type="number"
+                    inputMode="decimal"
+                    min="0.01"
+                    step="0.01"
+                    value={customAutoSave}
+                    onChange={(event) => setCustomAutoSave(event.target.value)}
+                    placeholder="Enter your weekly amount"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
+                  />
+                </div>
+              )}
               {/* ETA indicator */}
               <div className="flex items-center justify-between px-1">
                 <span className="text-[12px] text-muted-foreground font-medium">Estimated time to save</span>
                 <span className="text-[13px] font-bold text-foreground">
-                  ~{Math.ceil(115.30 / autoSave)} weeks
+                  {estimatedWeeks === null
+                    ? 'Enter valid amounts'
+                    : `~${estimatedWeeks} ${estimatedWeeks === 1 ? 'week' : 'weeks'}`}
                 </span>
               </div>
             </div>
@@ -234,10 +303,12 @@ export function PlanDetail() {
             </div>
 
             <button
+              type="button"
+              disabled={!canStartSaving}
               onClick={() => { setShowStash(false); setStashDone(true); }}
-              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all"
+              className="w-full bg-primary text-white py-4 rounded-xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Start Saving {formatPrice(autoSave)}/wk ✨
+              {canStartSaving ? `Start Saving ${formatPrice(weeklyAmount)}/wk` : 'Enter valid amounts'} ✨
             </button>
           </div>
         </div>
