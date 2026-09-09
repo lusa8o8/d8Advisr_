@@ -16,6 +16,9 @@ const desktopShell = read('artifacts/d8advisr/src/components/DesktopShell.tsx');
 const notifications = read('artifacts/d8advisr/src/pages/NotificationsCenter.tsx');
 const budget = read('artifacts/d8advisr/src/pages/BudgetDashboard.tsx');
 const settings = read('artifacts/d8advisr/src/pages/Settings.tsx');
+const onboarding = read('artifacts/d8advisr/src/pages/InitialPreferences.tsx');
+const preferenceEditor = read('artifacts/d8advisr/src/pages/PreferenceEdit.tsx');
+const preferenceContract = read('artifacts/d8advisr/src/lib/consumerPreferences.ts');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -56,5 +59,14 @@ assert(budget.includes('bg: "bg-card"'), 'Cold Stash cards must retain a semanti
 assert(budget.includes('consumerSheetWidthClass'), 'The new-Stash drawer must use the shared desktop width');
 assert(settings.includes("bg-foreground text-background border-foreground"), 'Selected Settings controls must retain semantic contrast');
 assert(settings.includes('consumerSheetWidthClass'), 'Personal Info drawers must use the shared desktop width');
+for (const consumer of [onboarding, preferenceEditor]) {
+  assert(consumer.includes('CONSUMER_PLAN_TYPES'), 'Onboarding and profile editing must share plan types');
+  assert(consumer.includes('CONSUMER_VIBES'), 'Onboarding and profile editing must share vibes');
+  assert(consumer.includes('CONSUMER_BUDGET_RANGE'), 'Onboarding and profile editing must share the budget range');
+}
+assert(preferenceContract.includes('Romantic Dates'), 'The shared preference contract must retain plan intent labels');
+assert(!preferenceEditor.includes('Favorite Cuisine'), 'The legacy cuisine preference section must remain removed');
+assert(!preferenceEditor.includes('Vegetarian / Vegan'), 'The unimplemented dietary preference must remain removed');
+assert(!preferenceEditor.includes('supabase'), 'The front-end preference editor must not introduce server persistence yet');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');

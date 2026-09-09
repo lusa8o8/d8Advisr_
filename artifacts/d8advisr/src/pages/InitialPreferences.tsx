@@ -1,54 +1,12 @@
 import { useState } from 'react';
 import { useLocation } from "wouter";
-import { ChevronLeft, Check, Loader2, MapPin } from 'lucide-react';
+import { ChevronLeft, Check, Loader2 } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
 import { useAuth } from "@/context/AuthContext";
 import { useRegion } from "@/hooks/useRegion";
 import { supabase } from "@/lib/supabase";
+import { CONSUMER_BUDGET_RANGE, CONSUMER_PLAN_TYPES, CONSUMER_VIBES } from "@/lib/consumerPreferences";
 import { useSessionDraft } from '@workspace/d8-core/use-session-draft';
-
-const PLAN_TYPES = [
-  {
-    id: "romantic",
-    emoji: "💑",
-    label: "Romantic Dates",
-    sub: "Perfect evenings, unforgettable moments",
-  },
-  {
-    id: "group",
-    emoji: "👥",
-    label: "Group Outings",
-    sub: "Friends, family & good company",
-  },
-  {
-    id: "occasions",
-    emoji: "🎉",
-    label: "Special Occasions",
-    sub: "Birthdays, anniversaries & milestones",
-  },
-  {
-    id: "solo",
-    emoji: "🧭",
-    label: "Solo Exploration",
-    sub: "Adventures on your own terms",
-  },
-];
-
-const VIBE_CHIPS = [
-  { label: "Foodie",     emoji: "🍽️" },
-  { label: "Romantic",   emoji: "❤️" },
-  { label: "Outdoor",    emoji: "🌿" },
-  { label: "Adventure",  emoji: "⚡" },
-  { label: "Nightlife",  emoji: "🌙" },
-  { label: "Cultural",   emoji: "🎭" },
-  { label: "Live Music", emoji: "🎷" },
-  { label: "Coffee",     emoji: "☕" },
-  { label: "Artsy",      emoji: "🎨" },
-  { label: "Relaxing",   emoji: "🛁" },
-  { label: "Sports",     emoji: "🏅" },
-  { label: "Casual",     emoji: "😎" },
-];
-
 
 export function InitialPreferences() {
   const { user } = useAuth();
@@ -64,7 +22,7 @@ export function InitialPreferences() {
 
   // Step 2 — vibes + budget
   const [vibes, setVibes, clearVibes] = useSessionDraft<string[]>(`${draftKey}:vibes`, []);
-  const [budget, setBudget, clearBudget] = useSessionDraft(`${draftKey}:budget`, 150);
+  const [budget, setBudget, clearBudget] = useSessionDraft<number>(`${draftKey}:budget`, CONSUMER_BUDGET_RANGE.defaultValue);
 
   // Step 3 — city
   const [city, setCity, clearCity] = useSessionDraft(`${draftKey}:city`, "");
@@ -181,7 +139,7 @@ export function InitialPreferences() {
             </p>
 
             <div className="flex flex-col gap-3">
-              {PLAN_TYPES.map(pt => {
+              {CONSUMER_PLAN_TYPES.map(pt => {
                 const selected = planTypes.includes(pt.id);
                 return (
                   <button
@@ -199,7 +157,7 @@ export function InitialPreferences() {
                       <p className={cn("font-bold text-[16px] leading-tight", selected ? "text-primary" : "text-foreground")}>
                         {pt.label}
                       </p>
-                      <p className="text-[13px] text-muted-foreground mt-0.5 leading-snug">{pt.sub}</p>
+                      <p className="text-[13px] text-muted-foreground mt-0.5 leading-snug">{pt.description}</p>
                     </div>
                     <div className={cn(
                       "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
@@ -225,7 +183,7 @@ export function InitialPreferences() {
             </p>
 
             <div className="flex flex-wrap gap-2.5 mb-10">
-              {VIBE_CHIPS.map(chip => {
+              {CONSUMER_VIBES.map(chip => {
                 const selected = vibes.includes(chip.label);
                 return (
                   <button
@@ -261,22 +219,22 @@ export function InitialPreferences() {
                 <div className="absolute inset-0 rounded-full bg-gray-200" />
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-foreground"
-                  style={{ width: `${((budget - 25) / (500 - 25)) * 100}%` }}
+                  style={{ width: `${((budget - CONSUMER_BUDGET_RANGE.min) / (CONSUMER_BUDGET_RANGE.max - CONSUMER_BUDGET_RANGE.min)) * 100}%` }}
                 />
                 <input
                   type="range"
-                  min="25"
-                  max="500"
-                  step="25"
+                  min={CONSUMER_BUDGET_RANGE.min}
+                  max={CONSUMER_BUDGET_RANGE.max}
+                  step={CONSUMER_BUDGET_RANGE.step}
                   value={budget}
                   onChange={e => setBudget(Number(e.target.value))}
                   className="budget-slider absolute inset-0 w-full appearance-none bg-transparent cursor-pointer"
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground font-medium mt-2">
-                <span>{formatPrice(25)}</span>
+                <span>{formatPrice(CONSUMER_BUDGET_RANGE.min)}</span>
                 <span>{formatPrice(250)}</span>
-                <span>{formatPrice(500)}+</span>
+                <span>{formatPrice(CONSUMER_BUDGET_RANGE.max)}+</span>
               </div>
             </div>
           </div>

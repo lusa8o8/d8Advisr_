@@ -44,6 +44,23 @@ convert or reset the budget.
 
 Plan intent needs a persisted constrained field before it can affect results.
 
+### Front-end contract unified — 9 September 2026
+
+Onboarding and `/profile/preferences` now consume one front-end catalogue for
+plan intentions, vibes, and the demo budget range. The previous profile page's
+hardcoded cuisine, activity, default-vibe, and dietary controls were removed;
+they had no shared taxonomy, interaction contract, or persistence path.
+
+This is deliberately not the consumer backend implementation. The profile
+editor keeps local component state and does not read or write Supabase. Its
+purpose is to settle vocabulary, selection behavior, hierarchy, and responsive
+presentation before designing the consumer domain as a whole.
+
+The later system-design phase must cover preference persistence together with
+feed eligibility/ranking, filters, search, plan generation and saving, Stash,
+and minimal group actions. Do not let this UI prototype silently become the
+ranking or storage contract.
+
 ## Relevance model boundary
 
 Apply eligibility gates before ranking:
