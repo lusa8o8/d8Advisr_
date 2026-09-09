@@ -8,18 +8,20 @@ export function PlanEdit() {
   const { formatPrice } = useRegion();
 
   return (
-    <div className={cn("flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24", consumerDesktopClass('reading'))}>
+    <div className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24">
       {/* Header */}
-      <div className="bg-card px-6 pt-10 lg:pt-14 pb-3 lg:pb-4 flex justify-between items-center sticky top-0 z-20 shadow-sm border-b border-border">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setLocation('/plan/1')} className="text-foreground hover:opacity-70">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="font-bold text-foreground text-xl">Edit Plan</h1>
+      <div className="bg-card pt-10 lg:pt-14 pb-3 lg:pb-4 sticky top-0 z-20 shadow-sm border-b border-border">
+        <div className={cn(consumerDesktopClass('reading'), "px-6 flex justify-between items-center")}>
+          <div className="flex items-center gap-4">
+            <button onClick={() => setLocation('/plan/1')} className="text-foreground hover:opacity-70">
+              <ArrowLeft size={24} />
+            </button>
+            <h1 className="font-bold text-foreground text-xl">Edit Plan</h1>
+          </div>
         </div>
       </div>
 
-      <div className="px-6 py-6 pb-28 flex flex-col gap-8">
+      <div className={cn(consumerDesktopClass('reading'), "px-6 py-6 pb-28 flex flex-col gap-8")}>
         
         <div>
            <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wider text-muted-foreground">Itinerary Steps</h3>

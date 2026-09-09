@@ -80,5 +80,8 @@ assert(!app.includes('ExecutionTracker'), 'The legacy execution screen must not 
 assert(!app.includes('path="/tracker"'), 'The legacy /tracker route must remain removed');
 assert(planEdit.includes("consumerDesktopClass('reading'), \"px-6 flex items-center gap-4\""), 'Plan editor action bar must share the page reading width');
 assert(!planEdit.includes('max-w-[430px]'), 'Plan editor action bar must not retain the legacy mobile-only width cap');
+assert(planEdit.includes('className="flex-1 min-h-0 bg-background flex flex-col relative overflow-y-auto no-scrollbar pb-24"'), 'Plan editor page surface must remain full width');
+assert(planEdit.includes("consumerDesktopClass('reading'), \"px-6 flex justify-between items-center\""), 'Plan editor header content must use the reading width');
+assert(planEdit.includes("consumerDesktopClass('reading'), \"px-6 py-6 pb-28 flex flex-col gap-8\""), 'Plan editor form content must use the reading width');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');
