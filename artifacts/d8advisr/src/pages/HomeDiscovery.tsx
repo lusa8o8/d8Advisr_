@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useRegion } from "@/hooks/useRegion";
 import { useGreeting } from "@/hooks/useGreeting";
 import { createSettingsPath } from '@/lib/settingsNavigation';
+import { createEventDetailPath } from '@/lib/eventNavigation';
 
 type Tier = 'Verified' | 'D8 Approved' | 'Hidden Gem';
 
@@ -119,7 +120,7 @@ export function HomeDiscovery() {
   }, [activeRegion.timezone]);
   const openEvent = (eventId: string) => {
     void recordEventView(eventId);
-    setLocation(`/event/${eventId}`);
+    setLocation(createEventDetailPath(eventId, '/home'));
   };
   const openVenue = (venueId: string) => {
     void recordVenueView(venueId);

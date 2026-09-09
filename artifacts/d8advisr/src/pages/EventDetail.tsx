@@ -13,6 +13,7 @@ import { useAuth } from '@workspace/d8-core/auth';
 import { EventTrustCard } from '@/features/events/EventTrustCard';
 import { loadPublicEventTrust, type PublicEventTrust } from '@/features/events/eventTrustData';
 import { createPlanGeneratorPath } from '@/lib/planNavigation';
+import { createEventDetailPath, getEventReturnPath } from '@/lib/eventNavigation';
 
 type Recurrence = 'weekly' | 'monthly' | 'annual' | null;
 const D8_PLATFORM_ORGANIZATION_ID = '00000000-0000-4000-8000-00000000d800';
@@ -412,6 +413,8 @@ export function EventDetail() {
       ? 'D8Advisr'
       : event.listingSource === 'partner' ? 'a D8 partner' : 'D8Advisr');
   const eventImages = Array.from(new Set([event.image, ...(event.images ?? [])].filter(Boolean)));
+  const returnTo = getEventReturnPath(window.location.search);
+  const eventDetailPath = createEventDetailPath(eventId, returnTo);
 
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col relative overflow-y-auto no-scrollbar pb-28">
@@ -420,7 +423,7 @@ export function EventDetail() {
         images={eventImages}
         title={event.name}
         variant="event"
-        onBack={() => window.history.back()}
+        onBack={() => setLocation(returnTo)}
         onShare={() => void navigator.share?.({ title: event.name, url: window.location.href })}
         badge={event.recurrence ? <span className="flex items-center gap-1.5"><Repeat size={11} /> {RECURRENCE_META[event.recurrence].icon}</span> : undefined}
       />
@@ -675,7 +678,7 @@ export function EventDetail() {
                 p_active: true,
               });
             }
-            setLocation(createPlanGeneratorPath(`/event/${eventId}`, planParams ?? undefined));
+            setLocation(createPlanGeneratorPath(eventDetailPath, planParams ?? undefined));
           }}
           className="flex-1 bg-primary text-white rounded-xl font-bold text-[16px] py-4 shadow-[0_8px_20px_-6px_rgba(255,90,95,0.5)] active:scale-[0.98] transition-all hover:bg-primary/90 flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
         >

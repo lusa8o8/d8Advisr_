@@ -13,6 +13,7 @@ import type { Database } from "@/lib/supabase";
 import { useRegion } from "@/hooks/useRegion";
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import { createPlanGeneratorPath } from '@/lib/planNavigation';
+import { createEventDetailPath } from '@/lib/eventNavigation';
 
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
 const GMAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID?.trim();
@@ -448,7 +449,7 @@ export function VenueDetails() {
               </div>
               <div
                 className={cn("bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform", hasLiveVenueId && "hidden")}
-                onClick={() => setLocation('/event/e1')}
+                onClick={() => setLocation(createEventDetailPath('e1', `/venue/${venueId}`))}
               >
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-2xl shadow-sm shrink-0">🎷</div>
                 <div className="flex-1 min-w-0">
@@ -468,7 +469,7 @@ export function VenueDetails() {
                     <button
                       key={event.id}
                       data-testid="venue-upcoming-event"
-                      onClick={() => setLocation(`/event/${event.id}`)}
+                      onClick={() => setLocation(createEventDetailPath(event.id, `/venue/${venueId}`))}
                       className="w-full rounded-2xl border border-border bg-card p-4 text-left active:scale-[0.99] transition-transform"
                     >
                       <p className="font-bold text-foreground">{event.name}</p>
@@ -542,7 +543,7 @@ export function VenueDetails() {
               ) : displayedVenueEvents.map(event => (
                 <div
                   key={event.id}
-                  onClick={() => setLocation(`/event/${event.id}`)}
+                  onClick={() => setLocation(createEventDetailPath(event.id, `/venue/${venueId}`))}
                   className={cn("bg-card border border-border rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform", 'cancelled' in event && event.cancelled && "opacity-65")}
                 >
                   <div className="h-24 relative overflow-hidden">

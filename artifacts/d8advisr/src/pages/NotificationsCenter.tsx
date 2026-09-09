@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Calendar, AlertCircle, MapPin, Check, Ticket, Tag, CheckCheck, Loader2 } from 'lucide-react';
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
 import { cn, consumerDesktopClass } from "@/components/SharedUI";
+import { createEventDetailPath } from '@/lib/eventNavigation';
 
 function formatRelativeTime(dateString: string) {
   const diff = Date.now() - new Date(dateString).getTime();
@@ -132,7 +133,7 @@ export function NotificationsCenter() {
                             onClick={e => {
                               e.stopPropagation();
                               if (isUnread) void markRead(n.id);
-                              setLocation(`/event/${n.eventId}`);
+                              setLocation(createEventDetailPath(n.eventId!, '/notifications'));
                             }}
                             className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-bold px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
                           >

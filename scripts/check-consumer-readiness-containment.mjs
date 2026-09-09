@@ -12,6 +12,7 @@ const plans = read('artifacts/d8advisr/src/pages/SavedPlans.tsx');
 const overview = read('artifacts/d8advisr/src/pages/PlanOverview.tsx');
 const profile = read('artifacts/d8advisr/src/pages/ProfileOverview.tsx');
 const generator = read('artifacts/d8advisr/src/pages/PlanGenerator.tsx');
+const eventDetail = read('artifacts/d8advisr/src/pages/EventDetail.tsx');
 const desktopShell = read('artifacts/d8advisr/src/components/DesktopShell.tsx');
 const notifications = read('artifacts/d8advisr/src/pages/NotificationsCenter.tsx');
 const budget = read('artifacts/d8advisr/src/pages/BudgetDashboard.tsx');
@@ -24,6 +25,7 @@ const planDetail = read('artifacts/d8advisr/src/pages/PlanDetail.tsx');
 const planEdit = read('artifacts/d8advisr/src/pages/PlanEdit.tsx');
 const planNavigation = read('artifacts/d8advisr/src/lib/planNavigation.ts');
 const settingsNavigation = read('artifacts/d8advisr/src/lib/settingsNavigation.ts');
+const eventNavigation = read('artifacts/d8advisr/src/lib/eventNavigation.ts');
 
 assert(sharedUi.includes('setLocation(createSettingsPath(location))'), 'Mobile Settings action must preserve its current-page return destination');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -66,6 +68,9 @@ assert(generator.includes("mode=\"single\""), 'Plan builder must provide the bra
 assert(!generator.includes('setLocation(-1 as unknown as string)'), 'Plan builder must not cast a history delta into a route string');
 assert(plans.includes("createPlanGeneratorPath('/plans')"), 'Plan a new evening must return to My Plans');
 assert(planNavigation.includes("DEFAULT_PLAN_RETURN_PATH = '/plans'"), 'Direct plan-builder entry must have a safe My Plans fallback');
+assert(eventNavigation.includes("DEFAULT_EVENT_RETURN_PATH = '/home'"), 'Direct event entry must have a safe Home fallback');
+assert(eventDetail.includes('createPlanGeneratorPath(eventDetailPath'), 'Event plan-builder entry must preserve the event origin contract');
+assert(!eventDetail.includes('window.history.back()'), 'Event detail must not use browser history for its on-screen back action');
 assert(!generator.includes('FullFormMode'), 'The legacy full plan form must remain removed');
 assert(!generator.includes('Build Your Plan'), 'The legacy plan-builder heading must remain removed');
 assert(notifications.includes('flex flex-col px-4 lg:px-10 pb-10'), 'Notifications must retain the reading-width inner inset');
