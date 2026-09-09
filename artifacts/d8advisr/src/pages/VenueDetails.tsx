@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from "wouter";
 import {
-  ArrowLeft, Star, MapPin, Heart, Clock, Share, Phone, Globe, Ticket,
+  Star, MapPin, Heart, Clock, Phone, Globe, Ticket,
   Bell, BellOff, ThumbsUp, Navigation, Car, Footprints, Copy, ExternalLink,
-  ChevronLeft, ChevronRight, X, ZoomIn, Images,
 } from 'lucide-react';
 import { cn } from "@/components/SharedUI";
+import { ListingMediaGallery } from '@/components/ListingMediaGallery';
 import { useDemandSignals } from "@/hooks/useDemandSignals";
 import { useVenueEvents } from "@/hooks/useVenues";
 import { VENUE_CLIENT_SELECT, supabase } from "@/lib/supabase";
@@ -251,8 +251,6 @@ export function VenueDetails() {
   const { activeRegion, formatPrice } = useRegion();
   const [activeTab, setActiveTab] = useState<'Overview' | 'Events' | 'Reviews' | 'Location'>('Overview');
   const [notifyOn, setNotifyOn] = useState(true);
-  const [imgIdx, setImgIdx] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [liveVenue, setLiveVenue] = useState<VenueRow | null>(null);
   const pathParts = window.location.pathname.split('/');
   const venueId = pathParts[pathParts.length - 1];
@@ -348,105 +346,19 @@ export function VenueDetails() {
     return params;
   };
 
-  const prevImg = () => setImgIdx(i => Math.max(0, i - 1));
-  const nextImg = () => setImgIdx(i => Math.min(displayedImages.length - 1, i + 1));
-
-  useEffect(() => setImgIdx(0), [liveVenue?.id, liveVenue?.cover_image, liveVenue?.images]);
-
   return (
     <div className="flex-1 min-h-0 bg-card flex flex-col relative overflow-y-auto no-scrollbar pb-24">
 
       {/* ── IMAGE SLIDESHOW ─────────────────────────────────────────────────── */}
-      <div className="h-72 relative overflow-hidden rounded-b-[40px] shadow-md shrink-0">
-        {displayedImages.map((src, i) => (
-          <img
-            key={i}
-            src={src}
-            alt={`${venueName} ${i + 1}`}
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
-              i === imgIdx ? "opacity-100" : "opacity-0 pointer-events-none"
-            )}
-          />
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/25" />
-
-        {/* Back */}
-        <button
-          onClick={() => setLocation('/home')}
-          className="absolute top-14 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20 z-10"
-        >
-          <ArrowLeft size={20} />
-        </button>
-
-        {/* Image counter */}
-        <button
-          onClick={() => setLightboxOpen(true)}
-          className="absolute top-14 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1.5 rounded-full z-10 flex items-center gap-1.5 hover:bg-black/60 transition-colors"
-        >
-          <Images size={11} /> {imgIdx + 1} / {displayedImages.length}
-        </button>
-
-        {/* Share */}
-        <button className="absolute top-14 right-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20 z-10">
-          <Share size={18} />
-        </button>
-
-        {/* Left arrow */}
-        {imgIdx > 0 && (
-          <button
-            onClick={prevImg}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
-          >
-            <ChevronLeft size={18} />
-          </button>
-        )}
-
-        {/* Right arrow */}
-        {imgIdx < displayedImages.length - 1 && (
-          <button
-            onClick={nextImg}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
-          >
-            <ChevronRight size={18} />
-          </button>
-        )}
-
-        {/* Expand button */}
-        <button
-          onClick={() => setLightboxOpen(true)}
-          className="absolute bottom-[70px] right-4 w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 hover:bg-black/50 transition-colors"
-        >
-          <ZoomIn size={14} />
-        </button>
-
-        {/* Dot indicators */}
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-          {displayedImages.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setImgIdx(i)}
-              className={cn(
-                "rounded-full transition-all",
-                i === imgIdx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/50"
-              )}
-            />
-          ))}
-        </div>
-
-        {/* Venue name overlay */}
-        <div className="absolute bottom-6 left-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl">
-            {venueEmoji}
-          </div>
-          <div>
-            <p className="text-white font-bold text-[17px] drop-shadow-sm">{venueName}</p>
-            <p className="text-white/80 text-[12px] font-medium">{venueCategory} · {venueArea}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-6 -mt-8 relative z-10">
+      <ListingMediaGallery
+        key={venueId}
+        images={displayedImages}
+        title={venueName}
+        variant="venue"
+        onBack={() => setLocation('/home')}
+        onShare={() => void navigator.share?.({ title: venueName, url: window.location.href })}
+      />
+      <div className="px-6 pt-5 lg:mx-auto lg:w-full lg:max-w-5xl lg:pt-6">
         {/* Main Info Card */}
         <div className="bg-card rounded-3xl p-6 shadow-md border border-border mb-6">
           <div className="flex justify-between items-start mb-2">
@@ -950,64 +862,6 @@ export function VenueDetails() {
           Add to Plan
         </button>
       </div>
-
-      {/* ── LIGHTBOX ── */}
-      {lightboxOpen && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={() => setLightboxOpen(false)}>
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-14 pb-4 shrink-0" onClick={e => e.stopPropagation()}>
-            <button
-              onClick={() => setLightboxOpen(false)}
-              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            <p className="text-white/80 text-[13px] font-semibold">
-              {venueName}
-            </p>
-            <span className="text-white/50 text-[13px] font-medium">{imgIdx + 1} / {displayedImages.length}</span>
-          </div>
-
-          {/* Image */}
-          <div className="flex-1 flex items-center justify-center relative px-2" onClick={e => e.stopPropagation()}>
-            <img
-              src={displayedImages[imgIdx]}
-              alt="Venue"
-              className="max-w-full max-h-full object-contain rounded-2xl"
-            />
-            {imgIdx > 0 && (
-              <button
-                onClick={prevImg}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-              >
-                <ChevronLeft size={22} />
-              </button>
-            )}
-            {imgIdx < displayedImages.length - 1 && (
-              <button
-                onClick={nextImg}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-              >
-                <ChevronRight size={22} />
-              </button>
-            )}
-          </div>
-
-          {/* Dot indicators */}
-          <div className="flex justify-center gap-2 pb-12 pt-5 shrink-0" onClick={e => e.stopPropagation()}>
-            {displayedImages.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setImgIdx(i)}
-                className={cn(
-                  "rounded-full transition-all",
-                  i === imgIdx ? "w-6 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40"
-                )}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

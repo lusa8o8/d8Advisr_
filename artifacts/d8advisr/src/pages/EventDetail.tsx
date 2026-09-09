@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
-  ArrowLeft, Calendar, Clock, MapPin, Users, Repeat,
-  Star, Ticket, Share, Bell, BellOff, ChevronRight, Loader2,
+  Calendar, Clock, MapPin, Users, Repeat,
+  Star, Ticket, Bell, BellOff, ChevronRight, Loader2,
 } from 'lucide-react';
 import { cn } from '@/components/SharedUI';
+import { ListingMediaGallery } from '@/components/ListingMediaGallery';
 import { useDemandSignals } from '@/hooks/useDemandSignals';
 import { EVENT_CLIENT_SELECT, supabase } from '@/lib/supabase';
 import { useRegion } from '@/hooks/useRegion';
@@ -37,6 +38,7 @@ interface EventData {
   vibes: string[];
   desc: string;
   image: string;
+  images?: string[];
   spotsLeft: number;
   totalCapacity: number;
   hasCapacity?: boolean;
@@ -107,6 +109,7 @@ function liveEventToEventData(row: Record<string, any>): EventData {
     vibes: Array.isArray(row.vibes) ? row.vibes : [],
     desc: row.description ?? 'Details will be added by the organizer soon.',
     image: row.cover_image ?? 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=400&fit=crop&auto=format',
+    images: Array.isArray(row.images) ? row.images.filter((image: unknown): image is string => typeof image === 'string' && image.length > 0) : [],
     spotsLeft: 0,
     totalCapacity: spotsTotal,
     hasCapacity: spotsTotal > 0,
@@ -408,50 +411,37 @@ export function EventDetail() {
     ?? (event.listingSource === 'd8_admin' || event.listingSource === 'import'
       ? 'D8Advisr'
       : event.listingSource === 'partner' ? 'a D8 partner' : 'D8Advisr');
+  const eventImages = Array.from(new Set([event.image, ...(event.images ?? [])].filter(Boolean)));
 
   return (
     <div className="flex-1 min-h-0 bg-[#F7F7F7] flex flex-col relative overflow-y-auto no-scrollbar pb-28">
-
-      {/* Hero */}
-      <div className="h-64 relative overflow-hidden shrink-0">
-        <img src={event.image} alt={event.name} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/30" />
-
-        <button
-          onClick={() => window.history.back()}
-          className="absolute top-14 left-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 active:scale-95 transition-transform z-10"
-        >
-          <ArrowLeft size={20} />
-        </button>
-
-        <button className="absolute top-14 right-6 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 z-10">
-          <Share size={18} />
-        </button>
-
-        {event.recurrence && (
-          <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-sm text-white text-[11px] font-bold px-3 py-1.5 rounded-full z-10 flex items-center gap-1.5">
-            <Repeat size={11} /> {RECURRENCE_META[event.recurrence].icon}
-          </div>
-        )}
-
-        <div className="absolute bottom-5 left-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl">
-            {event.emoji}
-          </div>
-          <div>
-            <span className="text-white/60 text-[11px] font-bold uppercase tracking-wider">{event.category}</span>
-            <p className="text-white font-bold text-[19px] drop-shadow-sm leading-tight">{event.name}</p>
-          </div>
-        </div>
-      </div>
+      <ListingMediaGallery
+        key={eventId}
+        images={eventImages}
+        title={event.name}
+        variant="event"
+        onBack={() => window.history.back()}
+        onShare={() => void navigator.share?.({ title: event.name, url: window.location.href })}
+        badge={event.recurrence ? <span className="flex items-center gap-1.5"><Repeat size={11} /> {RECURRENCE_META[event.recurrence].icon}</span> : undefined}
+      />
 
       {isCancelled && (
-        <div className="mx-5 mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="mx-5 mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 lg:mx-auto lg:w-[calc(100%-3rem)] lg:max-w-5xl">
           <p className="text-[14px] font-black">This event has been cancelled</p>
         </div>
       )}
 
-      <div className="px-5 pt-5 flex flex-col gap-4">
+      <div className="px-5 pt-5 flex flex-col gap-4 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-6 lg:pt-6">
+
+        <header className="flex items-start gap-3 px-1">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-gray-100 bg-white text-2xl shadow-sm">
+            {event.emoji}
+          </div>
+          <div className="min-w-0 pt-0.5">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{event.category}</p>
+            <h1 className="mt-0.5 text-[24px] font-black leading-tight text-gray-900 lg:text-[30px]">{event.name}</h1>
+          </div>
+        </header>
 
         {/* Main info card */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
