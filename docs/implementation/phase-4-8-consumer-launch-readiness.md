@@ -104,3 +104,11 @@ Keep browser acceptance journey-level rather than listing every field:
 Automated tests should own narrower contracts for session lifecycle, canonical
 market isolation, formatting, query predicates, persisted state, and mapping of
 database rows into consumer-facing models.
+
+## Bounded plan-route cleanup — 9 September 2026
+
+`/plan/generate` now has one current UI contract. Surprise Me opens the compact
+when/who/budget builder, while venue- and event-origin links open that same
+builder with a confirmed anchor card. The legacy full-form branch was removed
+instead of being retained behind the same route. Plan selection, generation,
+and persistence remain explicitly deferred demo behavior.

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from "wouter";
-import { TopBar, BottomNav, cn, consumerDesktopClass } from "@/components/SharedUI";
+import { cn, consumerDesktopClass } from "@/components/SharedUI";
 import { useRegion } from "@/hooks/useRegion";
 
 const MESSAGES = [
@@ -221,7 +221,7 @@ function PlanningAnimation({ onDone }: { onDone: () => void }) {
   );
 }
 
-// ─── Venue-anchored "Build Around" mode ─────────────────────────────────────
+// ─── Modern plan builder ──────────────────────────────────────────────────────
 
 const WHEN_OPTIONS = ['Tonight', 'Tomorrow', 'This Weekend'];
 const WHO_OPTIONS = [
@@ -232,7 +232,7 @@ const WHO_OPTIONS = [
 ];
 const BUDGET_STEPS = [25, 50, 75, 100, 150, 200, 300];
 
-function BuildAroundMode({
+function PlanBuilderMode({
   anchorType,
   anchorId,
   venueName,
@@ -241,9 +241,9 @@ function BuildAroundMode({
   anchorCostAmount,
   onGenerate,
 }: {
-  anchorType: 'venue' | 'event';
+  anchorType: 'venue' | 'event' | null;
   anchorId: string | null;
-  venueName: string;
+  venueName: string | null;
   venueEmoji: string;
   venueCategory: string;
   anchorCostAmount: number | null;
@@ -254,20 +254,25 @@ function BuildAroundMode({
   const [when, setWhen] = useState('Tonight');
   const [who, setWho] = useState('couple');
   const [budgetIdx, setBudgetIdx] = useState(2);
+  const hasAnchor = Boolean(anchorType && venueName);
 
   const handleGenerate = () => {
-    localStorage.setItem('d8advisr_plan_anchor', JSON.stringify({
-      anchorType,
-      venueId: anchorType === 'venue' ? anchorId : new URLSearchParams(window.location.search).get('venueId'),
-      eventId: anchorType === 'event' ? anchorId : null,
-      venueName,
-      venueEmoji,
-      venueCategory,
-      costAmount: anchorCostAmount,
-      when,
-      who,
-      budgetPerPerson: BUDGET_STEPS[budgetIdx],
-    }));
+    if (hasAnchor) {
+      localStorage.setItem('d8advisr_plan_anchor', JSON.stringify({
+        anchorType,
+        venueId: anchorType === 'venue' ? anchorId : new URLSearchParams(window.location.search).get('venueId'),
+        eventId: anchorType === 'event' ? anchorId : null,
+        venueName,
+        venueEmoji,
+        venueCategory,
+        costAmount: anchorCostAmount,
+        when,
+        who,
+        budgetPerPerson: BUDGET_STEPS[budgetIdx],
+      }));
+    } else {
+      localStorage.removeItem('d8advisr_plan_anchor');
+    }
     onGenerate();
   };
 
@@ -282,36 +287,44 @@ function BuildAroundMode({
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Building around</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            {hasAnchor ? 'Building around' : 'Surprise me'}
+          </p>
         </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-36">
         <div className="px-6">
-          {/* Locked Venue Card */}
-          <div className="bg-card border border-primary/25 rounded-2xl p-4 mb-8 flex items-center gap-4 shadow-sm">
-            <div className="w-14 h-14 rounded-xl bg-primary/8 flex items-center justify-center text-2xl shrink-0">
-              {venueEmoji}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-foreground text-[16px] leading-tight truncate">{venueName}</p>
-              <p className="text-sm text-muted-foreground mt-0.5">{venueCategory}</p>
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-bold px-2 py-0.5 rounded-full">
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                  Anchored stop
-                </span>
+          {/* Locked venue/event card */}
+          {hasAnchor && (
+            <div className="bg-card border border-primary/25 rounded-2xl p-4 mb-8 flex items-center gap-4 shadow-sm">
+              <div className="w-14 h-14 rounded-xl bg-primary/8 flex items-center justify-center text-2xl shrink-0">
+                {venueEmoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground text-[16px] leading-tight truncate">{venueName}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{venueCategory}</p>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    Anchored stop
+                  </span>
+                </div>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center" title="You can't remove the anchored venue here">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </div>
             </div>
-            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center" title="You can't remove the anchored venue here">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-          </div>
+          )}
 
           <p className="text-[28px] font-bold text-foreground leading-tight mb-1">
-            Build your evening ✨
+            {hasAnchor ? 'Build your evening ✨' : 'Plan your evening ✨'}
           </p>
-          <p className="text-sm text-muted-foreground mb-8">We'll fill in the rest around your choice.</p>
+          <p className="text-sm text-muted-foreground mb-8">
+            {hasAnchor
+              ? "We'll fill in the rest around your choice."
+              : "Choose the basics and we'll surprise you with the rest."}
+          </p>
 
           <div className="flex flex-col gap-8">
             {/* When? */}
@@ -390,171 +403,27 @@ function BuildAroundMode({
         >
           Build My Evening ✨
         </button>
-        <p className="text-center text-xs text-muted-foreground mt-3">
-          {venueName} will be your confirmed stop
-        </p>
+        {hasAnchor && (
+          <p className="text-center text-xs text-muted-foreground mt-3">
+            {venueName} will be your confirmed stop
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Full blank form mode ────────────────────────────────────────────────────
-
-function FullFormMode({ onGenerate }: { onGenerate: () => void }) {
-  const { activeRegion } = useRegion();
-  const [type, setType] = useState<'solo' | 'couple' | 'group'>('couple');
-  const [occasion, setOccasion] = useState('Date Night');
-  const [mood, setMood] = useState('Romantic');
-
-  const handleGenerate = () => {
-    localStorage.removeItem('d8advisr_plan_anchor');
-    onGenerate();
-  };
-
-  return (
-    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-28">
-      <div className="px-6 py-4">
-        <h1 className="text-[32px] font-bold text-foreground leading-tight mb-6">Build Your Plan ✨</h1>
-
-        {/* Solo / Group toggle */}
-        <div className="flex bg-card p-1 rounded-full shadow-sm border border-border mb-8">
-          <button
-            onClick={() => setType('solo')}
-            className={cn(
-              "flex-1 py-3 rounded-full text-sm font-bold transition-all",
-              type === 'solo'
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Solo Date
-          </button>
-          <button
-            onClick={() => setType('group')}
-            className={cn(
-              "flex-1 py-3 rounded-full text-sm font-bold transition-all",
-              type === 'group'
-                ? "bg-foreground text-card shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Group Plan
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-8">
-          {/* Occasion */}
-          <div>
-            <h3 className="font-bold text-foreground mb-3 text-[15px]">Occasion</h3>
-            <div className="flex flex-wrap gap-2.5">
-              {['Date Night', 'First Date', 'Anniversary', 'Casual', 'Celebration'].map(item => (
-                <button
-                  key={item}
-                  onClick={() => setOccasion(item)}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-sm font-medium transition-all active:scale-95",
-                    occasion === item
-                      ? "bg-foreground text-card shadow-md"
-                      : "bg-card border border-border text-foreground hover:border-gray-300"
-                  )}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Vibe / Mood */}
-          <div>
-            <h3 className="font-bold text-foreground mb-3 text-[15px]">Vibe / Mood</h3>
-            <div className="flex flex-wrap gap-2.5">
-              {['Romantic', 'Fun', 'Adventure', 'Relaxing', 'Cultural'].map(item => (
-                <button
-                  key={item}
-                  onClick={() => setMood(item)}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-sm font-medium transition-all active:scale-95",
-                    mood === item
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                      : "bg-card border border-border text-foreground hover:border-gray-300"
-                  )}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Details */}
-          <div className="flex flex-col gap-4">
-            <h3 className="font-bold text-foreground text-[15px]">Details</h3>
-
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">When</label>
-                <input
-                  type="date"
-                  defaultValue="2025-10-14"
-                  className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Time</label>
-                <input
-                  type="time"
-                  defaultValue="19:00"
-                  className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Max Budget per person ({activeRegion.currency_symbol})</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground font-bold text-sm">{activeRegion.currency_symbol}</span>
-                <input
-                  type="number"
-                  defaultValue={75}
-                  className="w-full bg-card border border-border rounded-xl pl-9 pr-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-                  placeholder="e.g. 75"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Neighborhood / Area</label>
-              <input
-                type="text"
-                placeholder="e.g. Victoria Island"
-                defaultValue="Victoria Island"
-                className="w-full bg-card border border-border rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-primary"
-              />
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleGenerate}
-          className="w-full bg-primary text-primary-foreground py-[18px] rounded-xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,90,95,0.6)] active:scale-[0.98] transition-all mt-10 hover:bg-primary/90 flex items-center justify-center gap-2"
-        >
-          Generate Plan ✨
-        </button>
-      </div>
-    </div>
-  );
-}
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export function PlanGenerator() {
   const [, setLocation] = useLocation();
-  const { activeRegion } = useRegion();
   const [generating, setGenerating] = useState(false);
 
   // Read anchor params from URL
   const params = new URLSearchParams(window.location.search);
   const venueName = params.get('venueName');
   const eventName = params.get('eventName');
-  const anchorType: 'venue' | 'event' = eventName ? 'event' : 'venue';
+  const anchorType: 'venue' | 'event' | null = eventName ? 'event' : venueName ? 'venue' : null;
   const anchorId = eventName ? params.get('eventId') : params.get('venueId');
   const anchorName = venueName ?? eventName;
   const venueEmoji = params.get('venueEmoji') || params.get('eventEmoji') || '📍';
@@ -566,8 +435,6 @@ export function PlanGenerator() {
   const anchorCostAmount = parsedAnchorCostAmount !== null && Number.isFinite(parsedAnchorCostAmount)
     ? parsedAnchorCostAmount
     : null;
-  const isAnchorMode = Boolean(anchorName);
-
   const handleGenerate = useCallback(() => {
     setGenerating(true);
   }, []);
@@ -578,24 +445,15 @@ export function PlanGenerator() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col relative bg-background">
-      {!isAnchorMode && <TopBar />}
-
-      {isAnchorMode ? (
-        <BuildAroundMode
-          anchorType={anchorType}
-          anchorId={anchorId}
-          venueName={anchorName!}
-          venueEmoji={venueEmoji}
-          venueCategory={venueCategory}
-          anchorCostAmount={anchorCostAmount}
-          onGenerate={handleGenerate}
-        />
-      ) : (
-        <>
-          <FullFormMode onGenerate={handleGenerate} />
-          <BottomNav active="plans" />
-        </>
-      )}
+      <PlanBuilderMode
+        anchorType={anchorType}
+        anchorId={anchorId}
+        venueName={anchorName}
+        venueEmoji={venueEmoji}
+        venueCategory={venueCategory}
+        anchorCostAmount={anchorCostAmount}
+        onGenerate={handleGenerate}
+      />
 
       {/* AI Planning Animation Overlay */}
       {generating && <PlanningAnimation onDone={handleDone} />}

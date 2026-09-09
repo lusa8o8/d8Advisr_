@@ -43,8 +43,12 @@ architecture and acceptance criteria below remain the required later work.
 
 ### Surprise Me and plan overview
 
-- Surprise Me routes directly to PlanOverview; it does not select from the
-  authenticated user's eligible staging venues or events.
+- Surprise Me now opens the same compact plan builder used by venue- and
+  event-anchored entry points. Generic entry asks only when, who, and budget;
+  anchored entry additionally identifies the confirmed venue or event.
+- The removed legacy full form is no longer reachable from `/plan/generate`.
+  Completing the compact builder still opens the demo PlanOverview and does
+  not yet select from the authenticated user's eligible venues or events.
 - The three stops, Lagos title/area, stop times, tiers, labels, images, venue
   IDs, and transport legs are fixed constants.
 - Costs use a legacy multiplier of 1500 and every amount is rendered with a

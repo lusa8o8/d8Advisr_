@@ -11,6 +11,8 @@ const map = read('artifacts/d8advisr/src/pages/MapView.tsx');
 const plans = read('artifacts/d8advisr/src/pages/SavedPlans.tsx');
 const overview = read('artifacts/d8advisr/src/pages/PlanOverview.tsx');
 const profile = read('artifacts/d8advisr/src/pages/ProfileOverview.tsx');
+const generator = read('artifacts/d8advisr/src/pages/PlanGenerator.tsx');
+const desktopShell = read('artifacts/d8advisr/src/components/DesktopShell.tsx');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -38,5 +40,11 @@ assert(profile.includes('const { signOut } = useAuth();'), 'Profile must obtain 
 assert(profile.includes('await signOut();'), 'Profile logout must revoke the local auth session');
 assert(profile.includes('onClick={() => void handleSignOut()}'), 'Profile logout button must call its sign-out handler');
 assert(!profile.includes("onClick={() => setLocation('/')"), 'Profile logout must not only navigate without signing out');
+
+assert(sharedUi.includes("setLocation('/plan/generate')"), 'Mobile Surprise Me must route to the plan builder');
+assert(desktopShell.includes("setLocation('/plan/generate')"), 'Desktop Surprise Me must route to the plan builder');
+assert(generator.includes('<PlanBuilderMode'), 'Plan generation must render the current compact builder');
+assert(!generator.includes('FullFormMode'), 'The legacy full plan form must remain removed');
+assert(!generator.includes('Build Your Plan'), 'The legacy plan-builder heading must remain removed');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');
