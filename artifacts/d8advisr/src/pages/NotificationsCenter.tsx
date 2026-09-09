@@ -45,7 +45,7 @@ export function NotificationsCenter() {
         </div>
       </div>
 
-      <div className={cn(consumerDesktopClass('reading'), "flex flex-col pb-10")}>
+      <div className={cn(consumerDesktopClass('reading'), "flex flex-col px-4 lg:px-10 pb-10")}>
         {loading ? (
           <div className="py-20 flex justify-center items-center">
             <Loader2 size={28} className="animate-spin text-primary" />
@@ -68,11 +68,11 @@ export function NotificationsCenter() {
           </div>
         ) : (
           <div>
-            <h2 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider px-6 py-4">
+            <h2 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider px-2 py-4">
               Recent Updates ({notifications.length})
             </h2>
 
-            <div className="flex flex-col">
+            <div className="flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               {notifications.map(n => {
                 const isUnread = !n.readAt;
                 const isRescheduled = n.type === 'event_rescheduled';
@@ -90,7 +90,7 @@ export function NotificationsCenter() {
                       if (isUnread) void markRead(n.id);
                     }}
                     className={cn(
-                      "border-b border-border px-6 py-5 flex gap-4 items-start relative transition-colors cursor-pointer",
+                      "border-b border-border px-6 py-5 flex gap-4 items-start relative transition-colors cursor-pointer last:border-b-0",
                       isUnread ? "bg-[#FFF0F1]/40 hover:bg-[#FFF0F1]/70" : "bg-card hover:bg-background"
                     )}
                   >

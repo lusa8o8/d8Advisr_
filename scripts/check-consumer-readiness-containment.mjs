@@ -13,6 +13,7 @@ const overview = read('artifacts/d8advisr/src/pages/PlanOverview.tsx');
 const profile = read('artifacts/d8advisr/src/pages/ProfileOverview.tsx');
 const generator = read('artifacts/d8advisr/src/pages/PlanGenerator.tsx');
 const desktopShell = read('artifacts/d8advisr/src/components/DesktopShell.tsx');
+const notifications = read('artifacts/d8advisr/src/pages/NotificationsCenter.tsx');
 
 assert(sharedUi.includes("onClick={() => setLocation('/settings')}"), 'Mobile Settings action must route to /settings');
 assert(sharedUi.includes('aria-label="Settings"'), 'Mobile Settings action must have an accessible name');
@@ -46,5 +47,7 @@ assert(desktopShell.includes("setLocation('/plan/generate')"), 'Desktop Surprise
 assert(generator.includes('<PlanBuilderMode'), 'Plan generation must render the current compact builder');
 assert(!generator.includes('FullFormMode'), 'The legacy full plan form must remain removed');
 assert(!generator.includes('Build Your Plan'), 'The legacy plan-builder heading must remain removed');
+assert(notifications.includes('flex flex-col px-4 lg:px-10 pb-10'), 'Notifications must retain the reading-width inner inset');
+assert(notifications.includes('overflow-hidden rounded-3xl border border-border bg-card shadow-sm'), 'Notifications must retain a rounded grouped card surface');
 
 console.log('PASS bounded consumer readiness navigation and currency containment');
